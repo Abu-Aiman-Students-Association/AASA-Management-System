@@ -7,6 +7,7 @@ import {
   signInWithEmail,
   signOut,
 } from "./lib/appwrite";
+import MembersPanel from "./MembersPanel";
 
 type ConnectionState = "idle" | "checking" | "connected" | "error";
 type View = "login" | "recovery";
@@ -185,6 +186,8 @@ export default function App() {
             <article className="summary-card"><span className="summary-icon gold">▤</span><div><small>{t.records}</small><strong>{t.planned}</strong><p>{t.recordsSub}</p></div></article>
             <article className="summary-card"><span className="summary-icon blue">⌁</span><div><small>{t.backend}</small><strong>{connection === "connected" ? t.connected : connection === "checking" ? t.checking : connection === "error" ? t.failed : t.notTested}</strong><p>{message}</p></div></article>
           </section>
+
+          {selectedModule === "members" && <MembersPanel />}
 
           <div className="section-heading" id="modules"><div><h2>{t.modules}</h2><p>{t.modulesSub}</p></div><span className="module-count">15 {language === "ar" ? "وحدة" : language === "ha" ? "sassa" : "modules"}</span></div>
           <section className="module-grid" aria-label={t.modules}>
