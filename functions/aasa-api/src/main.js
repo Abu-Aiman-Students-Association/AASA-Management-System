@@ -106,8 +106,17 @@ async function writeAudit({ actor, route, action, result, reason, recordId }) {
   }
 }
 function cleanInput(route, action, input, userId) {
-  const data = { ...input };
-  for (const key of ["$id", "$createdAt", "$updatedAt", "$permissions", "is_test_record", "created_by", "updated_by", "recorded_by", "approved_by", "actor_user_id", "assigned_by"]) delete data[key];
+  const allowed = {
+    members: action === "CREATE"
+      ? ["member_number", "full_name", "email", "phone_number", "whatsapp_number", "gender", "date_of_birth", "address", "state", "town", "profile_photo_file_id"]
+      : ["full_name", "email", "phone_number", "whatsapp_number", "gender", "date_of_birth", "address", "state", "town", "profile_photo_file_id"],
+    meetings: ["title", "meeting_type", "starts_at", "ends_at", "venue", "online_link"],
+    finance: action === "CREATE"
+      ? ["transaction_type", "category", "amount_minor", "transaction_date", "payment_reference", "evidence_file_id"]
+      : ["payment_reference", "evidence_file_id"],
+    elections: ["name", "purpose", "nomination_starts_at", "nomination_ends_at", "voting_starts_at", "voting_ends_at"],
+  }[route] || [];
+  const data = Object.fromEntries(Object.entries(input || {}).filter(([key]) => allowed.includes(key));
   if (route === "members") {
     if (action === "CREATE") {
       if (!String(data.member_number || "").trim() || !String(data.full_name || "").trim()) throw Object.assign(new Error("Member number and full name are required."), { status: 400 });
@@ -150,7 +159,8 @@ function cleanInput(route, action, input, userId) {
 export default async ({ req, res, log, error }) => {
   const method = String(req.method || "GET").toUpperCase();
   const path = String(req.path || "/").split("?")[0].replace(/\/$/, "") || "/";
-  const route = ROUTES[path];
+  const segments = path.split("/").filter(Boolean);
+  const route = ROUTES["/" + (segments[0] || "")];
   const jwt = req.headers?.["x-appwrite-user-jwt"] || req.headers?.["X-Appwrite-User-JWT"];
   if (method === "OPTIONS") return res.json({ ok: true });
   if (!PROJECT_ID || !API_KEY) return response(res, 503, { error: "Server configuration is incomplete." });
@@ -168,13 +178,12 @@ export default async ({ req, res, log, error }) => {
   if (path === "/health" && method === "GET") return response(res, 200, { ok: true, authenticated: true });
   if (!route) return response(res, 404, { error: "Unknown API route." });
 
-  const segments = path.split("/").filter(Boolean);
   const rowId = segments.length > 1 ? segments[1] : null;
   let action;
-  if (method === "GET" && !rowId) action = "READ";
-  else if (method === "POST" && !rowId) action = "CREATE";
-  else if (method === "PATCH" && rowId) action = "UPDATE";
-  else if (method === "POST" && rowId === "archive" && route.module === "members") action = "ARCHIVE";
+  if (method === "GET" && segments.length === 1) action = "READ";
+  else if (method === "POST" && segments.length === 1) action = "CREATE";
+  else if (method === "PATCH" && segments.length === 2 && rowId) action = "UPDATE";
+  else if (method === "POST" && segments.length === 3 && segments[2] === "archive" && route.module === "members" && rowId) action = "ARCHIVE";
   else return response(res, 405, { error: "Method not allowed." });
 
   try {
