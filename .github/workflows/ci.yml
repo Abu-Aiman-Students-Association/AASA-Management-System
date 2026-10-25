@@ -22,6 +22,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Check server API JavaScript syntax
+        run: node --check functions/aasa-api/src/main.js
       - name: Build app
         run: npm run build
         env:
