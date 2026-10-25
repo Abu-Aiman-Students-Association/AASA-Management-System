@@ -191,7 +191,7 @@ export default function App() {
 
           <div className="section-heading" id="modules"><div><h2>{t.modules}</h2><p>{t.modulesSub}</p></div><span className="module-count">15 {language === "ar" ? "وحدة" : language === "ha" ? "sassa" : "modules"}</span></div>
           <section className="module-grid" aria-label={t.modules}>
-            {modules.filter((item) => item.id !== "overview").map((item, index) => (
+            {modules.filter((item) => item.id !== "overview").map((item) => (
               <button type="button" key={item.id} className={`module-card ${selectedModule === item.id ? "chosen" : ""}`} onClick={() => { setSelectedModule(item.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                 <span className="module-card-top"><span className="module-icon">{item.icon}</span><span className="module-arrow">↗</span></span>
                 <span className="module-title">{item[language]}</span><span className="module-description">{item.description}</span>
