@@ -116,7 +116,7 @@ function cleanInput(route, action, input, userId) {
       : ["payment_reference", "evidence_file_id"],
     elections: ["name", "purpose", "nomination_starts_at", "nomination_ends_at", "voting_starts_at", "voting_ends_at"],
   }[route] || [];
-  const data = Object.fromEntries(Object.entries(input || {}).filter(([key]) => allowed.includes(key));
+  const data = Object.fromEntries(Object.entries(input || {}).filter(([key]) => allowed.includes(key)));
   if (route === "members") {
     if (action === "CREATE") {
       if (!String(data.member_number || "").trim() || !String(data.full_name || "").trim()) throw Object.assign(new Error("Member number and full name are required."), { status: 400 });
