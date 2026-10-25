@@ -1,0 +1,10 @@
+{
+  "name": "aasa-authorized-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Server-side identity verification, permission enforcement, and audited AASA module API.",
+  "engines": {
+    "node": ">=22"
+  }
+}
