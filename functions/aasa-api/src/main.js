@@ -1,6 +1,6 @@
-const ENDPOINT = (process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1").replace(/\/$/, "");
-const PROJECT_ID = process.env.APPWRITE_PROJECT_ID;
-const API_KEY = process.env.APPWRITE_API_KEY;
+const ENDPOINT = (process.env.APPWRITE_FUNCTION_API_ENDPOINT || process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1").replace(/\/$/, "");
+const PROJECT_ID = process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID;
+const API_KEY = process.env.APPWRITE_FUNCTION_API_KEY || process.env.APPWRITE_API_KEY;
 const DATABASE_ID = process.env.AASA_DATABASE_ID || "6adc732d002ef31e6c3a";
 
 const TABLES = {
