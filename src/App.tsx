@@ -3,6 +3,7 @@ import {
   appwriteConfigReady,
   checkAppwriteConnection,
   getCurrentAccount,
+  getCurrentPermissionKeys,
   requestPasswordRecovery,
   signInWithEmail,
   signOut,
@@ -12,6 +13,14 @@ import MembersPanel from "./MembersPanel";
 type ConnectionState = "idle" | "checking" | "connected" | "error";
 type View = "login" | "recovery";
 type Language = "en" | "ha" | "ar";
+type AccessState = "checking" | "ready" | "denied";
+
+const modulePermission: Record<string, string> = {
+  members: "members.read", leadership: "roles.read", committees: "meetings.manage", meetings: "meetings.manage",
+  attendance: "attendance.record", elections: "elections.manage", finance: "finance.read", welfare: "welfare.restricted_read",
+  complaints: "complaints.review", projects: "documents.manage", documents: "documents.manage", notifications: "notifications.send",
+  security: "roles.read", settings: "settings.manage",
+};
 
 const modules = [
   { id: "overview", icon: "◫", en: "Overview", ha: "Taƙaitaccen bayani", ar: "نظرة عامة", description: "Association-wide status and recent activity." },
@@ -68,6 +77,8 @@ export default function App() {
   const [connection, setConnection] = useState<ConnectionState>("idle");
   const [message, setMessage] = useState("Connection has not been tested yet.");
   const [user, setUser] = useState<{ $id: string; name: string; email: string } | null>(null);
+  const [permissionKeys, setPermissionKeys] = useState<string[]>([]);
+  const [accessState, setAccessState] = useState<AccessState>("checking");
   const [view, setView] = useState<View>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -77,15 +88,23 @@ export default function App() {
   const [language, setLanguage] = useState<Language>("en");
   const [selectedModule, setSelectedModule] = useState("overview");
   const t = copy[language];
-  const activeModule = useMemo(() => modules.find((item) => item.id === selectedModule) ?? modules[0], [selectedModule]);
+  const visibleModules = useMemo(() => modules.filter((item) => item.id === "overview" || permissionKeys.includes(modulePermission[item.id] ?? "__no_permission__")), [permissionKeys]);
+  const activeModule = useMemo(() => visibleModules.find((item) => item.id === selectedModule) ?? modules[0], [selectedModule, visibleModules]);
   const isArabic = language === "ar";
 
   useEffect(() => {
     let active = true;
     if (appwriteConfigReady) {
-      getCurrentAccount().then((current) => {
-        if (active) setUser({ $id: current.$id, name: current.name, email: current.email });
-      }).catch(() => {});
+      getCurrentAccount().then(async (current) => {
+        if (!active) return;
+        setUser({ $id: current.$id, name: current.name, email: current.email });
+        try {
+          const keys = await getCurrentPermissionKeys();
+          if (active) { setPermissionKeys(keys); setAccessState(keys.length ? "ready" : "denied"); }
+        } catch {
+          if (active) { setPermissionKeys([]); setAccessState("denied"); }
+        }
+      }).catch(() => { if (active) setAccessState("denied"); });
     }
     return () => { active = false; };
   }, []);
@@ -110,7 +129,15 @@ export default function App() {
       const current = await signInWithEmail(email, password);
       setUser({ $id: current.$id, name: current.name, email: current.email });
       setPassword("");
-      setAuthMessage(t.noAccess);
+      try {
+        const keys = await getCurrentPermissionKeys();
+        setPermissionKeys(keys); setAccessState(keys.length ? "ready" : "denied");
+        setSelectedModule("overview");
+        setAuthMessage(keys.length ? "Access permissions loaded. Only authorized modules are shown." : "Your account is signed in, but no active AASA role permissions were found. Ask an authorized administrator to assign your role.");
+      } catch {
+        setPermissionKeys([]); setAccessState("denied"); setSelectedModule("overview");
+        setAuthError(true); setAuthMessage("Signed in, but role permissions could not be verified. Access is blocked until the role tables are available to your account.");
+      }
     } catch (error) {
       setAuthError(true);
       setAuthMessage(error instanceof Error ? error.message : "Sign-in failed. Check your details and try again.");
@@ -130,7 +157,7 @@ export default function App() {
 
   async function handleSignOut() {
     setBusy(true);
-    try { await signOut(); setUser(null); setAuthMessage("You have signed out."); setAuthError(false); }
+    try { await signOut(); setUser(null); setPermissionKeys([]); setAccessState("denied"); setSelectedModule("overview"); setAuthMessage("You have signed out."); setAuthError(false); }
     catch (error) { setAuthMessage(error instanceof Error ? error.message : "Sign-out failed."); setAuthError(true); }
     finally { setBusy(false); }
   }
@@ -144,7 +171,7 @@ export default function App() {
         </a>
         <div className="side-label">{t.workspace}</div>
         <nav className="side-nav" aria-label="Main navigation">
-          {modules.map((item) => (
+          {visibleModules.map((item) => (
             <button key={item.id} type="button" className={`nav-item ${selectedModule === item.id ? "active" : ""}`} onClick={() => setSelectedModule(item.id)}>
               <span className="nav-icon" aria-hidden="true">{item.icon}</span><span>{item[language]}</span>
               {item.id !== "overview" && <span className="nav-dot" aria-label={t.planned} />}
@@ -187,11 +214,13 @@ export default function App() {
             <article className="summary-card"><span className="summary-icon blue">⌁</span><div><small>{t.backend}</small><strong>{connection === "connected" ? t.connected : connection === "checking" ? t.checking : connection === "error" ? t.failed : t.notTested}</strong><p>{message}</p></div></article>
           </section>
 
-          {selectedModule === "members" && <MembersPanel />}
+          {selectedModule === "members" && user && permissionKeys.includes("members.read") && <MembersPanel />}
+          {user && accessState === "denied" && <div className="auth-notice" role="status">Your identity is signed in, but no active AASA role permissions are verified. Management modules are hidden until an authorized administrator assigns access. Database permissions remain the security boundary.</div>}
+          {user && accessState === "checking" && <div className="auth-notice" role="status">Checking your AASA role permissions…</div>}
 
           <div className="section-heading" id="modules"><div><h2>{t.modules}</h2><p>{t.modulesSub}</p></div><span className="module-count">15 {language === "ar" ? "وحدة" : language === "ha" ? "sassa" : "modules"}</span></div>
           <section className="module-grid" aria-label={t.modules}>
-            {modules.filter((item) => item.id !== "overview").map((item) => (
+            {visibleModules.filter((item) => item.id !== "overview").map((item) => (
               <button type="button" key={item.id} className={`module-card ${selectedModule === item.id ? "chosen" : ""}`} onClick={() => { setSelectedModule(item.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                 <span className="module-card-top"><span className="module-icon">{item.icon}</span><span className="module-arrow">↗</span></span>
                 <span className="module-title">{item[language]}</span><span className="module-description">{item.description}</span>
