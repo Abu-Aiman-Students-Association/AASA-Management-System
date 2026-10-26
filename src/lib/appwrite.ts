@@ -16,10 +16,29 @@ export async function checkAppwriteConnection(): Promise<void> {
   await appwriteClient.ping();
 }
 
-export async function signInWithEmail(email: string, password: string) {
+const AASA_SUPER_ADMIN_ID = "6adc5b630006ac99c6bb";
+const AASA_SUPER_ADMIN_EMAIL = "abuaimanstudents@gmail.com";
+
+export async function requestSignInOtp(email: string) {
   if (!appwriteConfigReady) throw new Error("Appwrite is not configured.");
-  await account.createEmailPasswordSession(email.trim(), password);
-  return account.get();
+  const normalizedEmail = email.trim().toLowerCase();
+  if (normalizedEmail !== AASA_SUPER_ADMIN_EMAIL) throw new Error("This email is not authorized for AASA Super Admin access.");
+  await account.createEmailToken(AASA_SUPER_ADMIN_ID, normalizedEmail);
+}
+
+export async function verifySignInOtp(email: string, secret: string) {
+  if (!appwriteConfigReady) throw new Error("Appwrite is not configured.");
+  const normalizedEmail = email.trim().toLowerCase();
+  if (normalizedEmail !== AASA_SUPER_ADMIN_EMAIL) throw new Error("This email is not authorized for AASA Super Admin access.");
+  const code = secret.trim();
+  if (!/^\d{6}$/.test(code)) throw new Error("Enter the 6-digit code sent to your email.");
+  await account.createSession(AASA_SUPER_ADMIN_ID, code);
+  const current = await account.get();
+  if (current.$id !== AASA_SUPER_ADMIN_ID || current.email.toLowerCase() !== AASA_SUPER_ADMIN_EMAIL) {
+    try { await account.deleteSession("current"); } catch { /* no session to clear */ }
+    throw new Error("The signed-in account is not the authorized AASA Super Admin.");
+  }
+  return current;
 }
 
 export async function getCurrentAccount() {
