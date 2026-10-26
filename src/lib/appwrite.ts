@@ -28,7 +28,7 @@ export async function getCurrentAccount() {
 }
 
 /** Call the server-side API using a short-lived JWT for the current session. */
-export async function secureApi<T>(path: string, method: "GET" | "POST" | "PATCH" = "GET", data?: unknown): Promise<T> {
+export async function secureApi<T>(path: string, method: "get" | "post" | "patch" = "get", data?: unknown): Promise<T> {
   if (!appwriteConfigReady || !endpoint || !projectId) throw new Error("Appwrite is not configured.");
   const jwt = await account.createJWT();
   const execution = await functions.createExecution(
