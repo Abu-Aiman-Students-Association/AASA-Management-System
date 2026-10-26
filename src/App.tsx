@@ -5,7 +5,8 @@ import {
   getCurrentAccount,
   getCurrentPermissionKeys,
   requestPasswordRecovery,
-  signInWithEmail,
+  requestSignInOtp,
+  verifySignInOtp,
   signOut,
 } from "./lib/appwrite";
 import MembersPanel from "./MembersPanel";
@@ -46,7 +47,7 @@ const copy = {
     intro: "A modern workspace for membership, governance, finance and association services—with accountable access and verified records.",
     workspace: "Workspace", modules: "Workspace modules", modulesSub: "A complete roadmap, built module by module. Unreleased areas are clearly marked.",
     planned: "In development", secure: "Security first", secureSub: "Role-based access is being configured", records: "Real records only", recordsSub: "No sample figures presented as real", backend: "Backend connection", check: "Test connection",
-    signedOut: "Sign in", signInHint: "Use an account created by an authorized AASA administrator.", email: "Email address", password: "Password", forgot: "Forgot password?", sendRecovery: "Send recovery link", back: "Back to sign in", signingIn: "Signing in…", signOut: "Sign out",
+    signedOut: "Sign in", signInHint: "Use an account created by an authorized AASA administrator.", email: "Email address", password: "Password", otp: "6-digit email code", sendOtp: "Send OTP", verifyOtp: "Verify OTP", resendOtp: "Send a new code", otpSent: "If the authorized account is registered and email delivery is enabled, a 6-digit code has been sent.", forgot: "Forgot password?", sendRecovery: "Send recovery link", back: "Back to sign in", signingIn: "Signing in…", signOut: "Sign out",
     connected: "Endpoint reachable", notTested: "Not tested", checking: "Checking…", failed: "Connection issue", foundation: "Foundation stage", noAccess: "Your identity is signed in, but module access is not enabled until roles and database permissions are verified.",
     selectModule: "Module selected", coming: "This module is not live yet. Its data and permissions will be connected before it is released.",
     footer: "ABU-AIMAN STUDENTS' ASSOCIATION · SECURE · ACCOUNTABLE · MULTILINGUAL",
@@ -56,7 +57,7 @@ const copy = {
     intro: "Tsarin zamani na kula da mambobi, shugabanci, kuɗaɗe da ayyukan ƙungiya—tare da ingantaccen izini da bayanan da aka tabbatar.",
     workspace: "Wurin aiki", modules: "Sassan tsarin", modulesSub: "Tsarin duka za a gina shi a matakai. Za a bayyana sassan da ba su kammala ba.",
     planned: "Ana ginawa", secure: "Tsaro da farko", secureSub: "Ana tsara izini bisa matsayi", records: "Bayanan gaskiya kawai", recordsSub: "Ba za a nuna ƙididdigar ƙarya ba", backend: "Haɗin backend", check: "Gwada haɗi",
-    signedOut: "Shiga", signInHint: "Yi amfani da asusun da mai izini na AASA ya ƙirƙira.", email: "Adireshin imel", password: "Kalmar sirri", forgot: "Ka manta kalmar sirri?", sendRecovery: "Aika hanyar dawo da kalmar sirri", back: "Koma shiga", signingIn: "Ana shiga…", signOut: "Fita",
+    signedOut: "Shiga", signInHint: "Yi amfani da asusun da mai izini na AASA ya ƙirƙira.", email: "Adireshin imel", password: "Kalmar sirri", otp: "Lambar OTP mai lambobi 6", sendOtp: "Aika OTP", verifyOtp: "Tabbatar da OTP", resendOtp: "Sake aika lamba", otpSent: "Idan an tabbatar da asusun kuma an kunna aika imel, an aika lambar lambobi 6.", forgot: "Ka manta kalmar sirri?", sendRecovery: "Aika hanyar dawo da kalmar sirri", back: "Koma shiga", signingIn: "Ana shiga…", signOut: "Fita",
     connected: "An iya isa backend", notTested: "Ba a gwada ba", checking: "Ana dubawa…", failed: "Matsalar haɗi", foundation: "Matakin tushe", noAccess: "An tabbatar da shiga asusunka, amma ba a buɗe damar sassan tsarin ba sai an tabbatar da matsayi da izinin database.",
     selectModule: "An zaɓi sashe", coming: "Wannan sashe bai fara aiki ba tukuna. Za a haɗa bayanansa da izini kafin a fitar da shi.",
     footer: "ƘUNGIYAR ƊALIBAN ABU-AIMAN · TSARO · RIƘON AMANA · HARSUNA DA YAWA",
@@ -66,7 +67,7 @@ const copy = {
     intro: "مساحة عمل حديثة لإدارة العضوية والحوكمة والمالية وخدمات الجمعية، مع صلاحيات مسؤولة وسجلات موثوقة.",
     workspace: "مساحة العمل", modules: "وحدات النظام", modulesSub: "سيتم بناء النظام الكامل على مراحل، مع توضيح الوحدات التي لم تُطلق بعد.",
     planned: "قيد التطوير", secure: "الأمان أولاً", secureSub: "يجري إعداد الصلاحيات حسب الدور", records: "سجلات حقيقية فقط", recordsSub: "لن تُعرض أرقام تجريبية على أنها حقيقية", backend: "اتصال الخادم", check: "اختبار الاتصال",
-    signedOut: "تسجيل الدخول", signInHint: "استخدم حساباً أنشأه مسؤول مخوّل في الجمعية.", email: "البريد الإلكتروني", password: "كلمة المرور", forgot: "نسيت كلمة المرور؟", sendRecovery: "إرسال رابط الاستعادة", back: "العودة لتسجيل الدخول", signingIn: "جارٍ تسجيل الدخول…", signOut: "تسجيل الخروج",
+    signedOut: "تسجيل الدخول", signInHint: "استخدم حساباً أنشأه مسؤول مخوّل في الجمعية.", email: "البريد الإلكتروني", password: "كلمة المرور", otp: "رمز البريد المكوّن من 6 أرقام", sendOtp: "إرسال الرمز", verifyOtp: "تأكيد الرمز", resendOtp: "إرسال رمز جديد", otpSent: "إذا كان الحساب مخوّلاً والبريد مفعّلاً، فقد أُرسل رمز من 6 أرقام.", forgot: "نسيت كلمة المرور؟", sendRecovery: "إرسال رابط الاستعادة", back: "العودة لتسجيل الدخول", signingIn: "جارٍ تسجيل الدخول…", signOut: "تسجيل الخروج",
     connected: "الخادم متاح", notTested: "لم يُختبر", checking: "جارٍ الفحص…", failed: "مشكلة في الاتصال", foundation: "مرحلة التأسيس", noAccess: "تم تسجيل الدخول، لكن لن تُتاح الوحدات حتى يتم التحقق من الأدوار وصلاحيات قاعدة البيانات.",
     selectModule: "الوحدة المحددة", coming: "هذه الوحدة غير متاحة بعد. سيتم ربط البيانات والصلاحيات قبل إطلاقها.",
     footer: "جمعية طلاب أبو أيمن · آمن · مسؤول · متعدد اللغات",
@@ -81,7 +82,8 @@ export default function App() {
   const [accessState, setAccessState] = useState<AccessState>("checking");
   const [view, setView] = useState<View>("login");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [authError, setAuthError] = useState(false);
@@ -123,25 +125,24 @@ export default function App() {
   }
 
   async function handleSignIn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true); setAuthError(false); setAuthMessage("");
+    event.preventDefault(); setBusy(true); setAuthError(false); setAuthMessage("");
     try {
-      const current = await signInWithEmail(email, password);
-      setUser({ $id: current.$id, name: current.name, email: current.email });
-      setPassword("");
-      try {
-        const keys = await getCurrentPermissionKeys();
-        setPermissionKeys(keys); setAccessState(keys.length ? "ready" : "denied");
-        setSelectedModule("overview");
-        setAuthMessage(keys.length ? "Access permissions loaded. Only authorized modules are shown." : "Your account is signed in, but no active AASA role permissions were found. Ask an authorized administrator to assign your role.");
-      } catch {
-        setPermissionKeys([]); setAccessState("denied"); setSelectedModule("overview");
-        setAuthError(true); setAuthMessage("Signed in, but role permissions could not be verified. Access is blocked until the role tables are available to your account.");
+      if (!otpSent) {
+        await requestSignInOtp(email); setOtpSent(true); setAuthMessage(t.otpSent);
+      } else {
+        const current = await verifySignInOtp(email, otp);
+        setUser({ $id: current.$id, name: current.name, email: current.email }); setOtp("");
+        try {
+          const keys = await getCurrentPermissionKeys();
+          setPermissionKeys(keys); setAccessState(keys.length ? "ready" : "denied"); setSelectedModule("overview");
+          setAuthMessage(keys.length ? "Access permissions loaded. Only authorized modules are shown." : "Your account is signed in, but no active AASA role permissions were found. Ask an authorized administrator to assign your role.");
+        } catch {
+          setPermissionKeys([]); setAccessState("denied"); setSelectedModule("overview");
+          setAuthError(true); setAuthMessage("Signed in, but role permissions could not be verified. Access is blocked until the role tables are available to your account.");
+        }
       }
-    } catch (error) {
-      setAuthError(true);
-      setAuthMessage(error instanceof Error ? error.message : "Sign-in failed. Check your details and try again.");
-    } finally { setBusy(false); }
+    } catch (error) { setAuthError(true); setAuthMessage(error instanceof Error ? error.message : "Could not complete email OTP sign-in."); }
+    finally { setBusy(false); }
   }
 
   async function handleRecovery(event: FormEvent<HTMLFormElement>) {
@@ -233,7 +234,7 @@ export default function App() {
             <article className="connection-panel"><div className="panel-title"><div><p className="eyebrow">APPWRITE</p><h3>{t.backend}</h3></div><span className={`status-pill ${connection}`}>{connection === "connected" ? t.connected : connection === "checking" ? t.checking : connection === "error" ? t.failed : t.notTested}</span></div><p className="panel-copy">{message}. This verifies endpoint connectivity only; database permissions and role enforcement require separate verification.</p><button type="button" className="outline-button" onClick={testConnection} disabled={connection === "checking" || !appwriteConfigReady}>{connection === "checking" ? t.checking : t.check}</button>{!appwriteConfigReady && <p className="error-note">Appwrite settings are missing. Configure the public endpoint and project ID.</p>}</article>
 
             <article className="auth-panel" id="sign-in-panel"><div className="panel-title"><div><p className="eyebrow">ACCOUNT SECURITY</p><h3>{user ? (user.name || user.email) : view === "recovery" ? "Password recovery" : t.signedOut}</h3></div><span className={`status-pill ${user ? "connected" : "idle"}`}>{user ? "Verified identity" : "Secure access"}</span></div>
-              {user ? <><p className="panel-copy">{user.email}</p><p className="auth-notice">{t.noAccess}</p><button type="button" className="outline-button" onClick={handleSignOut} disabled={busy}>{busy ? "Please wait…" : t.signOut}</button></> : view === "recovery" ? <form className="auth-form" onSubmit={handleRecovery}><p className="panel-copy">Enter the email address linked to your account.</p><label htmlFor="recovery-email">{t.email}</label><input id="recovery-email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /><button type="submit" disabled={busy || !appwriteConfigReady}>{busy ? "Sending…" : t.sendRecovery}</button><button type="button" className="link-button" onClick={() => { setView("login"); setAuthMessage(""); }}>{t.back}</button></form> : <form className="auth-form" onSubmit={handleSignIn}><p className="panel-copy">{t.signInHint}</p><label htmlFor="login-email">{t.email}</label><input id="login-email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} /><label htmlFor="login-password">{t.password}</label><input id="login-password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /><button type="submit" disabled={busy || !appwriteConfigReady}>{busy ? t.signingIn : t.signedOut}</button><button type="button" className="link-button" onClick={() => { setView("recovery"); setAuthMessage(""); }}>{t.forgot}</button></form>}
+              {user ? <><p className="panel-copy">{user.email}</p><p className="auth-notice">{t.noAccess}</p><button type="button" className="outline-button" onClick={handleSignOut} disabled={busy}>{busy ? "Please wait…" : t.signOut}</button></> : view === "recovery" ? <form className="auth-form" onSubmit={handleRecovery}><p className="panel-copy">Enter the email address linked to your account.</p><label htmlFor="recovery-email">{t.email}</label><input id="recovery-email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /><button type="submit" disabled={busy || !appwriteConfigReady}>{busy ? "Sending…" : t.sendRecovery}</button><button type="button" className="link-button" onClick={() => { setView("login"); setAuthMessage(""); }}>{t.back}</button></form> : <form className="auth-form" onSubmit={handleSignIn}><p className="panel-copy">{t.signInHint}</p><label htmlFor="login-email">{t.email}</label><input id="login-email" type="email" autoComplete="email" required value={email} disabled={otpSent || busy} onChange={(e) => setEmail(e.target.value)} />{otpSent && <><label htmlFor="login-otp">{t.otp}</label><input id="login-otp" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} /></>}<button type="submit" disabled={busy || !appwriteConfigReady || (otpSent && otp.length !== 6)}>{busy ? "Please wait…" : otpSent ? t.verifyOtp : t.sendOtp}</button>{otpSent && <button type="button" className="link-button" disabled={busy} onClick={() => { setOtp(""); setOtpSent(false); setAuthMessage(""); }}>{t.resendOtp} / change email</button>}</form>}
               {authMessage && <p className={`auth-feedback ${authError ? "error-note" : ""}`} role="status">{authMessage}</p>}
             </article>
           </section>
