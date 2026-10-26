@@ -1,4 +1,4 @@
-import { Account, Client, Functions } from "appwrite";
+import { Account, Client, ExecutionMethod, Functions } from "appwrite";
 
 const endpoint = (import.meta.env.VITE_APPWRITE_ENDPOINT as string | undefined)?.replace(/\/$/, "");
 const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID as string | undefined;
@@ -31,12 +31,13 @@ export async function getCurrentAccount() {
 export async function secureApi<T>(path: string, method: "get" | "post" | "patch" = "get", data?: unknown): Promise<T> {
   if (!appwriteConfigReady || !endpoint || !projectId) throw new Error("Appwrite is not configured.");
   const jwt = await account.createJWT();
+  const sdkMethod = method === "post" ? ExecutionMethod.POST : method === "patch" ? ExecutionMethod.PATCH : ExecutionMethod.GET;
   const execution = await functions.createExecution(
     functionId,
     data === undefined ? "" : JSON.stringify(data),
     false,
     path,
-    method,
+    sdkMethod,
     { "x-appwrite-user-jwt": jwt.jwt, "content-type": "application/json" },
   );
   let payload: any = {};
