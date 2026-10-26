@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TablesDB, Query } from "appwrite";
-import { appwriteClient, appwriteConfigReady, getCurrentAccount } from "./lib/appwrite";
+import { appwriteConfigReady, getCurrentAccount, secureApi } from "./lib/appwrite";
 
 type Member = {
   $id: string;
@@ -13,17 +12,7 @@ type Member = {
   is_test_record?: boolean;
 };
 
-const tables = new TablesDB(appwriteClient);
-const DATABASE_ID = "6adc732d002ef31e6c3a";
-const MEMBERS_TABLE_ID = "aasa_members";
-
 function errorMessage(error: unknown) {
-  if (error && typeof error === "object" && "code" in error && (error as { code?: number }).code === 401) {
-    return "Your session is not authorized to read member records. Sign in with an approved AASA account.";
-  }
-  if (error && typeof error === "object" && "code" in error && (error as { code?: number }).code === 403) {
-    return "Access denied. Member records are protected until an authorized role and table permissions are configured.";
-  }
   return error instanceof Error ? error.message : "Could not load member records.";
 }
 
@@ -40,13 +29,8 @@ export default function MembersPanel() {
     try {
       if (!appwriteConfigReady) throw new Error("Appwrite is not configured. Set the public project endpoint and project ID.");
       await getCurrentAccount();
-      const response = await tables.listRows({
-        databaseId: DATABASE_ID,
-        tableId: MEMBERS_TABLE_ID,
-        queries: [Query.limit(100), Query.orderDesc("$createdAt")],
-        total: true,
-      });
-      setMembers((response.rows as unknown as Member[]).filter((row) => row.is_test_record !== true));
+      const response = await secureApi<{ rows?: Member[] }>("/members");
+      setMembers((response.rows || []).filter((row) => row.is_test_record !== true));
       setLoaded(true);
     } catch (cause) {
       setMembers([]);
@@ -84,7 +68,7 @@ export default function MembersPanel() {
       <div className="members-stats">
         <div><span>Visible records</span><strong>{loaded ? filtered.length : "—"}</strong></div>
         <div><span>Active members</span><strong>{loaded ? members.filter((m) => m.membership_status === "ACTIVE").length : "—"}</strong></div>
-        <div><span>Data source</span><strong>Appwrite</strong></div>
+        <div><span>Data source</span><strong>Secure API</strong></div>
       </div>
 
       <div className="members-table-card">
@@ -101,7 +85,7 @@ export default function MembersPanel() {
         {!loading && !error && loaded && filtered.length === 0 && <div className="members-state"><span className="state-icon">⌕</span><strong>{members.length === 0 ? "No member records yet" : "No matching members"}</strong><p>{members.length === 0 ? "The AASA Members table currently has no non-test records accessible to this account." : "Try another name, member number or contact detail."}</p></div>}
         {!loading && !error && filtered.length > 0 && <div className="members-table-wrap"><table className="members-table"><thead><tr><th>Member</th><th>Member ID</th><th>Contact</th><th>Status</th><th>Joined</th></tr></thead><tbody>{filtered.map((member) => <tr key={member.$id}><td><strong>{member.full_name || "Name not provided"}</strong><small>{member.email || "No email on record"}</small></td><td><span className="member-id">{member.member_number || "—"}</span></td><td>{member.phone_number || "—"}</td><td><span className={`member-status ${(member.membership_status || "UNKNOWN").toLowerCase()}`}>{(member.membership_status || "UNKNOWN").replaceAll("_", " ")}</span></td><td>{member.joined_at ? new Date(member.joined_at).toLocaleDateString() : "—"}</td></tr>)}</tbody></table></div>}
       </div>
-      <p className="members-security-note"><span>ⓘ</span> Creating, editing and archiving members will be enabled only after server-side role checks and audit logging are enforced.</p>
+      <p className="members-security-note"><span>ⓘ</span> Member records are read through server-side role checks and audit logging. Writes remain disabled in this screen.</p>
     </section>
   );
 }
