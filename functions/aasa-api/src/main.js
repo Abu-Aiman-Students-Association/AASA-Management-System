@@ -1,7 +1,7 @@
 const ENDPOINT = (process.env.APPWRITE_FUNCTION_API_ENDPOINT || process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1").replace(/\/$/, "");
 const PROJECT_ID = process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID;
 const API_KEY = process.env.APPWRITE_FUNCTION_API_KEY || process.env.APPWRITE_API_KEY;
-const DATABASE_ID = process.env.AASA_DATABASE_ID || "6adc732d002ef31e6c3a";
+const DATABASE_ID = process.env.AASA_DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "6adc732d002ef31e6c3a";
 
 const TABLES = {
   assignments: "aasa_role_assignments",
@@ -21,9 +21,7 @@ const ROUTES = {
   "/elections": { table: TABLES.elections, read: "elections.manage", create: "elections.manage", update: "elections.manage", module: "elections" },
 };
 
-function response(res, statusCode, body) {
-  return res.json(body, statusCode);
-}
+function response(res, statusCode, body) { return res.json(body, statusCode); }
 function query(method, attribute, values) {
   return JSON.stringify({ method, attribute, values: Array.isArray(values) ? values : [values] });
 }
@@ -72,12 +70,10 @@ async function resolvePermissions(userId) {
   const active = (assignments.rows || []).filter(row => activeExpiry(row.expires_at));
   const roleIds = [...new Set(active.map(row => row.role_id).filter(Boolean))];
   if (!roleIds.length) return [];
-  const links = await Promise.all(roleIds.map(roleId =>
-    listRows(TABLES.rolePermissions, [
-      query("equal", "role_id", roleId),
-      JSON.stringify({ method: "limit", values: [200] }),
-    ])
-  ));
+  const links = await Promise.all(roleIds.map(roleId => listRows(TABLES.rolePermissions, [
+    query("equal", "role_id", roleId),
+    JSON.stringify({ method: "limit", values: [200] }),
+  ])));
   const permissionIds = [...new Set(links.flatMap(result => (result.rows || []).map(row => row.permission_id).filter(Boolean)))];
   if (!permissionIds.length) return [];
   const registry = await listRows(TABLES.permissions, [JSON.stringify({ method: "limit", values: [200] })]);
@@ -87,76 +83,49 @@ async function resolvePermissions(userId) {
 async function writeAudit({ actor, route, action, result, reason, recordId }) {
   try {
     await createRow(TABLES.audit, {
-      actor_user_id: actor || null,
-      event_type: `api.${route}.${action.toLowerCase()}`,
-      module_key: route,
-      record_type: route,
-      record_id: recordId || null,
-      action,
-      result,
-      reason: reason || null,
-      correlation_id: crypto.randomUUID(),
-      occurred_at: new Date().toISOString(),
-      is_test_record: false,
+      actor_user_id: actor || null, event_type: `api.${route}.${action.toLowerCase()}`,
+      module_key: route, record_type: route, record_id: recordId || null, action, result,
+      reason: reason || null, correlation_id: crypto.randomUUID(), occurred_at: new Date().toISOString(), is_test_record: false,
     });
   } catch (err) {
-    // Fail closed for mutations if the audit sink is unavailable.
     if (result === "SUCCESS") throw new Error("Audit write failed; operation result cannot be safely confirmed.");
     console.error("AASA audit write failed", err?.message || err);
   }
 }
 function cleanInput(route, action, input, userId) {
   const allowed = {
-    members: action === "CREATE"
-      ? ["member_number", "full_name", "email", "phone_number", "whatsapp_number", "gender", "date_of_birth", "address", "state", "town", "profile_photo_file_id"]
-      : ["full_name", "email", "phone_number", "whatsapp_number", "gender", "date_of_birth", "address", "state", "town", "profile_photo_file_id"],
+    members: action === "CREATE" ? ["member_number", "full_name", "email", "phone_number", "whatsapp_number", "gender", "date_of_birth", "address", "state", "town", "profile_photo_file_id"] : ["full_name", "email", "phone_number", "whatsapp_number", "gender", "date_of_birth", "address", "state", "town", "profile_photo_file_id"],
     meetings: ["title", "meeting_type", "starts_at", "ends_at", "venue", "online_link"],
-    finance: action === "CREATE"
-      ? ["transaction_type", "category", "amount_minor", "transaction_date", "payment_reference", "evidence_file_id"]
-      : ["payment_reference", "evidence_file_id"],
+    finance: action === "CREATE" ? ["transaction_type", "category", "amount_minor", "transaction_date", "payment_reference", "evidence_file_id"] : ["payment_reference", "evidence_file_id"],
     elections: ["name", "purpose", "nomination_starts_at", "nomination_ends_at", "voting_starts_at", "voting_ends_at"],
   }[route] || [];
   const data = Object.fromEntries(Object.entries(input || {}).filter(([key]) => allowed.includes(key)));
   if (route === "members") {
     if (action === "CREATE") {
       if (!String(data.member_number || "").trim() || !String(data.full_name || "").trim()) throw Object.assign(new Error("Member number and full name are required."), { status: 400 });
-      data.member_number = String(data.member_number).trim();
-      data.full_name = String(data.full_name).trim();
-      data.membership_status = "PENDING_VERIFICATION";
-      data.created_by = userId;
-      data.is_test_record = false;
+      data.member_number = String(data.member_number).trim(); data.full_name = String(data.full_name).trim();
+      data.membership_status = "PENDING_VERIFICATION"; data.created_by = userId; data.is_test_record = false;
     } else if (action === "UPDATE") {
       if (data.member_number !== undefined || data.membership_status !== undefined) throw Object.assign(new Error("Member number and membership status changes require a separate authorized workflow."), { status: 400 });
       data.updated_by = userId;
     }
   }
-  if (route === "meetings") {
-    if (action === "CREATE") {
-      if (!String(data.title || "").trim() || !data.starts_at || !String(data.meeting_type || "").trim()) throw Object.assign(new Error("Meeting title, type and start time are required."), { status: 400 });
-      data.status = "DRAFT";
-      data.created_by = userId;
-    }
+  if (route === "meetings" && action === "CREATE") {
+    if (!String(data.title || "").trim() || !data.starts_at || !String(data.meeting_type || "").trim()) throw Object.assign(new Error("Meeting title, type and start time are required."), { status: 400 });
+    data.status = "DRAFT"; data.created_by = userId;
   }
-  if (route === "finance") {
-    if (action === "CREATE") {
-      if (!["INCOME", "EXPENSE"].includes(data.transaction_type) || !Number.isSafeInteger(data.amount_minor) || data.amount_minor <= 0 || !data.category || !data.transaction_date) {
-        throw Object.assign(new Error("Valid transaction type, positive amount in minor units, category and date are required."), { status: 400 });
-      }
-      data.currency = "NGN";
-      data.recorded_by = userId;
-      data.approval_status = "SUBMITTED";
-      data.is_test_record = false;
-    }
+  if (route === "finance" && action === "CREATE") {
+    if (!["INCOME", "EXPENSE"].includes(data.transaction_type) || !Number.isSafeInteger(data.amount_minor) || data.amount_minor <= 0 || !data.category || !data.transaction_date) throw Object.assign(new Error("Valid transaction type, positive amount in minor units, category and date are required."), { status: 400 });
+    data.currency = "NGN"; data.recorded_by = userId; data.approval_status = "SUBMITTED"; data.is_test_record = false;
   }
   if (route === "elections" && action === "CREATE") {
     if (!String(data.name || "").trim()) throw Object.assign(new Error("Election name is required."), { status: 400 });
-    data.status = "DRAFT";
-    data.is_test_election = false;
+    data.status = "DRAFT"; data.is_test_election = false;
   }
   return data;
 }
 
-export default async ({ req, res, log, error }) => {
+export default async ({ req, res, error }) => {
   const method = String(req.method || "GET").toUpperCase();
   const path = String(req.path || "/").split("?")[0].replace(/\/$/, "") || "/";
   const segments = path.split("/").filter(Boolean);
@@ -167,15 +136,19 @@ export default async ({ req, res, log, error }) => {
   if (!jwt) return response(res, 401, { error: "Sign-in required." });
 
   let account;
-  try {
-    account = await appwrite("/account", { jwt });
-  } catch {
-    return response(res, 401, { error: "The user session could not be verified." });
-  }
+  try { account = await appwrite("/account", { jwt }); }
+  catch { return response(res, 401, { error: "The user session could not be verified." }); }
   const userId = account.$id;
   if (!userId) return response(res, 401, { error: "Verified identity is missing." });
 
   if (path === "/health" && method === "GET") return response(res, 200, { ok: true, authenticated: true });
+  if (path === "/permissions" && method === "GET") {
+    try { return response(res, 200, { permissions: await resolvePermissions(userId) }); }
+    catch (err) {
+      error?.("AASA permission lookup failed: " + (err?.message || "unknown error"));
+      return response(res, 500, { error: "Permissions could not be verified. Access remains blocked." });
+    }
+  }
   if (!route) return response(res, 404, { error: "Unknown API route." });
 
   const rowId = segments.length > 1 ? segments[1] : null;
@@ -193,23 +166,19 @@ export default async ({ req, res, log, error }) => {
       await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "Missing permission." });
       return response(res, 403, { error: "Permission denied." });
     }
-
     if (action === "READ") {
       const data = await listRows(route.table, [JSON.stringify({ method: "limit", values: [100] })]);
       await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS" });
       const rows = (data.rows || []).filter(row => row.is_test_record !== true && row.is_test_election !== true);
       return response(res, 200, { rows, total: rows.length });
     }
-
     const body = typeof req.bodyJson === "object" && req.bodyJson !== null ? req.bodyJson : {};
     if (action === "ARCHIVE") {
-      if (route.module !== "members") return response(res, 400, { error: "Archive is not supported for this resource." });
       const updated = await updateRow(route.table, rowId, { membership_status: "INACTIVE", updated_by: userId });
       await writeAudit({ actor: userId, route: route.module, action: "UPDATE", result: "SUCCESS", recordId: rowId, reason: "Member archived (soft archive)." });
       return response(res, 200, { row: updated });
     }
-
-    const data = cleanInput(route, action, body, userId);
+    const data = cleanInput(route.module, action, body, userId);
     const saved = action === "CREATE" ? await createRow(route.table, data) : await updateRow(route.table, rowId, data);
     await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", recordId: saved.$id || rowId });
     return response(res, action === "CREATE" ? 201 : 200, { row: saved });
