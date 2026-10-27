@@ -1,6 +1,10 @@
 name: Package AASA API deployment
 
 on:
+  push:
+    paths:
+      - "functions/aasa-api/**"
+      - ".github/workflows/package-aasa-api.yml"
   workflow_dispatch:
 
 permissions:
