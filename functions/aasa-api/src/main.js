@@ -128,7 +128,8 @@ function cleanInput(route, action, input, userId) {
   }
   if (route === "finance" && action === "CREATE") {
     if (!["INCOME", "EXPENSE"].includes(data.transaction_type) || !Number.isSafeInteger(data.amount_minor) || data.amount_minor <= 0 || !data.category || !data.transaction_date) throw Object.assign(new Error("Valid transaction type, positive amount in minor units, category and date are required."), { status: 400 });
-    data.transaction_ref = `AASA-TXN-${new Date().getUTCFullYear()}-${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;\n    data.currency = "NGN"; data.recorded_by = userId; data.approval_status = "SUBMITTED"; data.is_test_record = false;
+    data.transaction_ref = `AASA-TXN-${new Date().getUTCFullYear()}-${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
+    data.currency = "NGN"; data.recorded_by = userId; data.approval_status = "SUBMITTED"; data.is_test_record = false;
   }
   if (route === "elections" && action === "CREATE") {
     if (!String(data.name || "").trim()) throw Object.assign(new Error("Election name is required."), { status: 400 });
