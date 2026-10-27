@@ -77,12 +77,18 @@ function activeExpiry(value) {
   return Number.isFinite(time) && time > Date.now();
 }
 async function resolvePermissions(userId, apiKey) {
+  // Fetch by identity first, then evaluate revocation and expiry locally. Appwrite
+  // TablesDB's isNull query can omit rows whose nullable field was never set,
+  // which incorrectly hides valid permanent assignments.
   const assignments = await listRows(TABLES.assignments, [
     query("equal", "auth_user_id", userId),
-    query("isNull", "revoked_at", []),
     JSON.stringify({ method: "limit", values: [100] }),
   ], apiKey);
-  const active = (assignments.rows || []).filter(row => activeExpiry(row.data?.expires_at));
+  const active = (assignments.rows || []).filter(row => {
+    const data = row.data || {};
+    const notRevoked = data.revoked_at === null || data.revoked_at === undefined || data.revoked_at === "";
+    return notRevoked && activeExpiry(data.expires_at);
+  });
   const roleIds = [...new Set(active.map(row => row.data?.role_id).filter(Boolean))];
   if (!roleIds.length) return [];
   const links = await Promise.all(roleIds.map(roleId => listRows(TABLES.rolePermissions, [
