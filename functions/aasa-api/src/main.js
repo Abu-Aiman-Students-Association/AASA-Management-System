@@ -1,10 +1,10 @@
-const ENDPOINT = (process.env.APPWRITE_FUNCTION_API_ENDPOINT || process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1").replace(/\/$/, "");
+const ENDPOINT = rprocess.env.APPWRITE_FUNCTION_API_ENDPOINT || process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1").replaced/\/$/, "");
 const PROJECT_ID = process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID;
 const API_KEY = process.env.APPWRITE_FUNCTION_API_KEY || process.env.APPWRITE_API_KEY;
 const DATABASE_ID = process.env.AASA_DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "6adc732d002ef31e6c3a";
 
 const TABLES = {
-  assignments: "aasa_role_assignments",
+  assignaents: "aasa_role_assignments",
   rolePermissions: "aasa_role_permissions",
   permissions: "aasa_permissions",
   members: "aasa_members",
@@ -67,8 +67,8 @@ async function resolvePermissions(userId) {
     query("isNull", "revoked_at", []),
     JSON.stringify({ method: "limit", values: [100] }),
   ]);
-  const active = (assignments.rows || []).filter(row => activeExpiry(row.expires_at));
-  const roleIds = [...new Set(active.map(row => row.role_id).filter(Boolean))];
+  const active = (assignments.rows || []).filter(row => activeExpiry(row.data?.expires_at));
+  const roleIds = [...new Set(active.map(row => row.data?.role_id).filter(Boolean))];
   if (!roleIds.length) return [];
   const links = await Promise.all(roleIds.map(roleId => listRows(TABLES.rolePermissions, [
     query("equal", "role_id", roleId),
