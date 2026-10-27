@@ -22,6 +22,18 @@ const ROUTES = {
 };
 
 function response(res, statusCode, body) { return res.json(body, statusCode); }
+function getUserJwt(req) {
+  const headers = req.headers || {};
+  const entries = Object.entries(headers);
+  const appwriteHeader = entries.find(([key, value]) => key.toLowerCase() === "x-appwrite-user-jwt" && typeof value === "string" && value.trim());
+  if (appwriteHeader) return appwriteHeader[1].trim();
+  const authorization = entries.find(([key, value]) => key.toLowerCase() === "authorization" && typeof value === "string");
+  if (authorization) {
+    const match = authorization[1].match(/^Bearer\\s+(.+)$/i);
+    if (match) return match[1].trim();
+  }
+  return "";
+}
 function query(method, attribute, values) {
   return JSON.stringify({ method, attribute, values: Array.isArray(values) ? values : [values] });
 }
@@ -116,7 +128,7 @@ function cleanInput(route, action, input, userId) {
   }
   if (route === "finance" && action === "CREATE") {
     if (!["INCOME", "EXPENSE"].includes(data.transaction_type) || !Number.isSafeInteger(data.amount_minor) || data.amount_minor <= 0 || !data.category || !data.transaction_date) throw Object.assign(new Error("Valid transaction type, positive amount in minor units, category and date are required."), { status: 400 });
-    data.currency = "NGN"; data.recorded_by = userId; data.approval_status = "SUBMITTED"; data.is_test_record = false;
+    data.transaction_ref = `AASA-TXN-${new Date().getUTCFullYear()}-${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;\n    data.currency = "NGN"; data.recorded_by = userId; data.approval_status = "SUBMITTED"; data.is_test_record = false;
   }
   if (route === "elections" && action === "CREATE") {
     if (!String(data.name || "").trim()) throw Object.assign(new Error("Election name is required."), { status: 400 });
@@ -130,7 +142,7 @@ export default async ({ req, res, error }) => {
   const path = String(req.path || "/").split("?")[0].replace(/\/$/, "") || "/";
   const segments = path.split("/").filter(Boolean);
   const route = ROUTES["/" + (segments[0] || "")];
-  const jwt = req.headers?.["x-appwrite-user-jwt"] || req.headers?.["X-Appwrite-User-JWT"];
+  const jwt = getUserJwt(req);
   if (method === "OPTIONS") return res.json({ ok: true });
   if (!PROJECT_ID || !API_KEY) return response(res, 503, { error: "Server configuration is incomplete." });
   if (!jwt) return response(res, 401, { error: "Sign-in required." });
