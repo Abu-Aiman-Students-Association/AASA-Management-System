@@ -57,7 +57,7 @@ export async function secureApi<T>(path: string, method: "get" | "post" | "patch
     false,
     path,
     sdkMethod,
-    { "x-appwrite-user-jwt": jwt.jwt, "content-type": "application/json" },
+    { "x-appwrite-user-jwt": jwt.jwt, "authorization": "Bearer " + jwt.jwt, "content-type": "application/json" },
   );
   let payload: any = {};
   try { payload = execution.responseBody ? JSON.parse(execution.responseBody) : {}; } catch { payload = {}; }
