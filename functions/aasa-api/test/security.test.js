@@ -67,6 +67,13 @@ test("rejects invalid JWTs after asking Appwrite to verify identity", async () =
   assert.equal(h.calls.some(call => call.path === "/v1/account"), true);
 });
 
+test("returns registered permission keys for an active permanent admin assignment", async () => {
+  const h = harness({ method: "GET", path: "/permissions", permissionKeys: ["members.read", "finance.read"] });
+  const result = await h.run();
+  assert.equal(result.statusCode, 200);
+  assert.deepEqual(result.body.permissions.sort(), ["finance.read", "members.read"]);
+});
+
 test("fails closed when a valid user has no active role assignment", async () => {
   const h = harness({ method: "POST", path: "/members", bodyJson: { member_number: "FAKE-1", full_name: "Not a real member" } });
   const result = await h.run();
