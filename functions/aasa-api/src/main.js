@@ -17,7 +17,7 @@ const TABLES = {
 const ROUTES = {
   "/members": { table: TABLES.members, read: "members.read", create: "members.create", update: "members.update", archive: "members.archive", module: "members" },
   "/meetings": { table: TABLES.meetings, read: "meetings.manage", create: "meetings.manage", update: "meetings.manage", module: "meetings" },
-  "/finance": { table: TABLES.finance, read: "finance.read", create: "finance.record", update: "finance.record", module: "finance" },
+  "/finance": { table: TABLES.finance, read: "finance.read", create: "finance.record", update: "finance.record", approve: "finance.approve", module: "finance" },
   "/elections": { table: TABLES.elections, read: "elections.manage", create: "elections.manage", update: "elections.manage", module: "elections" },
 };
 
@@ -62,6 +62,9 @@ async function createRow(tableId, data) {
     method: "POST", admin: true,
     body: { rowId: crypto.randomUUID(), data, permissions: [] },
   });
+}
+async function getRow(tableId, rowId) {
+  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows/${encodeURIComponent(rowId)}`, { admin: true });
 }
 async function updateRow(tableId, rowId, data) {
   return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows/${encodeURIComponent(rowId)}`, {
@@ -170,10 +173,11 @@ export default async ({ req, res, error }) => {
   else if (method === "POST" && segments.length === 1) action = "CREATE";
   else if (method === "PATCH" && segments.length === 2 && rowId) action = "UPDATE";
   else if (method === "POST" && segments.length === 3 && segments[2] === "archive" && route.module === "members" && rowId) action = "ARCHIVE";
+  else if (method === "POST" && segments.length === 3 && segments[2] === "approve" && route.module === "finance" && rowId) action = "APPROVE";
   else return response(res, 405, { error: "Method not allowed." });
 
   try {
-    const permissionKey = action === "READ" ? route.read : action === "CREATE" ? route.create : action === "ARCHIVE" ? route.archive : route.update;
+    const permissionKey = action === "READ" ? route.read : action === "CREATE" ? route.create : action === "ARCHIVE" ? route.archive : action === "APPROVE" ? route.approve : route.update;
     const permissions = await resolvePermissions(userId);
     if (!permissions.includes(permissionKey)) {
       await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "Missing permission." });
@@ -186,12 +190,29 @@ export default async ({ req, res, error }) => {
       return response(res, 200, { rows, total: rows.length });
     }
     const body = typeof req.bodyJson === "object" && req.bodyJson !== null ? req.bodyJson : {};
+    if (action === "APPROVE") {
+      let existing;
+      try { existing = await getRow(route.table, rowId); } catch (err) { if (err?.status === 404) return response(res, 404, { error: "Financial transaction not found." }); throw err; }
+      if (existing.data?.approval_status !== "SUBMITTED") return response(res, 409, { error: "Only submitted financial transactions can be approved." });
+      if (existing.data?.recorded_by === userId) {
+        await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "A user cannot approve their own financial transaction.", recordId: rowId });
+        return response(res, 403, { error: "You cannot approve a transaction you recorded." });
+      }
+      const updated = await updateRow(route.table, rowId, { approval_status: "APPROVED", approved_by: userId });
+      await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", recordId: rowId });
+      return response(res, 200, { row: updated });
+    }
     if (action === "ARCHIVE") {
       const updated = await updateRow(route.table, rowId, { membership_status: "INACTIVE", updated_by: userId });
       await writeAudit({ actor: userId, route: route.module, action: "UPDATE", result: "SUCCESS", recordId: rowId, reason: "Member archived (soft archive)." });
       return response(res, 200, { row: updated });
     }
     const data = cleanInput(route.module, action, body, userId);
+    if (route.module === "finance" && action === "UPDATE") {
+      let existing;
+      try { existing = await getRow(route.table, rowId); } catch (err) { if (err?.status === 404) return response(res, 404, { error: "Financial transaction not found." }); throw err; }
+      if (existing.data?.approval_status === "APPROVED") return response(res, 409, { error: "Approved financial transactions are locked. Use an audited reversal or correction workflow." });
+    }
     const saved = action === "CREATE" ? await createRow(route.table, data) : await updateRow(route.table, rowId, data);
     await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", recordId: saved.$id || rowId });
     return response(res, action === "CREATE" ? 201 : 200, { row: saved });
