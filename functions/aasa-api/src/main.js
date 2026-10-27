@@ -179,14 +179,14 @@ export default async ({ req, res, error }) => {
 
   try {
     const permissionKey = action === "READ" ? route.read : action === "CREATE" ? route.create : action === "ARCHIVE" ? route.archive : action === "APPROVE" ? route.approve : route.update;
-    const permissions = await resolvePermissions(userId);
+    const permissions = await resolvePermissions(userId, apiKey);
     if (!permissions.includes(permissionKey)) {
       await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "Missing permission.", apiKey });
       return response(res, 403, { error: "Permission denied." });
     }
     if (action === "READ") {
       const data = await listRows(route.table, [JSON.stringify({ method: "limit", values: [100] })], apiKey);
-      await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS" });
+      await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", apiKey });
       const rows = (data.rows || []).filter(row => row.data?.is_test_record !== true && row.data?.is_test_election !== true);
       return response(res, 200, { rows, total: rows.length });
     }
@@ -211,7 +211,7 @@ export default async ({ req, res, error }) => {
     const data = cleanInput(route.module, action, body, userId);
     if (route.module === "finance" && action === "UPDATE") {
       let existing;
-      try { existing = await getRow(route.table, rowId); } catch (err) { if (err?.status === 404) return response(res, 404, { error: "Financial transaction not found." }); throw err; }
+      try { existing = await getRow(route.table, rowId, apiKey); } catch (err) { if (err?.status === 404) return response(res, 404, { error: "Financial transaction not found." }); throw err; }
       if (existing.data?.approval_status === "APPROVED") return response(res, 409, { error: "Approved financial transactions are locked. Use an audited reversal or correction workflow." });
     }
     const saved = action === "CREATE" ? await createRow(route.table, data, apiKey) : await updateRow(route.table, rowId, data, apiKey);
