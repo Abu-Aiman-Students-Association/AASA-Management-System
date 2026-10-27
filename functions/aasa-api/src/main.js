@@ -1,10 +1,10 @@
-const ENDPOINT = rprocess.env.APPWRITE_FUNCTION_API_ENDPOINT || process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1").replaced/\/$/, "");
+const ENDPOINT = (process.env.APPWRITE_FUNCTION_API_ENDPOINT || process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1").replace(/\/$/, "");
 const PROJECT_ID = process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID;
 const API_KEY = process.env.APPWRITE_FUNCTION_API_KEY || process.env.APPWRITE_API_KEY;
 const DATABASE_ID = process.env.AASA_DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "6adc732d002ef31e6c3a";
 
 const TABLES = {
-  assignaents: "aasa_role_assignments",
+  assignments: "aasa_role_assignments",
   rolePermissions: "aasa_role_permissions",
   permissions: "aasa_permissions",
   members: "aasa_members",
@@ -74,11 +74,11 @@ async function resolvePermissions(userId) {
     query("equal", "role_id", roleId),
     JSON.stringify({ method: "limit", values: [200] }),
   ])));
-  const permissionIds = [...new Set(links.flatMap(result => (result.rows || []).map(row => row.permission_id).filter(Boolean)))];
+  const permissionIds = [...new Set(links.flatMap(result => (result.rows || []).map(row => row.data?.permission_id).filter(Boolean)))];
   if (!permissionIds.length) return [];
   const registry = await listRows(TABLES.permissions, [JSON.stringify({ method: "limit", values: [200] })]);
   const allowed = new Set(permissionIds);
-  return (registry.rows || []).filter(row => allowed.has(row.$id)).map(row => row.permission_key).filter(Boolean);
+  return (registry.rows || []).filter(row => allowed.has(row.$id)).map(row => row.data?.permission_key).filter(Boolean);
 }
 async function writeAudit({ actor, route, action, result, reason, recordId }) {
   try {
@@ -169,7 +169,7 @@ export default async ({ req, res, error }) => {
     if (action === "READ") {
       const data = await listRows(route.table, [JSON.stringify({ method: "limit", values: [100] })]);
       await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS" });
-      const rows = (data.rows || []).filter(row => row.is_test_record !== true && row.is_test_election !== true);
+      const rows = (data.rows || []).filter(row => row.data?.is_test_record !== true && row.data?.is_test_election !== true);
       return response(res, 200, { rows, total: rows.length });
     }
     const body = typeof req.bodyJson === "object" && req.bodyJson !== null ? req.bodyJson : {};
