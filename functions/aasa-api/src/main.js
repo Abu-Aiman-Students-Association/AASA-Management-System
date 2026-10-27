@@ -1,6 +1,6 @@
 const ENDPOINT = (process.env.APPWRITE_FUNCTION_API_ENDPOINT || process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1").replace(/\/$/, "");
 const PROJECT_ID = process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID;
-const API_KEY = process.env.APPWRITE_FUNCTION_API_KEY || process.env.APPWRITE_API_KEY;
+const CONFIGURED_API_KEY = process.env.APPWRITE_FUNCTION_API_KEY || process.env.APPWRITE_API_KEY;
 const DATABASE_ID = process.env.AASA_DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "6adc732d002ef31e6c3a";
 
 const TABLES = {
@@ -37,12 +37,12 @@ function getUserJwt(req) {
 function query(method, attribute, values) {
   return JSON.stringify({ method, attribute, values: Array.isArray(values) ? values : [values] });
 }
-async function appwrite(path, { method = "GET", body, jwt, admin = false, queries = [] } = {}) {
+async function appwrite(path, { method = "GET", body, jwt, admin = false, queries = [], apiKey } = {}) {
   const url = new URL(ENDPOINT + path);
   for (const item of queries) url.searchParams.append("queries[]", item);
   const headers = { "X-Appwrite-Project": PROJECT_ID, "Content-Type": "application/json" };
   if (jwt) headers["X-Appwrite-JWT"] = jwt;
-  if (admin) headers["X-Appwrite-Key"] = API_KEY;
+  if (admin) headers["X-Appwrite-Key"] = apiKey || CONFIGURED_API_KEY;
   const result = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   const text = await result.text();
   let data = {};
@@ -54,21 +54,21 @@ async function appwrite(path, { method = "GET", body, jwt, admin = false, querie
   }
   return data;
 }
-async function listRows(tableId, queries = []) {
-  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows`, { admin: true, queries });
+async function listRows(tableId, queries = [], apiKey) {
+  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows`, { admin: true, queries, apiKey });
 }
-async function createRow(tableId, data) {
+async function createRow(tableId, data, apiKey) {
   return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows`, {
-    method: "POST", admin: true,
+    method: "POST", admin: true, apiKey,
     body: { rowId: crypto.randomUUID(), data, permissions: [] },
   });
 }
-async function getRow(tableId, rowId) {
-  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows/${encodeURIComponent(rowId)}`, { admin: true });
+async function getRow(tableId, rowId, apiKey) {
+  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows/${encodeURIComponent(rowId)}`, { admin: true, apiKey });
 }
-async function updateRow(tableId, rowId, data) {
+async function updateRow(tableId, rowId, data, apiKey) {
   return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows/${encodeURIComponent(rowId)}`, {
-    method: "PATCH", admin: true, body: { data },
+    method: "PATCH", admin: true, apiKey, body: { data },
   });
 }
 function activeExpiry(value) {
@@ -76,32 +76,32 @@ function activeExpiry(value) {
   const time = Date.parse(value);
   return Number.isFinite(time) && time > Date.now();
 }
-async function resolvePermissions(userId) {
+async function resolvePermissions(userId, apiKey) {
   const assignments = await listRows(TABLES.assignments, [
     query("equal", "auth_user_id", userId),
     query("isNull", "revoked_at", []),
     JSON.stringify({ method: "limit", values: [100] }),
-  ]);
+  ], apiKey);
   const active = (assignments.rows || []).filter(row => activeExpiry(row.data?.expires_at));
   const roleIds = [...new Set(active.map(row => row.data?.role_id).filter(Boolean))];
   if (!roleIds.length) return [];
   const links = await Promise.all(roleIds.map(roleId => listRows(TABLES.rolePermissions, [
     query("equal", "role_id", roleId),
     JSON.stringify({ method: "limit", values: [200] }),
-  ])));
+  ], apiKey)));
   const permissionIds = [...new Set(links.flatMap(result => (result.rows || []).map(row => row.data?.permission_id).filter(Boolean)))];
   if (!permissionIds.length) return [];
-  const registry = await listRows(TABLES.permissions, [JSON.stringify({ method: "limit", values: [200] })]);
+  const registry = await listRows(TABLES.permissions, [JSON.stringify({ method: "limit", values: [200] })], apiKey);
   const allowed = new Set(permissionIds);
   return (registry.rows || []).filter(row => allowed.has(row.$id)).map(row => row.data?.permission_key).filter(Boolean);
 }
-async function writeAudit({ actor, route, action, result, reason, recordId }) {
+async function writeAudit({ actor, route, action, result, reason, recordId, apiKey }) {
   try {
     await createRow(TABLES.audit, {
       actor_user_id: actor || null, event_type: `api.${route}.${action.toLowerCase()}`,
       module_key: route, record_type: route, record_id: recordId || null, action, result,
       reason: reason || null, correlation_id: crypto.randomUUID(), occurred_at: new Date().toISOString(), is_test_record: false,
-    });
+    }, apiKey);
   } catch (err) {
     if (result === "SUCCESS") throw new Error("Audit write failed; operation result cannot be safely confirmed.");
     console.error("AASA audit write failed", err?.message || err);
@@ -148,7 +148,8 @@ export default async ({ req, res, error }) => {
   const route = ROUTES["/" + (segments[0] || "")];
   const jwt = getUserJwt(req);
   if (method === "OPTIONS") return res.json({ ok: true });
-  if (!PROJECT_ID || !API_KEY) return response(res, 503, { error: "Server configuration is incomplete." });
+  const apiKey = req.headers?.["x-appwrite-key"] || req.headers?.["X-Appwrite-Key"] || CONFIGURED_API_KEY;
+  if (!PROJECT_ID || !apiKey) return response(res, 503, { error: "Server configuration is incomplete." });
   if (!jwt) return response(res, 401, { error: "Sign-in required." });
 
   let account;
@@ -159,7 +160,7 @@ export default async ({ req, res, error }) => {
 
   if (path === "/health" && method === "GET") return response(res, 200, { ok: true, authenticated: true });
   if (path === "/permissions" && method === "GET") {
-    try { return response(res, 200, { permissions: await resolvePermissions(userId) }); }
+    try { return response(res, 200, { permissions: await resolvePermissions(userId, apiKey) }); }
     catch (err) {
       error?.("AASA permission lookup failed: " + (err?.message || "unknown error"));
       return response(res, 500, { error: "Permissions could not be verified. Access remains blocked." });
@@ -180,11 +181,11 @@ export default async ({ req, res, error }) => {
     const permissionKey = action === "READ" ? route.read : action === "CREATE" ? route.create : action === "ARCHIVE" ? route.archive : action === "APPROVE" ? route.approve : route.update;
     const permissions = await resolvePermissions(userId);
     if (!permissions.includes(permissionKey)) {
-      await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "Missing permission." });
+      await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "Missing permission.", apiKey });
       return response(res, 403, { error: "Permission denied." });
     }
     if (action === "READ") {
-      const data = await listRows(route.table, [JSON.stringify({ method: "limit", values: [100] })]);
+      const data = await listRows(route.table, [JSON.stringify({ method: "limit", values: [100] })], apiKey);
       await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS" });
       const rows = (data.rows || []).filter(row => row.data?.is_test_record !== true && row.data?.is_test_election !== true);
       return response(res, 200, { rows, total: rows.length });
@@ -192,19 +193,19 @@ export default async ({ req, res, error }) => {
     const body = typeof req.bodyJson === "object" && req.bodyJson !== null ? req.bodyJson : {};
     if (action === "APPROVE") {
       let existing;
-      try { existing = await getRow(route.table, rowId); } catch (err) { if (err?.status === 404) return response(res, 404, { error: "Financial transaction not found." }); throw err; }
+      try { existing = await getRow(route.table, rowId, apiKey); } catch (err) { if (err?.status === 404) return response(res, 404, { error: "Financial transaction not found." }); throw err; }
       if (existing.data?.approval_status !== "SUBMITTED") return response(res, 409, { error: "Only submitted financial transactions can be approved." });
       if (existing.data?.recorded_by === userId) {
-        await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "A user cannot approve their own financial transaction.", recordId: rowId });
+        await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "A user cannot approve their own financial transaction.", recordId: rowId, apiKey });
         return response(res, 403, { error: "You cannot approve a transaction you recorded." });
       }
-      const updated = await updateRow(route.table, rowId, { approval_status: "APPROVED", approved_by: userId });
-      await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", recordId: rowId });
+      const updated = await updateRow(route.table, rowId, { approval_status: "APPROVED", approved_by: userId }, apiKey);
+      await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", recordId: rowId, apiKey });
       return response(res, 200, { row: updated });
     }
     if (action === "ARCHIVE") {
-      const updated = await updateRow(route.table, rowId, { membership_status: "INACTIVE", updated_by: userId });
-      await writeAudit({ actor: userId, route: route.module, action: "UPDATE", result: "SUCCESS", recordId: rowId, reason: "Member archived (soft archive)." });
+      const updated = await updateRow(route.table, rowId, { membership_status: "INACTIVE", updated_by: userId }, apiKey);
+      await writeAudit({ actor: userId, route: route.module, action: "UPDATE", result: "SUCCESS", recordId: rowId, reason: "Member archived (soft archive).", apiKey });
       return response(res, 200, { row: updated });
     }
     const data = cleanInput(route.module, action, body, userId);
@@ -213,12 +214,12 @@ export default async ({ req, res, error }) => {
       try { existing = await getRow(route.table, rowId); } catch (err) { if (err?.status === 404) return response(res, 404, { error: "Financial transaction not found." }); throw err; }
       if (existing.data?.approval_status === "APPROVED") return response(res, 409, { error: "Approved financial transactions are locked. Use an audited reversal or correction workflow." });
     }
-    const saved = action === "CREATE" ? await createRow(route.table, data) : await updateRow(route.table, rowId, data);
-    await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", recordId: saved.$id || rowId });
+    const saved = action === "CREATE" ? await createRow(route.table, data, apiKey) : await updateRow(route.table, rowId, data, apiKey);
+    await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", recordId: saved.$id || rowId, apiKey });
     return response(res, action === "CREATE" ? 201 : 200, { row: saved });
   } catch (err) {
     const status = err?.status || 500;
-    try { await writeAudit({ actor: userId, route: route.module, action, result: "FAILURE", reason: err?.message || "Operation failed." }); } catch {}
+    try { await writeAudit({ actor: userId, route: route.module, action, result: "FAILURE", reason: err?.message || "Operation failed.", apiKey }); } catch {}
     if (status >= 500) error?.("AASA API operation failed: " + (err?.message || "unknown error"));
     return response(res, status, { error: status >= 500 ? "The operation failed safely. Check server logs and audit records." : err.message });
   }
