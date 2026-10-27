@@ -49,15 +49,16 @@ export async function getCurrentAccount() {
 /** Call the server-side API using a short-lived JWT for the current session. */
 export async function secureApi<T>(path: string, method: "get" | "post" | "patch" = "get", data?: unknown): Promise<T> {
   if (!appwriteConfigReady || !endpoint || !projectId) throw new Error("Appwrite is not configured.");
-  const jwt = await account.createJWT();
   const sdkMethod = method === "post" ? ExecutionMethod.POST : method === "patch" ? ExecutionMethod.PATCH : ExecutionMethod.GET;
+  // Appwrite rejects caller-supplied headers beginning with x-appwrite. The
+  // authenticated function execution carries the user's JWT in the platform-
+  // supplied x-appwrite-user-jwt header; do not manually forward a JWT.
   const execution = await functions.createExecution(
     functionId,
     data === undefined ? "" : JSON.stringify(data),
     false,
     path,
     sdkMethod,
-    { "authorization": "Bearer " + jwt.jwt, "content-type": "application/json" },
   );
   let payload: any = {};
   try { payload = execution.responseBody ? JSON.parse(execution.responseBody) : {}; } catch { payload = {}; }
