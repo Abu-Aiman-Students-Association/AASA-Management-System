@@ -1,0 +1,41 @@
+name: Package AASA API deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate function package
+        working-directory: functions/aasa-api
+        run: |
+          test -f package.json
+          test -f src/main.js
+          node --check src/main.js
+          node -e "const p=require('./package.json'); if (!p.name || p.type !== 'module') process.exit(1)"
+          echo "Function source syntax and package manifest validated."
+
+      - name: Create Appwrite source archive
+        run: |
+          mkdir -p dist
+          tar -czf dist/aasa-api-deployment.tar.gz -C functions/aasa-api .
+          tar -tzf dist/aasa-api-deployment.tar.gz | grep -qx './src/main.js'
+          tar -tzf dist/aasa-api-deployment.tar.gz | grep -qx './package.json'
+          sha256sum dist/aasa-api-deployment.tar.gz | tee dist/SHA256SUMS
+          tar -tzf dist/aasa-api-deployment.tar.gz
+
+      - name: Upload deployment package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aasa-api-deployment-package
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
