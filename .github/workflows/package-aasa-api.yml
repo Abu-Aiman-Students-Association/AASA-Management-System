@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 jobs:
@@ -35,6 +35,16 @@ jobs:
           tar -tzf dist/aasa-api-deployment.tar.gz | grep -qx './package.json'
           sha256sum dist/aasa-api-deployment.tar.gz | tee dist/SHA256SUMS
           tar -tzf dist/aasa-api-deployment.tar.gz
+
+      - name: Publish package asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: aasa-api-package-${{ github.run_number }}
+          name: AASA API deployment package ${{ github.run_number }}
+          files: |
+            dist/aasa-api-deployment.tar.gz
+            dist/SHA256SUMS
+          fail_on_unmatched_files: true
 
       - name: Upload deployment package artifact
         uses: actions/upload-artifact@v4
