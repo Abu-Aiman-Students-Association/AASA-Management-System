@@ -8,7 +8,7 @@ process.env.AASA_DATABASE_ID = "6adc732d002ef31e6c3a";
 
 const { default: handler } = await import("../src/main.js");
 
-function harness({ method = "GET", path = "/members", jwt = "valid-jwt", bodyJson = {} } = {}) {
+function harness({ method = "GET", path = "/members", jwt = "valid-jwt", bodyJson = {}, permissionKeys = [], financeRow = null } = {}) {
   const calls = [];
   globalThis.fetch = async (url, options = {}) => {
     const parsed = new URL(url);
@@ -20,7 +20,24 @@ function harness({ method = "GET", path = "/members", jwt = "valid-jwt", bodyJso
       return new Response(JSON.stringify({ $id: "verified-user-123", email: "user@example.test" }), { status: 200 });
     }
     if (parsed.pathname.endsWith("/tables/aasa_role_assignments/rows")) {
-      return new Response(JSON.stringify({ rows: [], total: 0 }), { status: 200 });
+      const rows = permissionKeys.length ? [{ $id: "assignment", data: { auth_user_id: "verified-user-123", role_id: "test-role", assigned_by: "admin-user", assigned_at: "2026-10-27T00:00:00.000Z", revoked_at: null } }] : [];
+      return new Response(JSON.stringify({ rows, total: rows.length }), { status: 200 });
+    }
+    if (parsed.pathname.endsWith("/tables/aasa_role_permissions/rows")) {
+      const rows = permissionKeys.map((key) => ({ $id: "link-" + key, data: { role_id: "test-role", permission_id: key } }));
+      return new Response(JSON.stringify({ rows, total: rows.length }), { status: 200 });
+    }
+    if (parsed.pathname.endsWith("/tables/aasa_permissions/rows")) {
+      const rows = permissionKeys.map((key) => ({ $id: key, data: { permission_key: key } }));
+      return new Response(JSON.stringify({ rows, total: rows.length }), { status: 200 });
+    }
+    if (parsed.pathname.includes("/tables/aasa_financial_transactions/rows/") && options.method === "GET") {
+      if (!financeRow) return new Response(JSON.stringify({ message: "Not found" }), { status: 404 });
+      return new Response(JSON.stringify({ $id: "finance-row", data: financeRow }), { status: 200 });
+    }
+    if (parsed.pathname.includes("/tables/aasa_financial_transactions/rows/") && options.method === "PATCH") {
+      const body = JSON.parse(options.body || "{}");
+      return new Response(JSON.stringify({ $id: "finance-row", data: { ...financeRow, ...body.data } }), { status: 200 });
     }
     if (parsed.pathname.endsWith("/tables/aasa_audit_events/rows") && options.method === "POST") {
       return new Response(JSON.stringify({ $id: "audit-row" }), { status: 201 });
@@ -63,4 +80,30 @@ test("resolves nested member routes and denies them without permission", async (
   const result = await h.run();
   assert.equal(result.statusCode, 403);
   assert.equal(h.calls.some(call => call.path.includes("/tables/aasa_members/rows/real-row") && call.method === "PATCH"), false);
+});
+
+
+test("approves a submitted finance transaction only with finance.approve and a different approver", async () => {
+  const h = harness({
+    method: "POST",
+    path: "/finance/finance-row/approve",
+    permissionKeys: ["finance.approve"],
+    financeRow: { transaction_ref: "AASA-TXN-2026-ABC123", recorded_by: "another-user", approval_status: "SUBMITTED" },
+  });
+  const result = await h.run();
+  assert.equal(result.statusCode, 200);
+  assert.equal(h.calls.some(call => call.path.endsWith("/rows/finance-row") && call.method === "PATCH"), true);
+  assert.equal(h.calls.some(call => call.path.endsWith("/tables/aasa_audit_events/rows") && call.method === "POST"), true);
+});
+
+test("prevents a finance transaction author from approving their own transaction", async () => {
+  const h = harness({
+    method: "POST",
+    path: "/finance/finance-row/approve",
+    permissionKeys: ["finance.approve"],
+    financeRow: { transaction_ref: "AASA-TXN-2026-ABC123", recorded_by: "verified-user-123", approval_status: "SUBMITTED" },
+  });
+  const result = await h.run();
+  assert.equal(result.statusCode, 403);
+  assert.equal(h.calls.some(call => call.path.endsWith("/rows/finance-row") && call.method === "PATCH"), false);
 });
