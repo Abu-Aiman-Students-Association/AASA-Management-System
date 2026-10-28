@@ -1,31 +1,44 @@
 # AASA Management System
 
-Abu-Aiman Students' Association (AASA) — a secure, multilingual, offline-conscious association management platform.
+Abu-Aiman Students' Association (AASA) — a secure, multilingual, mobile-first association management platform.
 
-## Current foundation
+## Current implementation status
 
-- React + TypeScript + Vite frontend
-- Appwrite Web SDK client configured for the existing AASA Appwrite project
-- A connection-check screen that reports success or the actual error
-- Responsive starter dashboard; planned modules are clearly marked as planned, not live features
+- React + TypeScript + Vite frontend.
+- Supabase is the chosen backend for Auth and PostgreSQL; the project moved away from Appwrite after implementation problems.
+- Current database foundation includes profiles, roles, permissions, role_permissions, user_roles, audit_events, and a private Super Admin bootstrap record.
+- The administration dashboard and server-side account authorization foundation exist.
+- Membership, leadership/committees, elections, meetings/events, finance, welfare/cases, and documents/reports must be treated as planned until each workflow is implemented and verified end-to-end. A navigation item is not proof that a module is live.
 
 ## Local development
 
-1. Install Node.js (current LTS) and pnpm or npm.
+1. Install a supported Node.js LTS version and npm.
 2. Copy `.env.example` to `.env.local`.
-3. Confirm the Appwrite endpoint and project ID in `.env.local`.
-4. Install dependencies with `npm install` (or `pnpm install`).
-5. Start the app with `npm run dev` (or `pnpm dev`).
+3. Set the Supabase project URL and publishable/anon client key.
+4. Install dependencies with `npm install`.
+5. Start with `npm run dev`; run `npm run build` before submitting changes.
 
-The environment variables are public client configuration only. **Never place Appwrite API keys or other server secrets in a browser app or commit them to GitHub.**
+Only public client configuration belongs in `VITE_*` variables. Never put a Supabase service-role key, database password, or other server secret in browser code or GitHub.
 
-## Appwrite status
+## Database and authorization
 
-The project and web app have been registered in Appwrite. Runtime connectivity still needs to be tested from the running app. A successful ping verifies endpoint connectivity only; it does not configure authentication, database collections, permissions, backups, or production deployment.
+- Supabase Auth identifies users; PostgreSQL Row Level Security (RLS) and trusted database functions enforce access.
+- Treat frontend route guards as presentation only, never as the security boundary.
+- Privileged operations must verify the authenticated identity and the required database role/permission, then create an audit event.
+- Do not create broad public read/write access for private association records.
+- Secret elections require a separate threat model and end-to-end security review before real ballots.
+- Preserve existing data during schema changes; use reviewed migrations and verify positive and negative authorization cases.
 
-## Security and data integrity
+## Security checks
 
-- Do not use fabricated people or transactions as real data.
-- Implement and test access controls before exposing private association records.
-- Configure Appwrite database permissions and authentication deliberately before adding live data.
-- Keep secrets out of source control and client-side environment variables.
+Review Supabase Security Advisor and Auth settings regularly. The advisor has reported the private bootstrap table as RLS-enabled without policies (review this in the context of its private schema and grants), and leaked-password protection as disabled. Enable leaked-password protection in Supabase Auth settings after confirming the project's sign-in policy. Do not add a client-accessible policy to the private bootstrap table merely to silence the advisor.
+
+## CI and deployment
+
+GitHub Actions currently builds the application, runs server authorization security tests, and deploys the Pages artifact. A successful run proves only the checks included in that run; it does not prove every business module or database authorization path is complete.
+
+## Data integrity
+
+- Never present fabricated members, ballots, cases, or financial transactions as real data.
+- Keep test records explicitly labelled and remove them only after confirming they are test-only.
+- Never claim a service or module is complete without a reproducible test.
