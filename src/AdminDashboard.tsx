@@ -20,11 +20,17 @@ export default function AdminDashboard() {
   }[lang];
   async function refresh(user: { id: string; email?: string }) {
     const p = await supabase.from("profiles").select("account_status").eq("user_id", user.id).maybeSingle();
-    const r = await supabase.from("user_roles").select("roles(role_key)").eq("user_id", user.id).is("revoked_at", null);
+    const r = await supabase.from("user_roles").select("roles(role_key),expires_at").eq("user_id", user.id).is("revoked_at", null);
     if (p.error) throw p.error;
     if (r.error) throw r.error;
-    const roles = (r.data ?? []).flatMap((x: any) => x.roles?.role_key ? [x.roles.role_key as Role] : []);
-    setAccount({ id: user.id, email: user.email ?? "", roles, status: p.data?.account_status ?? "pending" });
+    const status = p.data?.account_status ?? "pending";
+    const now = Date.now();
+    const roles = status === "active" ? (r.data ?? []).flatMap((x: any) => {
+      const unexpired = !x.expires_at || Date.parse(x.expires_at) > now;
+      return unexpired && (x.roles?.role_key === "super_admin" || x.roles?.role_key === "platform_admin")
+        ? [x.roles.role_key as Role] : [];
+    }) : [];
+    setAccount({ id: user.id, email: user.email ?? "", roles, status });
     setView("dashboard");
   }
   useEffect(() => {
