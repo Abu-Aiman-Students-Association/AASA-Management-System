@@ -19,19 +19,19 @@ function harness({ method = "GET", path = "/members", jwt = "valid-jwt", bodyJso
       }
       return new Response(JSON.stringify({ $id: "verified-user-123", email: "user@example.test" }), { status: 200 });
     }
-    if (parsed.pathname.endsWith("/tables/aasa_role_assignments/rows")) {
+    if (parsed.pathname.endsWith("/collections/aasa_role_assignments/documents")) {
       const rows = permissionKeys.length ? [{ $id: "assignment", data: { auth_user_id: "verified-user-123", role_id: "test-role", assigned_by: "admin-user", assigned_at: "2026-10-27T00:00:00.000Z", revoked_at: null } }] : [];
       return new Response(JSON.stringify({ rows, total: rows.length }), { status: 200 });
     }
-    if (parsed.pathname.endsWith("/tables/aasa_role_permissions/rows")) {
+    if (parsed.pathname.endsWith("/collections/aasa_role_permissions/documents")) {
       const rows = permissionKeys.map((key) => ({ $id: "link-" + key, data: { role_id: "test-role", permission_id: key } }));
       return new Response(JSON.stringify({ rows, total: rows.length }), { status: 200 });
     }
-    if (parsed.pathname.endsWith("/tables/aasa_permissions/rows")) {
+    if (parsed.pathname.endsWith("/collections/aasa_permissions/documents")) {
       const rows = permissionKeys.map((key) => ({ $id: key, data: { permission_key: key } }));
       return new Response(JSON.stringify({ rows, total: rows.length }), { status: 200 });
     }
-    if (parsed.pathname.includes("/tables/aasa_financial_transactions/rows/") && options.method === "GET") {
+    if (parsed.pathname.includes("/collections/aasa_financial_transactions/documents/") && options.method === "GET") {
       if (!financeRow) return new Response(JSON.stringify({ message: "Not found" }), { status: 404 });
       return new Response(JSON.stringify({ $id: "finance-row", data: financeRow }), { status: 200 });
     }
@@ -39,10 +39,10 @@ function harness({ method = "GET", path = "/members", jwt = "valid-jwt", bodyJso
       const body = JSON.parse(options.body || "{}");
       return new Response(JSON.stringify({ $id: "finance-row", data: { ...financeRow, ...body.data } }), { status: 200 });
     }
-    if (parsed.pathname.endsWith("/tables/aasa_audit_events/rows") && options.method === "POST") {
+    if (parsed.pathname.endsWith("/collections/aasa_audit_events/documents") && options.method === "POST") {
       return new Response(JSON.stringify({ $id: "audit-row" }), { status: 201 });
     }
-    if (parsed.pathname.includes("/tables/aasa_members/rows") && options.method !== "GET") {
+    if (parsed.pathname.includes("/collections/aasa_members/documents") && options.method !== "GET") {
       return new Response(JSON.stringify({ $id: "member-row" }), { status: 201 });
     }
     return new Response(JSON.stringify({ rows: [] }), { status: 200 });
@@ -78,8 +78,8 @@ test("fails closed when a valid user has no active role assignment", async () =>
   const h = harness({ method: "POST", path: "/members", bodyJson: { member_number: "FAKE-1", full_name: "Not a real member" } });
   const result = await h.run();
   assert.equal(result.statusCode, 403);
-  assert.equal(h.calls.some(call => call.path.includes("/tables/aasa_members/rows") && call.method === "POST"), false);
-  assert.equal(h.calls.some(call => call.path.includes("/tables/aasa_audit_events/rows") && call.method === "POST"), true);
+  assert.equal(h.calls.some(call => call.path.includes("/collections/aasa_members/documents") && call.method === "POST"), false);
+  assert.equal(h.calls.some(call => call.path.includes("/collections/aasa_audit_events/documents") && call.method === "POST"), true);
 });
 
 test("resolves nested member routes and denies them without permission", async () => {
@@ -99,7 +99,7 @@ test("approves a submitted finance transaction only with finance.approve and a d
   });
   const result = await h.run();
   assert.equal(result.statusCode, 200);
-  assert.equal(h.calls.some(call => call.path.endsWith("/rows/finance-row") && call.method === "PATCH"), true);
+  assert.equal(h.calls.some(call => call.path.endsWith("/documents/finance-row") && call.method === "PATCH"), true);
   assert.equal(h.calls.some(call => call.path.endsWith("/tables/aasa_audit_events/rows") && call.method === "POST"), true);
 });
 
