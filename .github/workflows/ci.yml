@@ -24,13 +24,13 @@ jobs:
         run: npm install
       - name: Check server API JavaScript syntax
         run: node --check functions/aasa-api/src/main.js
-      - name: Run server authorization security tests
+      - name: Run legacy Appwrite API regression tests (not Supabase authorization tests)
         run: node --test functions/aasa-api/test/*.test.js
       - name: Build app
         run: npm run build
         env:
-          VITE_APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
-          VITE_APPWRITE_PROJECT_ID: 6adbc96b002527d3b7fc
+          VITE_SUPABASE_URL: https://pedmroseihpaflbzqgkf.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Upload GitHub Pages artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
