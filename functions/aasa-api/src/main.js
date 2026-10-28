@@ -102,7 +102,7 @@ async function resolvePermissions(userId, apiKey) {
     let roleIsActive = false;
     try {
       const role = await getRow("aasa_roles", "super_admin", apiKey);
-      roleIsActive = role?.data?.active === true &&
+      roleIsActive = (role?.data?.is_active === true || role?.data?.active === true) &&
         String(role?.data?.role_key || "").toUpperCase() === "SUPER_ADMIN";
     } catch (err) {
       if (err?.status !== 404) throw err;
