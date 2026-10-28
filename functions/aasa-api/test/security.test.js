@@ -35,7 +35,7 @@ function harness({ method = "GET", path = "/members", jwt = "valid-jwt", bodyJso
       if (!financeRow) return new Response(JSON.stringify({ message: "Not found" }), { status: 404 });
       return new Response(JSON.stringify({ $id: "finance-row", data: financeRow }), { status: 200 });
     }
-    if (parsed.pathname.includes("/tables/aasa_financial_transactions/rows/") && options.method === "PATCH") {
+    if (parsed.pathname.includes("/collections/aasa_financial_transactions/documents/") && options.method === "PATCH") {
       const body = JSON.parse(options.body || "{}");
       return new Response(JSON.stringify({ $id: "finance-row", data: { ...financeRow, ...body.data } }), { status: 200 });
     }
@@ -100,7 +100,7 @@ test("approves a submitted finance transaction only with finance.approve and a d
   const result = await h.run();
   assert.equal(result.statusCode, 200);
   assert.equal(h.calls.some(call => call.path.endsWith("/documents/finance-row") && call.method === "PATCH"), true);
-  assert.equal(h.calls.some(call => call.path.endsWith("/tables/aasa_audit_events/rows") && call.method === "POST"), true);
+  assert.equal(h.calls.some(call => call.path.endsWith("/collections/aasa_audit_events/documents") && call.method === "POST"), true);
 });
 
 test("prevents a finance transaction author from approving their own transaction", async () => {
