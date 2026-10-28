@@ -31,7 +31,7 @@ Security principle: deny by default; backend-enforced least privilege.
 ## Mandatory enforcement
 1. The frontend must not decide authorization by itself.
 2. Never accept a role supplied by a browser as proof of authority.
-3. Appwrite collection/document permissions must enforce access to data.
+3. Supabase PostgreSQL grants and Row Level Security (RLS) policies must enforce access to data.
 4. Privileged changes should use trusted server-side operations with explicit role checks and audit events.
 5. No ordinary user may assign themselves roles or modify audit records.
 6. Sensitive personal data must be minimized and scoped.
@@ -41,4 +41,4 @@ Security principle: deny by default; backend-enforced least privilege.
 10. Review all final roles and actions against the approved AASA Master Blueprint before implementation.
 
 ## Approval required
-This is a design proposal only. Do not create Appwrite roles, collections, documents, or production permissions solely from this draft. The association owner must confirm role names, role assignment authority, and separation-of-duties rules first.
+This is a design proposal only. Do not create Supabase roles, tables, records, or production policies solely from this draft. The association owner must confirm role names, role assignment authority, and separation-of-duties rules first.
