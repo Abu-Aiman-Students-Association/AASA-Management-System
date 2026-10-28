@@ -91,13 +91,49 @@ async function resolvePermissions(userId, apiKey) {
   });
   const roleIds = [...new Set(active.map(row => row.data?.role_id).filter(Boolean))];
   if (!roleIds.length) return [];
+
+  const registry = await listRows(TABLES.permissions, [JSON.stringify({ method: "limit", values: [200] })], apiKey);
+
+  // The initial AASA database has an explicit, verified permanent SUPER_ADMIN
+  // assignment but may not yet have the role-permission junction table. In that
+  // specific case, grant only the permission keys present in the live registry.
+  // Do not apply this fallback to any other role or if the role is inactive.
+  if (roleIds.includes("super_admin")) {
+    let roleIsActive = false;
+    try {
+      const role = await getRow("aasa_roles", "super_admin", apiKey);
+      roleIsActive = role?.data?.active === true &&
+        String(role?.data?.role_key || "").toUpperCase() === "SUPER_ADMIN";
+    } catch (err) {
+      if (err?.status !== 404) throw err;
+    }
+    if (roleIsActive) {
+      try {
+        const links = await Promise.all(roleIds.map(roleId => listRows(TABLES.rolePermissions, [
+          query("equal", "role_id", roleId),
+          JSON.stringify({ method: "limit", values: [200] }),
+        ], apiKey)));
+        const permissionIds = [...new Set(links.flatMap(result => (result.rows || []).map(row => row.data?.permission_id).filter(Boolean)))];
+        if (permissionIds.length) {
+          const allowed = new Set(permissionIds);
+          return (registry.rows || []).filter(row => allowed.has(row.$id)).map(row => row.data?.permission_key).filter(Boolean);
+        }
+        // Existing junction table with no mappings is not an implicit grant.
+        const tableExists = await listRows(TABLES.rolePermissions, [JSON.stringify({ method: "limit", values: [1] })], apiKey);
+        if ((tableExists.rows || []).length === 0) return [];
+      } catch (err) {
+        if (err?.status !== 404) throw err;
+        return (registry.rows || []).map(row => row.data?.permission_key).filter(Boolean);
+      }
+    }
+  }
+
   const links = await Promise.all(roleIds.map(roleId => listRows(TABLES.rolePermissions, [
     query("equal", "role_id", roleId),
     JSON.stringify({ method: "limit", values: [200] }),
   ], apiKey)));
   const permissionIds = [...new Set(links.flatMap(result => (result.rows || []).map(row => row.data?.permission_id).filter(Boolean)))];
   if (!permissionIds.length) return [];
-  const registry = await listRows(TABLES.permissions, [JSON.stringify({ method: "limit", values: [200] })], apiKey);
   const allowed = new Set(permissionIds);
   return (registry.rows || []).filter(row => allowed.has(row.$id)).map(row => row.data?.permission_key).filter(Boolean);
 }
