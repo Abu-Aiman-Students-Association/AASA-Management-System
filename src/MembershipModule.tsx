@@ -115,7 +115,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
             if (saved.error) photoMessage = " Member record saved, but photo path could not be saved: " + saved.error.message;
           }
         }
-        setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setNotes("");
+        setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setCityOfResidence(""); setNotes("");
         setEmergencyName(""); setEmergencyRelationship(""); setEmergencyPhone(""); setOccupation(""); setStateOfResidence(""); setLga(""); setMembershipConsent(false);
         setType("ordinary"); setPhotoFile(null);
         await load(); setNotice("Member record saved as pending. Review identity and details before approval." + photoMessage);
@@ -201,7 +201,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
           <span>I confirm the details provided are accurate and consent to AASA using these details for membership administration and association communications. <strong>*</strong></span>
         </label>
         <button className="aasa-primary" disabled={busy}>{busy ? "Saving…" : editingId ? "Save member changes" : "Save pending member"}</button>
-        {editingId && <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(null);setName("");setEmail("");setPhone("");setDob("");setGender("");setAddress("");setNotes("");setEmergencyName("");setEmergencyRelationship("");setEmergencyPhone("");setOccupation("");setStateOfResidence("");setLga("");setMembershipConsent(false);setType("ordinary");setPhotoFile(null);}}>Cancel editing</button>}
+        {editingId && <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(null);setName("");setEmail("");setPhone("");setDob("");setGender("");setAddress("");setCityOfResidence("");setNotes("");setEmergencyName("");setEmergencyRelationship("");setEmergencyPhone("");setOccupation("");setStateOfResidence("");setLga("");setMembershipConsent(false);setType("ordinary");setPhotoFile(null);}}>Cancel editing</button>}
       </form>
       <p className="aasa-muted">Required: full name, at least one contact method, and declaration for new registrations. Nationality, emergency contact, occupation and location are optional. State and emergency relationship use dropdowns; Borno LGAs are listed for selection. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. Cards can be issued only after membership approval.</p>
     </section>
