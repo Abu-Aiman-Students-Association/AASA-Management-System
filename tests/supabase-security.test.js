@@ -31,10 +31,12 @@ test("permanent Super Admin and current account are protected in the UI", () => 
 
 const electionsSource = await readFile(new URL("../src/ElectionsModule.tsx", import.meta.url), "utf8");
 const electionResultsMigration = await readFile(new URL("../supabase/migrations/20261029163000_protect_anonymous_ballot_rows.sql", import.meta.url), "utf8");
+const ballotPrivilegesMigration = await readFile(new URL("../supabase/migrations/20261029164000_revoke_direct_ballot_table_access.sql", import.meta.url), "utf8");
 
 test("election results use aggregate RPC and do not expose individual ballot rows to the browser", () => {
   assert.match(electionsSource, /rpc\(["']aasa_get_closed_election_results["']\)/);
   assert.doesNotMatch(electionsSource, /from\(["']aasa_secret_ballots["']\)/);
   assert.match(electionResultsMigration, /drop policy if exists aasa_secret_ballots_read_permission/i);
   assert.match(electionResultsMigration, /revoke select on table public\.aasa_secret_ballots from anon, authenticated/i);
+  assert.match(ballotPrivilegesMigration, /revoke all privileges on table public\.aasa_secret_ballots from anon, authenticated/i);
 });
