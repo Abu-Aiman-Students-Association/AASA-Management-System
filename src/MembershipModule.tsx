@@ -10,7 +10,7 @@ type Member = {
   emergency_contact_name: string | null; emergency_contact_relationship: string | null;
   emergency_contact_phone: string | null; occupation: string | null;
   state_of_residence: string | null; local_government_area: string | null;
-  membership_consent: boolean;
+  nationality: string | null; membership_consent: boolean;
 };
 type MemberCard = { id: string; member_id: string; card_number: string; qr_token: string; status: string; issued_at: string };
 export default function MembershipModule({ userId }: { userId: string }) {
@@ -29,6 +29,8 @@ export default function MembershipModule({ userId }: { userId: string }) {
   const [occupation, setOccupation] = useState("");
   const [stateOfResidence, setStateOfResidence] = useState("");
   const [lga, setLga] = useState("");
+  const [nationality, setNationality] = useState("Nigerian");
+  const [otherNationality, setOtherNationality] = useState("");
   const [membershipConsent, setMembershipConsent] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
   const [notice, setNotice] = useState("");
   async function load() {
     const [members, cardRows] = await Promise.all([
-      supabase.from("aasa_members").select("id,member_number,full_name,email,phone,membership_type,status,joined_on,date_of_birth,gender,address,notes,photo_path,auth_user_id,emergency_contact_name,emergency_contact_relationship,emergency_contact_phone,occupation,state_of_residence,local_government_area,membership_consent").order("created_at", { ascending: false }).limit(250),
+      supabase.from("aasa_members").select("id,member_number,full_name,email,phone,membership_type,status,joined_on,date_of_birth,gender,address,notes,photo_path,auth_user_id,emergency_contact_name,emergency_contact_relationship,emergency_contact_phone,occupation,state_of_residence,local_government_area,nationality,membership_consent").order("created_at", { ascending: false }).limit(250),
       supabase.from("aasa_member_cards").select("id,member_id,card_number,qr_token,status,issued_at").order("issued_at", { ascending: false }).limit(500)
     ]);
     if (members.error) throw members.error;
@@ -68,6 +70,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         occupation: occupation.trim() || null,
         state_of_residence: stateOfResidence.trim() || null,
         local_government_area: lga.trim() || null,
+        nationality: (nationality === "Other" ? otherNationality.trim() : nationality).trim() || null,
         membership_consent: membershipConsent,
         membership_type: type, updated_by: userId
       };
@@ -85,7 +88,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
           throw error;
         }
         setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setNotes("");
-        setEmergencyName(""); setEmergencyRelationship(""); setEmergencyPhone(""); setOccupation(""); setStateOfResidence(""); setLga(""); setMembershipConsent(false);
+        setEmergencyName(""); setEmergencyRelationship(""); setEmergencyPhone(""); setOccupation(""); setStateOfResidence(""); setLga(""); setNationality("Nigerian"); setOtherNationality(""); setMembershipConsent(false);
         setType("ordinary"); setPhotoFile(null); setEditingId(null);
         await load(); setNotice("Member details updated. Membership status was not changed.");
       } else {
@@ -173,11 +176,13 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <label>Gender<select value={gender} onChange={e=>setGender(e.target.value)}><option value="">Prefer not to say / Not provided</option><option value="male">Male</option><option value="female">Female</option><option value="prefer_not_to_say">Prefer not to say</option></select></label>
         <label>Membership type<select value={type} onChange={e=>setType(e.target.value)}><option value="ordinary">Ordinary</option><option value="associate">Associate</option><option value="honorary">Honorary</option><option value="life">Life</option></select></label>
         <label>Residential address<textarea rows={2} maxLength={500} value={address} onChange={e=>setAddress(e.target.value)} autoComplete="street-address" /></label>
-        <label>State of residence<input maxLength={120} value={stateOfResidence} onChange={e=>setStateOfResidence(e.target.value)} autoComplete="address-level1" /></label>
-        <label>Local Government Area (LGA)<input maxLength={120} value={lga} onChange={e=>setLga(e.target.value)} /></label>
+        <label>Nationality<select value={nationality} onChange={e=>setNationality(e.target.value)}><option value="Nigerian">Nigerian</option><option value="Nigerien">Nigerien</option><option value="Cameroonian">Cameroonian</option><option value="Chadian">Chadian</option><option value="Ghanaian">Ghanaian</option><option value="Other">Other nationality</option></select></label>
+        {nationality === "Other" && <label>Specify nationality<input required maxLength={100} value={otherNationality} onChange={e=>setOtherNationality(e.target.value)} /></label>}
+        <label>State of residence<select value={stateOfResidence} onChange={e=>{setStateOfResidence(e.target.value);setLga("");}} autoComplete="address-level1"><option value="">Select state</option>{["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","Federal Capital Territory (FCT)","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"].map(s=><option key={s} value={s}>{s}</option>)}</select></label>
+        {stateOfResidence === "Borno" ? <label>Local Government Area (LGA)<select value={lga} onChange={e=>setLga(e.target.value)}><option value="">Select LGA</option>{["Abadam","Askira/Uba","Bama","Bayo","Biu","Chibok","Damboa","Dikwa","Gubio","Guzamala","Gwoza","Hawul","Jere","Kaga","Kala/Balge","Konduga","Kukawa","Kwaya Kusar","Mafa","Magumeri","Maiduguri","Marte","Mobbar","Monguno","Ngala","Nganzai","Shani"].map(s=><option key={s} value={s}>{s}</option>)}</select></label> : <label>Local Government Area (LGA)<input maxLength={120} value={lga} onChange={e=>setLga(e.target.value)} placeholder="Enter LGA" /></label>
         <label>Occupation / profession<input maxLength={120} value={occupation} onChange={e=>setOccupation(e.target.value)} autoComplete="organization-title" /></label>
         <label>Emergency contact name<input maxLength={160} value={emergencyName} onChange={e=>setEmergencyName(e.target.value)} /></label>
-        <label>Emergency contact relationship<input maxLength={80} value={emergencyRelationship} onChange={e=>setEmergencyRelationship(e.target.value)} placeholder="e.g. spouse, parent, sibling" /></label>
+        <label>Emergency contact relationship<select value={emergencyRelationship} onChange={e=>setEmergencyRelationship(e.target.value)}><option value="">Select relationship</option>{["Parent","Spouse","Child","Sibling","Guardian","Relative","Friend","Other"].map(s=><option key={s} value={s}>{s}</option>)}</select></label>
         <label>Emergency contact phone<input type="tel" maxLength={30} value={emergencyPhone} onChange={e=>setEmergencyPhone(e.target.value)} /></label>
         <label>Member photo (optional)<input type="file" accept="image/jpeg,image/png" onChange={e=>setPhotoFile(e.target.files?.[0] ?? null)} />{photoFile && <small>{photoFile.name} · {(photoFile.size / 1024).toFixed(0)} KB</small>}</label>
         <label>Administrative notes (restricted)<textarea rows={2} maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)} /></label>
@@ -188,7 +193,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <button className="aasa-primary" disabled={busy}>{busy ? "Saving…" : editingId ? "Save member changes" : "Save pending member"}</button>
         {editingId && <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(null);setName("");setEmail("");setPhone("");setDob("");setGender("");setAddress("");setNotes("");setEmergencyName("");setEmergencyRelationship("");setEmergencyPhone("");setOccupation("");setStateOfResidence("");setLga("");setMembershipConsent(false);setType("ordinary");setPhotoFile(null);}}>Cancel editing</button>}
       </form>
-      <p className="aasa-muted">Required: full name, at least one contact method, and declaration for new registrations. Emergency contact, occupation and location are optional. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. Cards can be issued only after membership approval.</p>
+      <p className="aasa-muted">Required: full name, at least one contact method, and declaration for new registrations. Nationality, emergency contact, occupation and location are optional. State and emergency relationship use dropdowns; Borno LGAs are listed for selection. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. Cards can be issued only after membership approval.</p>
     </section>
     <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">OFFICIAL REGISTER</p><h3>Members</h3></div>
@@ -196,10 +201,10 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <select aria-label="Filter by membership status" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">All statuses</option><option value="pending">Pending</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="inactive">Inactive</option><option value="rejected">Rejected</option></select></div>
       </div>
       {filtered.length ? <div className="aasa-table-wrap"><table className="aasa-table"><thead><tr><th>Member no.</th><th>Name & details</th><th>Contact</th><th>Type</th><th>Status</th><th>Joined</th><th>Card</th><th>Review</th></tr></thead><tbody>{filtered.map(m=><tr key={m.id}>
-        <td>{m.member_number}</td><td><strong>{m.full_name}</strong><br/><small>DOB: {m.date_of_birth || "—"} · Gender: {m.gender || "—"}</small>{m.address && <><br/><small>{m.address}</small></>}{(m.state_of_residence || m.local_government_area) && <><br/><small>{[m.local_government_area,m.state_of_residence].filter(Boolean).join(", ")}</small></>}{m.occupation && <><br/><small>Occupation: {m.occupation}</small></>}{m.emergency_contact_name && <><br/><small>Emergency: {m.emergency_contact_name} ({m.emergency_contact_relationship || "contact"}) · {m.emergency_contact_phone || "—"}</small></>}{m.notes && <><br/><small>Admin note: {m.notes}</small></>}</td>
+        <td>{m.member_number}</td><td><strong>{m.full_name}</strong><br/><small>DOB: {m.date_of_birth || "—"} · Gender: {m.gender || "—"}</small>{m.address && <><br/><small>{m.address}</small></>}{(m.state_of_residence || m.local_government_area) && <><br/><small>{[m.local_government_area,m.state_of_residence].filter(Boolean).join(", ")}</small></>}{m.nationality && <><br/><small>Nationality: {m.nationality}</small></>}{m.occupation && <><br/><small>Occupation: {m.occupation}</small></>}{m.emergency_contact_name && <><br/><small>Emergency: {m.emergency_contact_name} ({m.emergency_contact_relationship || "contact"}) · {m.emergency_contact_phone || "—"}</small></>}{m.notes && <><br/><small>Admin note: {m.notes}</small></>}</td>
         <td>{m.email || "—"}<br/>{m.phone || "—"}</td><td>{m.membership_type}</td><td><span className="aasa-pill">{m.status}</span></td><td>{m.joined_on}</td>
         <td>{m.status==="active"&&m.email&&!m.auth_user_id&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void linkAccount(m)}>Link verified account</button>}{m.auth_user_id&&<small>Verified account linked</small>}{cards.filter(card=>card.member_id===m.id&&card.status==="active").map(card=><div key={card.id}>{card.card_number}<br/><small>Issued {new Date(card.issued_at).toLocaleDateString()}</small><br/><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void openCard(m,card)}>View / print</button><button type="button" className="aasa-link" disabled={busy} onClick={()=>void revokeCard(card)}>Revoke card</button></div>)}{m.status==="active"&&!cards.some(card=>card.member_id===m.id&&card.status==="active")&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void issueCard(m)}>Issue card</button>}</td>
-        <td><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(m.id);setName(m.full_name);setEmail(m.email??"");setPhone(m.phone??"");setDob(m.date_of_birth??"");setGender(m.gender??"");setAddress(m.address??"");setNotes(m.notes??"");setEmergencyName(m.emergency_contact_name??"");setEmergencyRelationship(m.emergency_contact_relationship??"");setEmergencyPhone(m.emergency_contact_phone??"");setOccupation(m.occupation??"");setStateOfResidence(m.state_of_residence??"");setLga(m.local_government_area??"");setMembershipConsent(m.membership_consent??false);setType(m.membership_type);setPhotoFile(null);window.scrollTo({top:0,behavior:"smooth"});}}>Edit details</button><br/>{m.status === "pending" ? <><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button> <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
+        <td><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(m.id);setName(m.full_name);setEmail(m.email??"");setPhone(m.phone??"");setDob(m.date_of_birth??"");setGender(m.gender??"");setAddress(m.address??"");setNotes(m.notes??"");setEmergencyName(m.emergency_contact_name??"");setEmergencyRelationship(m.emergency_contact_relationship??"");setEmergencyPhone(m.emergency_contact_phone??"");setOccupation(m.occupation??"");setStateOfResidence(m.state_of_residence??"");setLga(m.local_government_area??"");setNationality(["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian","Other"].includes(m.nationality??"") ? (m.nationality??"Nigerian") : "Other");setOtherNationality(m.nationality && !["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian"].includes(m.nationality) ? m.nationality : "");setMembershipConsent(m.membership_consent??false);setType(m.membership_type);setPhotoFile(null);window.scrollTo({top:0,behavior:"smooth"});}}>Edit details</button><br/>{m.status === "pending" ? <><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button> <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
       </tr>)}</tbody></table></div> : <p className="aasa-muted">No matching membership records. Add verified records using the form above.</p>}
     </section>{notice && <p className="aasa-notice" role="status">{notice}</p>}{error && <p className="aasa-error" role="alert">{error}</p>}
     {cardPreview && <div className="aasa-card-overlay" role="dialog" aria-modal="true" aria-label="Membership card preview">
