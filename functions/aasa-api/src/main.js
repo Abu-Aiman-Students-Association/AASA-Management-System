@@ -216,6 +216,7 @@ export default async ({ req, res, error }) => {
   else if (method === "POST" && segments.length === 1) action = "CREATE";
   else if (method === "PATCH" && segments.length === 2 && rowId) action = "UPDATE";
   else if (method === "POST" && segments.length === 3 && segments[2] === "archive" && route.module === "members" && rowId) action = "ARCHIVE";
+  else if (method === "POST" && segments.length === 3 && segments[2] === "approve" && route.module === "members" && rowId) action = "MEMBER_APPROVE";
   else if (method === "POST" && segments.length === 3 && segments[2] === "approve" && route.module === "finance" && rowId) action = "APPROVE";
   else return response(res, 405, { error: "Method not allowed." });
 
@@ -244,6 +245,13 @@ export default async ({ req, res, error }) => {
       const updated = await updateRow(route.table, rowId, { approval_status: "APPROVED", approved_by: userId }, apiKey);
       await writeAudit({ actor: userId, route: route.module, action, result: "SUCCESS", recordId: rowId, apiKey });
       return response(res, 200, { row: updated });
+    }
+    if (action === "MEMBER_APPROVE") {
+      const existing = await getRow(route.table, rowId, apiKey);
+      if (existing.data?.membership_status !== "PENDING_VERIFICATION" && existing.data?.membership_status !== "PENDING") return response(res, 409, { error: "Only pending members can be approved." });
+      const updated = await updateRow(route.table, rowId, { membership_status: "ACTIVE", updated_by: userId, joined_at: existing.data?.joined_at || new Date().toISOString() }, apiKey);
+      await writeAudit({ actor: userId, route: route.module, action: "APPROVE", result: "SUCCESS", recordId: rowId, apiKey });
+      return response(res, 200, { row: updated, card: { status: "not_issued", message: "Member approved. ID card issuance is the next workflow step." } });
     }
     if (action === "ARCHIVE") {
       const updated = await updateRow(route.table, rowId, { membership_status: "INACTIVE", updated_by: userId }, apiKey);
