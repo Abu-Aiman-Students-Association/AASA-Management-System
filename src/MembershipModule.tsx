@@ -85,7 +85,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
   }
   async function issueCard(m: Member) {
     setBusy(true); setError(""); setNotice("");
-    try { const { error } = await supabase.rpc("aasa_issue_member_card", { p_member_id: m.id }); if (error) throw error; await load(); setNotice("Membership card record issued. Visual card artwork and public QR verification still require their dedicated release."); }
+    try { const { error } = await supabase.rpc("aasa_issue_member_card", { p_member_id: m.id }); if (error) throw error; await load(); setNotice("Membership card issued. Open View / print to render the member photo and QR verification code."); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not issue card."); }
     finally { setBusy(false); }
   }
