@@ -17,15 +17,16 @@ export async function getCurrentAccount() {
   return account.get();
 }
 
-export async function secureApi<T>(path: string): Promise<T> {
+export async function secureApiRequest<T>(path: string, method: ExecutionMethod = ExecutionMethod.GET, payload?: unknown): Promise<T> {
   if (!appwriteConfigReady) throw new Error("Appwrite is not configured. Set VITE_APPWRITE_ENDPOINT and VITE_APPWRITE_PROJECT_ID.");
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Invalid secure API path.");
   const execution = await functions.createExecution({
     functionId,
-    body: "",
+    body: payload === undefined ? "" : JSON.stringify(payload),
     async: false,
     xpath: path,
-    method: ExecutionMethod.GET,
+    method,
+    headers: { "content-type": "application/json" },
   });
   if (execution.responseStatusCode < 200 || execution.responseStatusCode >= 300) {
     throw new Error(execution.responseBody || `Secure API request failed (${execution.responseStatusCode}).`);
@@ -35,4 +36,8 @@ export async function secureApi<T>(path: string): Promise<T> {
   } catch {
     throw new Error("Secure API returned an invalid response.");
   }
+}
+
+export async function secureApi<T>(path: string): Promise<T> {
+  return secureApiRequest<T>(path, ExecutionMethod.GET);
 }
