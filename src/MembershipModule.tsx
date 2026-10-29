@@ -13,6 +13,45 @@ type Member = {
   nationality: string | null; country_of_residence: string | null; city_of_residence: string | null; membership_consent: boolean;
 };
 type MemberCard = { id: string; member_id: string; card_number: string; qr_token: string; status: string; issued_at: string };
+const STATE_CITIES: Record<string, string[]> = {
+  "Abia": ["Aba","Umuahia","Arochukwu","Ohafia","Bende","Isiala Ngwa","Osisioma"],
+  "Adamawa": ["Yola","Mubi","Numan","Jimeta","Ganye","Gombi","Michika"],
+  "Akwa Ibom": ["Uyo","Eket","Ikot Ekpene","Oron","Abak","Itu","Etinan"],
+  "Anambra": ["Awka","Onitsha","Nnewi","Ekwulobia","Ihiala","Aguata","Otuocha"],
+  "Bauchi": ["Bauchi","Azare","Misau","Jama'are","Ningi","Dass","Tafawa Balewa"],
+  "Bayelsa": ["Yenagoa","Ogbia","Brass","Nembe","Sagbama","Kaiama","Oporoma"],
+  "Benue": ["Makurdi","Gboko","Otukpo","Katsina-Ala","Adikpo","Vandeikya","Aliade"],
+  "Borno": ["Maiduguri","Biu","Bama","Dikwa","Monguno","Gwoza","Briyel","Konduga","Mafa","Damboa","Kaga","Gubio","Ngala","Jere"],
+  "Cross River": ["Calabar","Ogoja","Ikom","Ugep","Obudu","Akpabuyo","Akamkpa"],
+  "Delta": ["Asaba","Warri","Effurun","Sapele","Ughelli","Agbor","Oleh","Ozoro"],
+  "Ebonyi": ["Abakaliki","Afikpo","Onueke","Ezza","Ishielu","Onicha","Ikwo"],
+  "Edo": ["Benin City","Auchi","Ekpoma","Irrua","Uromi","Igarra","Ubiaja"],
+  "Ekiti": ["Ado-Ekiti","Ikere-Ekiti","Ijero-Ekiti","Ikole-Ekiti","Oye-Ekiti","Ise-Ekiti"],
+  "Enugu": ["Enugu","Nsukka","Agbani","Udi","Oji River","Awgu","Eha-Amufu"],
+  "Federal Capital Territory (FCT)": ["Abuja","Gwagwalada","Kuje","Kubwa","Bwari","Karu","Nyanya","Lugbe"],
+  "Gombe": ["Gombe","Kumo","Billiri","Bajoga","Dukku","Kaltungo","Deba"],
+  "Imo": ["Owerri","Orlu","Okigwe","Mbaise","Oguta","Nkwerre","Mbano"],
+  "Jigawa": ["Dutse","Hadejia","Kazaure","Gumel","Birnin Kudu","Ringim","Gwaram"],
+  "Kaduna": ["Kaduna","Zaria","Kafanchan","Saminaka","Birnin Gwari","Kachia","Kajuru"],
+  "Kano": ["Kano","Wudil","Gwarzo","Rano","Bichi","Gaya","Karaye"],
+  "Katsina": ["Katsina","Daura","Funtua","Malumfashi","Dutsin-Ma","Kankia","Jibia"],
+  "Kebbi": ["Birnin Kebbi","Argungu","Yauri","Zuru","Jega","Kamba","Bagudo"],
+  "Kogi": ["Lokoja","Okene","Idah","Kabba","Anyigba","Ankpa","Ajaokuta"],
+  "Kwara": ["Ilorin","Offa","Omu-Aran","Jebba","Lafiagi","Kaiama","Share"],
+  "Lagos": ["Ikeja","Lagos Island","Lekki","Epe","Badagry","Ikorodu","Festac Town","Agege","Surulere"],
+  "Nasarawa": ["Lafia","Keffi","Karu","Akwanga","Nasarawa","Doma","Toto"],
+  "Niger": ["Minna","Suleja","Bida","Kontagora","New Bussa","Lapai","Mokwa"],
+  "Ogun": ["Abeokuta","Ijebu-Ode","Sagamu","Ota","Ilaro","Ifo","Ayetoro"],
+  "Ondo": ["Akure","Ondo","Owo","Ikare-Akoko","Okitipupa","Ore","Idanre"],
+  "Osun": ["Osogbo","Ile-Ife","Ilesa","Ede","Ikirun","Iwo","Ejigbo"],
+  "Oyo": ["Ibadan","Ogbomoso","Oyo","Iseyin","Saki","Eruwa","Igbo-Ora"],
+  "Plateau": ["Jos","Bukuru","Barkin Ladi","Pankshin","Shendam","Vom","Langtang"],
+  "Rivers": ["Port Harcourt","Obio-Akpor","Bonny","Eleme","Bori","Okrika","Ahoada"],
+  "Sokoto": ["Sokoto","Tambuwal","Wurno","Gwadabawa","Illela","Kware","Yabo"],
+  "Taraba": ["Jalingo","Wukari","Bali","Takum","Serti","Zing","Gembu"],
+  "Yobe": ["Damaturu","Potiskum","Gashua","Nguru","Geidam","Buni Yadi","Fika"],
+  "Zamfara": ["Gusau","Kaura Namoda","Talata Mafara","Anka","Maru","Shinkafi","Tsafe"]
+};
 export default function MembershipModule({ userId }: { userId: string }) {
   const [rows, setRows] = useState<Member[]>([]);
   const [cards, setCards] = useState<MemberCard[]>([]);
@@ -185,7 +224,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         {countryOfResidence === "Other" && <label>Specify country<input required maxLength={100} value={otherCountry} onChange={e=>setOtherCountry(e.target.value)} /></label>}
         <label>State of residence<select value={stateOfResidence} onChange={e=>{setStateOfResidence(e.target.value);setLga("");}} autoComplete="address-level1"><option value="">Select state</option>{["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","Federal Capital Territory (FCT)","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"].map(s=><option key={s} value={s}>{s}</option>)}</select></label>
         {stateOfResidence === "Borno" ? <label>Local Government Area (LGA)<select value={lga} onChange={e=>setLga(e.target.value)}><option value="">Select LGA</option>{["Abadam","Askira/Uba","Bama","Bayo","Biu","Chibok","Damboa","Dikwa","Gubio","Guzamala","Gwoza","Hawul","Jere","Kaga","Kala/Balge","Konduga","Kukawa","Kwaya Kusar","Mafa","Magumeri","Maiduguri","Marte","Mobbar","Monguno","Ngala","Nganzai","Shani"].map(s=><option key={s} value={s}>{s}</option>)}</select></label> : <label>Local Government Area (LGA)<input maxLength={120} value={lga} onChange={e=>setLga(e.target.value)} placeholder="Enter LGA" /></label>}
-        <label>City / Town<input maxLength={120} value={cityOfResidence} onChange={e=>setCityOfResidence(e.target.value)} autoComplete="address-level2" placeholder="Enter city or town" /></label>
+        {countryOfResidence === "Nigeria" && stateOfResidence ? <label>City / Town<select value={cityOfResidence} onChange={e=>setCityOfResidence(e.target.value)} autoComplete="address-level2"><option value="">Select city or town</option>{(STATE_CITIES[stateOfResidence] ?? []).map(city=><option key={city} value={city}>{city}</option>)}<option value="Other">Other / not listed</option></select></label> : <label>City / Town<input maxLength={120} value={cityOfResidence} onChange={e=>setCityOfResidence(e.target.value)} autoComplete="address-level2" placeholder="Enter city or town" /></label>}{cityOfResidence === "Other" && <label>Enter city / town<input required maxLength={120} value={cityOfResidence === "Other" ? "" : cityOfResidence} onChange={e=>setCityOfResidence(e.target.value)} placeholder="Enter city or town" /></label>}
         <label>Residential address<textarea rows={2} maxLength={500} value={address} onChange={e=>setAddress(e.target.value)} autoComplete="street-address" /></label>
         <label>Nationality<select value={nationality} onChange={e=>setNationality(e.target.value)}><option value="Nigerian">Nigerian</option><option value="Nigerien">Nigerien</option><option value="Cameroonian">Cameroonian</option><option value="Chadian">Chadian</option><option value="Ghanaian">Ghanaian</option><option value="Other">Other nationality</option></select></label>
         {nationality === "Other" && <label>Specify nationality<input required maxLength={100} value={otherNationality} onChange={e=>setOtherNationality(e.target.value)} /></label>}
