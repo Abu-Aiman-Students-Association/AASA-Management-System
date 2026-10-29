@@ -109,7 +109,7 @@ export default function AdminDashboard() {
     if (id === "overview") return Boolean(role);
     if (id === "administration") return account?.permissions.some(p => ["platform.admins.manage","system.users.manage","system.roles.manage"].includes(p)) ?? false;
     const required: Record<Exclude<Section,"overview"|"administration">, string[]> = {
-      membership: ["membership.read"], governance: ["executives.manage","committees.manage"], elections: ["elections.manage","elections.results.review","elections.vote"], meetings: ["meetings.manage"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve"], welfare: ["welfare.cases.read","welfare.cases.manage"], documents: ["documents.manage"]
+      membership: ["membership.read"], governance: ["executives.manage","committees.manage"], elections: ["elections.manage","elections.results.review"], meetings: ["meetings.manage"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve"], welfare: ["welfare.cases.read","welfare.cases.manage"], documents: ["documents.manage"]
     };
     return account?.permissions.some(p => required[id as Exclude<Section,"overview"|"administration">]?.includes(p)) ?? false;
   };
