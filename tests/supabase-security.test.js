@@ -33,6 +33,7 @@ const electionsSource = await readFile(new URL("../src/ElectionsModule.tsx", imp
 const electionResultsMigration = await readFile(new URL("../supabase/migrations/20261029163000_protect_anonymous_ballot_rows.sql", import.meta.url), "utf8");
 const ballotPrivilegesMigration = await readFile(new URL("../supabase/migrations/20261029164000_revoke_direct_ballot_table_access.sql", import.meta.url), "utf8");
 const ballotFunctionMigration = await readFile(new URL("../supabase/migrations/20261029165000_harden_secret_ballot_function_search_path.sql", import.meta.url), "utf8");
+const electionResultsGrantMigration = await readFile(new URL("../supabase/migrations/20261029166000_restrict_closed_election_results_rpc.sql", import.meta.url), "utf8");
 
 test("election results use aggregate RPC and do not expose individual ballot rows to the browser", () => {
   assert.match(electionsSource, /rpc\(["']aasa_get_closed_election_results["']\)/);
@@ -42,4 +43,6 @@ test("election results use aggregate RPC and do not expose individual ballot row
   assert.match(ballotPrivilegesMigration, /revoke all privileges on table public\.aasa_secret_ballots from anon, authenticated/i);
   assert.ok(ballotFunctionMigration.includes("set search_path = ''"));
   assert.ok(ballotFunctionMigration.includes("auth.uid()"));
+  assert.match(electionResultsGrantMigration, /revoke all on function public\.aasa_get_closed_election_results\(\) from public, anon/i);
+  assert.match(electionResultsGrantMigration, /grant execute on function public\.aasa_get_closed_election_results\(\) to authenticated/i);
 });
