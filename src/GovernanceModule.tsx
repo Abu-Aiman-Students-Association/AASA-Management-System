@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "./lib/supabase";
 
 type Position = { id:string; title:string; description:string|null; status:string; term_start:string|null; term_end:string|null };
