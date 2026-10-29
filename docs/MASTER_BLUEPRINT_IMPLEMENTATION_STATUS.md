@@ -6,7 +6,7 @@ This is a living status note for the AASA Management System repository. It does 
 
 - Membership register: create pending records, search, approve/reject/suspend/reactivate.
 - Membership-card records: issue/revoke actions and unique QR-token foundation.
-- Verified member account linking: links only when the active member email matches one confirmed Appwrite/Supabase account email; account linking is permission checked.
+- Verified member account linking: links only when the active member email matches one confirmed Supabase account email; account linking is permission checked.
 - Leadership and committee foundations: create positions and committees.
 - Elections: create elections, manage phases, nominate candidates and approve/reject nominations.
 - Voting portal: separate voter interface and RPC-backed secret ballots; requires active verified member linkage, open election, approved candidate, and prevents duplicate votes per position. Voter receipts do not contain a timestamp and are separate from ballots.
