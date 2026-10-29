@@ -55,7 +55,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
       let photoMessage = "";
       if (photoFile && inserted) {
         const ext = photoFile.type === "image/png" ? "png" : "jpg";
-        const path = "member-photos/" + userId + "/" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
+        const path = userId + "/member-photo-" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
         const uploaded = await supabase.storage.from("aasa-documents").upload(path, photoFile, { contentType: photoFile.type, upsert: false });
         if (uploaded.error) photoMessage = " Member record saved, but photo upload failed: " + uploaded.error.message;
         else {
