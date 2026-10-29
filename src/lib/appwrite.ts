@@ -26,8 +26,8 @@ export async function secureApi<T>(path: string): Promise<T> {
     xpath: path,
     method: ExecutionMethod.GET,
   });
-  if (execution.responseStatusCode < 200 || execution.statusCode >= 300) {
-    throw new Error(execution.responseBody || `Secure API request failed (${execution.statusCode}).`);
+  if (execution.responseStatusCode < 200 || execution.responseStatusCode >= 300) {
+    throw new Error(execution.responseBody || `Secure API request failed (${execution.responseStatusCode}).`);
   }
   try {
     return JSON.parse(execution.responseBody) as T;
