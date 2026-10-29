@@ -3,6 +3,7 @@ import { Account, Client, ExecutionMethod, Functions } from "appwrite";
 const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT || "";
 const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID || "";
 const functionId = import.meta.env.VITE_APPWRITE_FUNCTION_ID || "aasa-secure-api";
+// Keep execution synchronous so the secure API response body is available to callers.
 
 export const appwriteConfigReady = Boolean(endpoint && projectId);
 export const appwriteClient = new Client();
