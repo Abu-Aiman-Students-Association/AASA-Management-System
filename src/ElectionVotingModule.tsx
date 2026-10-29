@@ -5,8 +5,8 @@ export default function ElectionVotingModule(){
  const [rows,setRows]=useState<VoteOption[]>([]),[electionId,setElectionId]=useState(""),[positionId,setPositionId]=useState(""),[candidateId,setCandidateId]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
  async function load(){const {data,error}=await supabase.rpc("aasa_get_open_elections");if(error)throw error;const options=(Array.isArray(data)?data:[]) as VoteOption[];setRows(options);const first=options.find(x=>!x.has_voted);if(first){setElectionId(first.election_id);setPositionId(first.position_id);setCandidateId("");}}
  useEffect(()=>{void load().catch(e=>setError(e.message))},[]);
- const elections=useMemo(()=>Array.from(new Map(rows.map(r=>[r.election_id,{id:r.election_id,title:r.title}])).values()),[rows]);
- const positions=useMemo(()=>Array.from(new Map(rows.filter(r=>r.election_id===electionId&&!r.has_voted).map(r=>[r.position_id,{id:r.position_id,title:r.position_title}])).values()),[rows,electionId]);
+ const elections=useMemo(()=>rows.filter((r,i)=>rows.findIndex(x=>x.election_id===r.election_id)===i).map(r=>({id:r.election_id,title:r.title})),[rows]);
+ const positions=useMemo(()=>{const list=rows.filter(r=>r.election_id===electionId&&!r.has_voted);return list.filter((r,i)=>list.findIndex(x=>x.position_id===r.position_id)===i).map(r=>({id:r.position_id,title:r.position_title}));},[rows,electionId]);
  const candidates=rows.filter(r=>r.election_id===electionId&&r.position_id===positionId&&!r.has_voted);
  async function cast(){if(!electionId||!positionId||!candidateId)return;setBusy(true);setError("");setNotice("");try{const {error}=await supabase.rpc("aasa_cast_secret_ballot",{p_election_id:electionId,p_position_id:positionId,p_candidate_id:candidateId});if(error)throw error;setNotice("Your ballot has been recorded. Your identity is not stored with the ballot.");await load();setCandidateId("");}catch(e){setError(e instanceof Error?e.message:"Could not record vote.")}finally{setBusy(false)}}
  const remaining=rows.filter(r=>!r.has_voted).length;
