@@ -31,6 +31,8 @@ export default function AdminDashboard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [liveMetrics, setLiveMetrics] = useState<Record<string, number | null>>({});
+  const [metricsLoading, setMetricsLoading] = useState(false);
   const [view, setView] = useState<"login" | "dashboard">("login");
   const [section, setSection] = useState<Section>("overview");
   const [lang, setLang] = useState<"en" | "ha" | "ar">("en");
@@ -103,6 +105,25 @@ export default function AdminDashboard() {
     else { setAccount(null); setView("login"); setSent(false); setSection("overview"); }
     setBusy(false);
   }
+  useEffect(() => {
+    if (!account || account.status !== "active") { setLiveMetrics({}); return; }
+    let live = true;
+    setMetricsLoading(true);
+    Promise.all([
+      supabase.from("aasa_members").select("id", { count: "exact", head: true }),
+      supabase.from("aasa_committee_members").select("member_id", { count: "exact", head: true }).is("left_on", null),
+      supabase.from("aasa_elections").select("id", { count: "exact", head: true }).in("status", ["nominations", "voting"]),
+      supabase.from("aasa_meetings").select("id", { count: "exact", head: true }).eq("status", "scheduled"),
+      supabase.from("aasa_finance_entries").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("aasa_welfare_cases").select("id", { count: "exact", head: true }).in("status", ["open", "under_review", "referred"]),
+      supabase.from("aasa_documents").select("id", { count: "exact", head: true }).is("archived_at", null)
+    ]).then(([members, committees, elections, meetings, finance, welfare, documents]) => {
+      if (!live) return;
+      setLiveMetrics({ members: members.error ? null : members.count ?? 0, committees: committees.error ? null : committees.count ?? 0, elections: elections.error ? null : elections.count ?? 0, meetings: meetings.error ? null : meetings.count ?? 0, finance: finance.error ? null : finance.count ?? 0, welfare: welfare.error ? null : welfare.count ?? 0, documents: documents.error ? null : documents.count ?? 0 });
+      setMetricsLoading(false);
+    }).catch(() => { if (live) setMetricsLoading(false); });
+    return () => { live = false; };
+  }, [account?.id, account?.status]);
   const role = account?.roles.includes("super_admin") ? "super_admin" : account?.roles.includes("platform_admin") ? "platform_admin" : account?.roles[0] ?? "";
   const rtl = lang === "ar";
   const canAccessSection = (id: Section) => {
