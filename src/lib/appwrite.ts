@@ -1,4 +1,4 @@
-import { Account, Client, Functions } from "appwrite";
+import { Account, Client, ExecutionMethod, Functions } from "appwrite";
 
 const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT || "";
 const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID || "";
@@ -23,10 +23,10 @@ export async function secureApi<T>(path: string): Promise<T> {
     functionId,
     body: "",
     async: false,
-    path,
-    method: "GET",
+    xpath: path,
+    method: ExecutionMethod.GET,
   });
-  if (execution.statusCode < 200 || execution.statusCode >= 300) {
+  if (execution.responseStatusCode < 200 || execution.statusCode >= 300) {
     throw new Error(execution.responseBody || `Secure API request failed (${execution.statusCode}).`);
   }
   try {
