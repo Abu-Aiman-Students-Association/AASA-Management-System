@@ -20,6 +20,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [cardPreview, setCardPreview] = useState<{ member: Member; card: MemberCard; photoUrl: string; qrUrl: string } | null>(null);
   const [type, setType] = useState("ordinary");
   const [query, setQuery] = useState("");
@@ -41,30 +42,51 @@ export default function MembershipModule({ userId }: { userId: string }) {
   async function add(e: FormEvent) {
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
-      const memberNo = "AASA-" + new Date().getFullYear() + "-" + crypto.randomUUID().slice(0, 8).toUpperCase();
       if (photoFile && (!["image/jpeg", "image/png"].includes(photoFile.type) || photoFile.size > 5 * 1024 * 1024)) {
         throw new Error("Member photo must be JPG or PNG and no larger than 5 MB.");
       }
-      const { data: inserted, error } = await supabase.from("aasa_members").insert({
-        member_number: memberNo, full_name: name.trim(), email: email.trim() || null,
+      const memberFields = {
+        full_name: name.trim(), email: email.trim() || null,
         phone: phone.trim() || null, date_of_birth: dob || null, gender: gender || null,
         address: address.trim() || null, notes: notes.trim() || null,
-        membership_type: type, status: "pending", created_by: userId, updated_by: userId
-      }).select("id,member_number").single();
-      if (error) throw error;
-      let photoMessage = "";
-      if (photoFile && inserted) {
-        const ext = photoFile.type === "image/png" ? "png" : "jpg";
-        const path = userId + "/member-photo-" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
-        const uploaded = await supabase.storage.from("aasa-documents").upload(path, photoFile, { contentType: photoFile.type, upsert: false });
-        if (uploaded.error) photoMessage = " Member record saved, but photo upload failed: " + uploaded.error.message;
-        else {
-          const saved = await supabase.from("aasa_members").update({ photo_path: path, updated_by: userId }).eq("id", inserted.id);
-          if (saved.error) photoMessage = " Member record saved, but photo path could not be saved: " + saved.error.message;
+        membership_type: type, updated_by: userId
+      };
+      if (editingId) {
+        let newPhotoPath: string | null = null;
+        if (photoFile) {
+          const ext = photoFile.type === "image/png" ? "png" : "jpg";
+          newPhotoPath = userId + "/member-photo-" + editingId + "-" + crypto.randomUUID() + "." + ext;
+          const uploaded = await supabase.storage.from("aasa-documents").upload(newPhotoPath, photoFile, { contentType: photoFile.type, upsert: false });
+          if (uploaded.error) throw uploaded.error;
         }
+        const { error } = await supabase.from("aasa_members").update({ ...memberFields, ...(newPhotoPath ? { photo_path: newPhotoPath } : {}) }).eq("id", editingId);
+        if (error) {
+          if (newPhotoPath) await supabase.storage.from("aasa-documents").remove([newPhotoPath]);
+          throw error;
+        }
+        setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setNotes(""); setType("ordinary"); setPhotoFile(null); setEditingId(null);
+        await load(); setNotice("Member details updated. Membership status was not changed.");
+      } else {
+        const memberNo = "AASA-" + new Date().getFullYear() + "-" + crypto.randomUUID().slice(0, 8).toUpperCase();
+        const { data: inserted, error } = await supabase.from("aasa_members").insert({
+          member_number: memberNo, ...memberFields,
+          status: "pending", created_by: userId
+        }).select("id,member_number").single();
+        if (error) throw error;
+        let photoMessage = "";
+        if (photoFile && inserted) {
+          const ext = photoFile.type === "image/png" ? "png" : "jpg";
+          const path = userId + "/member-photo-" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
+          const uploaded = await supabase.storage.from("aasa-documents").upload(path, photoFile, { contentType: photoFile.type, upsert: false });
+          if (uploaded.error) photoMessage = " Member record saved, but photo upload failed: " + uploaded.error.message;
+          else {
+            const saved = await supabase.from("aasa_members").update({ photo_path: path, updated_by: userId }).eq("id", inserted.id);
+            if (saved.error) photoMessage = " Member record saved, but photo path could not be saved: " + saved.error.message;
+          }
+        }
+        setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setNotes(""); setType("ordinary"); setPhotoFile(null);
+        await load(); setNotice("Member record saved as pending. Review identity and details before approval." + photoMessage);
       }
-      setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setNotes(""); setType("ordinary"); setPhotoFile(null);
-      await load(); setNotice("Member record saved as pending. Review identity and details before approval." + photoMessage);
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save membership."); }
     finally { setBusy(false); }
   }
@@ -119,6 +141,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
     <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">MEMBERSHIP REGISTER</p><h3>Register a member</h3></div><span className="aasa-pill">{rows.length} records loaded</span></div>
       <form className="aasa-member-form" onSubmit={add}>
+        {editingId && <p className="aasa-notice aasa-full-span">Editing {rows.find(m=>m.id===editingId)?.member_number}. Saving changes will not change membership status or existing card validity.</p>}
         <label>Full name *<input required minLength={2} maxLength={160} value={name} onChange={e=>setName(e.target.value)} autoComplete="name" /></label>
         <label>Email address<input type="email" maxLength={254} value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" /></label>
         <label>Phone number<input type="tel" maxLength={40} value={phone} onChange={e=>setPhone(e.target.value)} autoComplete="tel" /></label>
@@ -128,7 +151,8 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <label>Residential address<textarea rows={2} maxLength={500} value={address} onChange={e=>setAddress(e.target.value)} autoComplete="street-address" /></label>
         <label>Member photo (optional)<input type="file" accept="image/jpeg,image/png" onChange={e=>setPhotoFile(e.target.files?.[0] ?? null)} />{photoFile && <small>{photoFile.name} · {(photoFile.size / 1024).toFixed(0)} KB</small>}</label>
         <label>Administrative notes (restricted)<textarea rows={2} maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)} /></label>
-        <button className="aasa-primary" disabled={busy}>{busy ? "Saving…" : "Save pending member"}</button>
+        <button className="aasa-primary" disabled={busy}>{busy ? "Saving…" : editingId ? "Save member changes" : "Save pending member"}</button>
+        {editingId && <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(null);setName("");setEmail("");setPhone("");setDob("");setGender("");setAddress("");setNotes("");setType("ordinary");setPhotoFile(null);}}>Cancel editing</button>}
       </form>
       <p className="aasa-muted">Required fields are marked *. New records remain pending until reviewed. Do not enter sensitive personal information in administrative notes. Upload a recent member photo (optional). Images are limited to JPG or PNG, up to 5 MB. Cards can be issued only after membership approval.</p>
     </section>
@@ -141,7 +165,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <td>{m.member_number}</td><td><strong>{m.full_name}</strong><br/><small>DOB: {m.date_of_birth || "—"} · Gender: {m.gender || "—"}</small>{m.address && <><br/><small>{m.address}</small></>}{m.notes && <><br/><small>Admin note: {m.notes}</small></>}</td>
         <td>{m.email || "—"}<br/>{m.phone || "—"}</td><td>{m.membership_type}</td><td><span className="aasa-pill">{m.status}</span></td><td>{m.joined_on}</td>
         <td>{m.status==="active"&&m.email&&!m.auth_user_id&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void linkAccount(m)}>Link verified account</button>}{m.auth_user_id&&<small>Verified account linked</small>}{cards.filter(card=>card.member_id===m.id&&card.status==="active").map(card=><div key={card.id}>{card.card_number}<br/><small>Issued {new Date(card.issued_at).toLocaleDateString()}</small><br/><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void openCard(m,card)}>View / print</button><button type="button" className="aasa-link" disabled={busy} onClick={()=>void revokeCard(card)}>Revoke card</button></div>)}{m.status==="active"&&!cards.some(card=>card.member_id===m.id&&card.status==="active")&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void issueCard(m)}>Issue card</button>}</td>
-        <td>{m.status === "pending" ? <><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button> <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
+        <td><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(m.id);setName(m.full_name);setEmail(m.email??"");setPhone(m.phone??"");setDob(m.date_of_birth??"");setGender(m.gender??"");setAddress(m.address??"");setNotes(m.notes??"");setType(m.membership_type);setPhotoFile(null);window.scrollTo({top:0,behavior:"smooth"});}}>Edit details</button><br/>{m.status === "pending" ? <><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button> <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
       </tr>)}</tbody></table></div> : <p className="aasa-muted">No matching membership records. Add verified records using the form above.</p>}
     </section>{notice && <p className="aasa-notice" role="status">{notice}</p>}{error && <p className="aasa-error" role="alert">{error}</p>}
     {cardPreview && <div className="aasa-card-overlay" role="dialog" aria-modal="true" aria-label="Membership card preview">
