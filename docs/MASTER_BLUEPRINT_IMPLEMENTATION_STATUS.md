@@ -1,29 +1,32 @@
 # AASA Master Blueprint — Implementation Status
 
-This is a living status note for the AASA Management System repository. It does not replace the approved Master Blueprint.
+This is a living engineering status note for the independent AASA Management System. It does not replace the approved Master Blueprint. Status claims below describe source/database work; a successful build is not by itself proof of end-to-end production readiness.
 
-## Implemented in the current feature branch
+## Implemented in source / database
 
-- Membership register: create pending records, search, approve/reject/suspend/reactivate.
-- Membership-card records: issue/revoke actions and unique QR-token foundation.
-- Verified member account linking: links only when the active member email matches one confirmed Supabase account email; account linking is permission checked.
-- Leadership and committee foundations: create positions and committees.
-- Elections: create elections, manage phases, nominate candidates and approve/reject nominations.
-- Voting portal: separate voter interface and RPC-backed secret ballots; requires active verified member linkage, open election, approved candidate, and prevents duplicate votes per position. Voter receipts do not contain a timestamp and are separate from ballots.
-- Meetings and events: schedule, complete, or cancel.
-- Finance ledger: income/expense entries remain pending until independent approval; database constraints block self-approval.
-- Welfare/cases: restricted records and status workflow.
-- Documents: private storage bucket, upload/open/archive.
-- Module permissions: role-permission-aware navigation and RLS for operational tables.
-- Audit: status/operation audit triggers on core operational records.
+- **Association identity and dashboard:** official AASA crest used across the admin login/header; English, Hausa and Arabic language controls; live database count cards now show a dash when the signed-in account lacks the corresponding permission.
+- **Membership:** create pending members, search/filter by status, edit member details without changing approval status, approve/reject/suspend/reactivate, link a confirmed account by email, upload private member photos, issue/revoke card records, printable card layout with QR code, and a public card verification route.
+- **Leadership and committees:** define positions and terms, appoint active members, end appointments while preserving history, create committees, assign active members to committees, and record the end of committee service. UI status values were aligned to database constraints.
+- **Elections:** create elections, guarded phase changes, nomination workflow, candidate review, RPC-backed anonymous ballot voting, duplicate-vote receipts separate from ballot records, and aggregate tally review after election closure for authorised reviewers.
+- **Meetings and events:** scheduling with date validation, completion/cancellation, official minutes, search/status filters and CSV export. A new attendance table tracks invited/present/absent/excused member status, notes and an audit trail; a permission-checked RPC exposes only minimal member details needed for attendance.
+- **Finance:** income/expense ledger, pending entries, independent approval, rejection, expense settlement, date/status/type filters, CSV export, and totals that include paid expenses.
+- **Welfare and cases:** restricted case creation, optional member linkage, assignment to self/release, case status tracking, searchable filters and a restricted register export.
+- **Documents and reports:** private upload/open/archive, visibility classification, active/archive and document-type filters, register export, and short-lived signed links.
+- **Administration and security:** account search/filter, account status controls, protected Super Admin/self controls, platform-admin assignment/revocation through database RPCs, and recent security audit event review/export.
+- **Database security foundation:** RLS policies, permission checks, audit triggers, RPCs for privileged workflows, private document storage, and schema migrations for meeting attendance/member lookup. No demo association records were inserted by these changes.
 
-## Not yet release-complete
+## Release blockers / remaining work
 
-- Run and pass the complete frontend build after the latest fixes; verify the browser flows end-to-end.
-- Render the QR token as an actual QR image on printable membership cards and complete the public verification page.
-- Complete leadership appointments and committee-member assignment UI.
-- Add attendance, meeting minutes approval, finance reconciliation/report exports, document version history, welfare case assignment, and final election tally certification.
-- Finish offline/PWA behaviour, multilingual module content (English/Hausa/Arabic), backup/recovery workflow, and the complete permission matrix review.
-- Store and maintain all applied Supabase migrations in the repository before production handover.
+- Run and pass the CI build against the latest commit and confirm the GitHub Pages deployment completes. The most recent attendance/dashboard changes were still being validated at the time this note was updated.
+- Verify each real workflow in the browser using authorised and unauthorised accounts; verify the storage upload/preview/print/QR flow against the deployed site and confirm the public QR endpoint never exposes inactive/revoked card details.
+- Review the full permission matrix. In particular, ensure result-review-only accounts can view results without receiving election-management permissions, and ensure every UI action is backed by database enforcement.
+- Add document replacement/version history and a controlled download/retention policy; visibility labels must never be mistaken for an access-control boundary.
+- Expand finance into approved budget/period reporting and reconciliation rules if required by the final approved blueprint; confirm who can mark expenses paid and how supporting evidence is retained.
+- Complete the full welfare escalation/assignment workflow and review highly restricted case visibility with positive and negative RLS tests.
+- Finish consistent Hausa/Arabic translations across every module; current language controls do not yet translate all module content.
+- Complete offline/PWA behaviour, backup/recovery procedure, migration tracking, and an end-to-end release checklist.
+- Do not claim production completion until the build, deployment, browser flows, and permission-negative tests pass.
 
-No demo/test association records were inserted by this implementation.
+## Data integrity
+
+No fake members, candidates, votes, financial entries, meetings, cases, or documents were created to make dashboards look populated. Empty registers should remain empty until genuine records are entered.
