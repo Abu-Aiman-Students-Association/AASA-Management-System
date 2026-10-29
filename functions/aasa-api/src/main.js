@@ -55,19 +55,19 @@ async function appwrite(path, { method = "GET", body, jwt, admin = false, querie
   return data;
 }
 async function listRows(tableId, queries = [], apiKey) {
-  return appwrite(`/databases/${DATABASE_ID}/collections/${tableId}/documents`, { admin: true, queries, apiKey });
+  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows`, { admin: true, queries, apiKey });
 }
 async function createRow(tableId, data, apiKey) {
-  return appwrite(`/databases/${DATABASE_ID}/collections/${tableId}/documents`, {
+  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows`, {
     method: "POST", admin: true, apiKey,
-    body: { documentId: crypto.randomUUID(), data, permissions: [] },
+    body: { rowId: crypto.randomUUID(), data, permissions: [] },
   });
 }
 async function getRow(tableId, rowId, apiKey) {
-  return appwrite(`/databases/${DATABASE_ID}/collections/${tableId}/documents/${encodeURIComponent(rowId)}`, { admin: true, apiKey });
+  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows/${encodeURIComponent(rowId)}`, { admin: true, apiKey });
 }
 async function updateRow(tableId, rowId, data, apiKey) {
-  return appwrite(`/databases/${DATABASE_ID}/collections/${tableId}/documents/${encodeURIComponent(rowId)}`, {
+  return appwrite(`/tablesdb/${DATABASE_ID}/tables/${tableId}/rows/${encodeURIComponent(rowId)}`, {
     method: "PATCH", admin: true, apiKey, body: { data },
   });
 }
