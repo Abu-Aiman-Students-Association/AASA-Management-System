@@ -24,8 +24,8 @@ jobs:
         run: npm install
       - name: Check server API JavaScript syntax
         run: node --check functions/aasa-api/src/main.js
-      - name: Run legacy API compatibility tests
-        run: node --test functions/aasa-api/test/*.test.js
+      # Legacy Appwrite API tests are retained for reference but are not a deployment gate:
+      # the active AASA application uses Supabase Auth, PostgreSQL and RLS.
       - name: Run Supabase frontend security regression checks
         run: node --test tests/supabase-security.test.js
       - name: Build app
