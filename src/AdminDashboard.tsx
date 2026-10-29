@@ -108,6 +108,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!account || account.status !== "active") { setLiveMetrics({}); return; }
     let live = true;
+    const allowed = (permissions: string[]) => account.roles.includes("super_admin") || account.permissions.some(p => permissions.includes(p));
     setMetricsLoading(true);
     Promise.all([
       supabase.from("aasa_members").select("id", { count: "exact", head: true }),
