@@ -120,7 +120,7 @@ export default function AdminDashboard() {
       supabase.from("aasa_documents").select("id", { count: "exact", head: true }).is("archived_at", null)
     ]).then(([members, committees, elections, meetings, finance, welfare, documents]) => {
       if (!live) return;
-      setLiveMetrics({ members: members.error ? null : members.count ?? 0, committees: committees.error ? null : committees.count ?? 0, elections: elections.error ? null : elections.count ?? 0, meetings: meetings.error ? null : meetings.count ?? 0, finance: finance.error ? null : finance.count ?? 0, welfare: welfare.error ? null : welfare.count ?? 0, documents: documents.error ? null : documents.count ?? 0 });
+      setLiveMetrics({ members: !allowed(["membership.read"]) || members.error ? null : members.count ?? 0, committees: !allowed(["committees.manage"]) || committees.error ? null : committees.count ?? 0, elections: !allowed(["elections.manage", "elections.results.review", "elections.vote"]) || elections.error ? null : elections.count ?? 0, meetings: !allowed(["meetings.manage"]) || meetings.error ? null : meetings.count ?? 0, finance: !allowed(["finance.records.read", "finance.records.create", "finance.transactions.approve"]) || finance.error ? null : finance.count ?? 0, welfare: !allowed(["welfare.cases.read", "welfare.cases.manage"]) || welfare.error ? null : welfare.count ?? 0, documents: !allowed(["documents.manage"]) || documents.error ? null : documents.count ?? 0 });
       setMetricsLoading(false);
     }).catch(() => { if (live) setMetricsLoading(false); });
     return () => { live = false; };
