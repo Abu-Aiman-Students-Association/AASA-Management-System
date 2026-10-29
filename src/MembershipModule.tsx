@@ -42,8 +42,8 @@ export default function MembershipModule({ userId }: { userId: string }) {
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
       const memberNo = "AASA-" + new Date().getFullYear() + "-" + crypto.randomUUID().slice(0, 8).toUpperCase();
-      if (photoFile && (!["image/jpeg", "image/png", "image/webp"].includes(photoFile.type) || photoFile.size > 5 * 1024 * 1024)) {
-        throw new Error("Member photo must be JPG, PNG or WebP and no larger than 5 MB.");
+      if (photoFile && (!["image/jpeg", "image/png"].includes(photoFile.type) || photoFile.size > 5 * 1024 * 1024)) {
+        throw new Error("Member photo must be JPG or PNG and no larger than 5 MB.");
       }
       const { data: inserted, error } = await supabase.from("aasa_members").insert({
         member_number: memberNo, full_name: name.trim(), email: email.trim() || null,
@@ -54,7 +54,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
       if (error) throw error;
       let photoMessage = "";
       if (photoFile && inserted) {
-        const ext = photoFile.type === "image/png" ? "png" : photoFile.type === "image/webp" ? "webp" : "jpg";
+        const ext = photoFile.type === "image/png" ? "png" : "jpg";
         const path = "member-photos/" + userId + "/" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
         const uploaded = await supabase.storage.from("aasa-documents").upload(path, photoFile, { contentType: photoFile.type, upsert: false });
         if (uploaded.error) photoMessage = " Member record saved, but photo upload failed: " + uploaded.error.message;
@@ -126,11 +126,11 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <label>Gender<select value={gender} onChange={e=>setGender(e.target.value)}><option value="">Prefer not to say / Not provided</option><option value="male">Male</option><option value="female">Female</option><option value="prefer_not_to_say">Prefer not to say</option></select></label>
         <label>Membership type<select value={type} onChange={e=>setType(e.target.value)}><option value="ordinary">Ordinary</option><option value="associate">Associate</option><option value="honorary">Honorary</option><option value="life">Life</option></select></label>
         <label>Residential address<textarea rows={2} maxLength={500} value={address} onChange={e=>setAddress(e.target.value)} autoComplete="street-address" /></label>
-        <label>Member photo (optional)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setPhotoFile(e.target.files?.[0] ?? null)} />{photoFile && <small>{photoFile.name} · {(photoFile.size / 1024).toFixed(0)} KB</small>}</label>
+        <label>Member photo (optional)<input type="file" accept="image/jpeg,image/png" onChange={e=>setPhotoFile(e.target.files?.[0] ?? null)} />{photoFile && <small>{photoFile.name} · {(photoFile.size / 1024).toFixed(0)} KB</small>}</label>
         <label>Administrative notes (restricted)<textarea rows={2} maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)} /></label>
         <button className="aasa-primary" disabled={busy}>{busy ? "Saving…" : "Save pending member"}</button>
       </form>
-      <p className="aasa-muted">Required fields are marked *. New records remain pending until reviewed. Do not enter sensitive personal information in administrative notes. Upload a recent member photo (optional). Images are limited to JPG, PNG or WebP, up to 5 MB. Cards can be issued only after membership approval.</p>
+      <p className="aasa-muted">Required fields are marked *. New records remain pending until reviewed. Do not enter sensitive personal information in administrative notes. Upload a recent member photo (optional). Images are limited to JPG or PNG, up to 5 MB. Cards can be issued only after membership approval.</p>
     </section>
     <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">OFFICIAL REGISTER</p><h3>Members</h3></div>
