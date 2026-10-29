@@ -15,7 +15,7 @@ const TABLES = {
 };
 
 const ROUTES = {
-  "/members": { table: TABLES.members, read: "members.read", create: "members.create", update: "members.update", archive: "members.archive", module: "members" },
+  "/members": { table: TABLES.members, read: "members.read", create: "members.create", update: "members.update", approve: "members.approve", archive: "members.archive", module: "members" },
   "/meetings": { table: TABLES.meetings, read: "meetings.manage", create: "meetings.manage", update: "meetings.manage", module: "meetings" },
   "/finance": { table: TABLES.finance, read: "finance.read", create: "finance.record", update: "finance.record", approve: "finance.approve", module: "finance" },
   "/elections": { table: TABLES.elections, read: "elections.manage", create: "elections.manage", update: "elections.manage", module: "elections" },
@@ -221,7 +221,7 @@ export default async ({ req, res, error }) => {
   else return response(res, 405, { error: "Method not allowed." });
 
   try {
-    const permissionKey = action === "READ" ? route.read : action === "CREATE" ? route.create : action === "ARCHIVE" ? route.archive : action === "APPROVE" ? route.approve : route.update;
+    const permissionKey = action === "READ" ? route.read : action === "CREATE" ? route.create : action === "ARCHIVE" ? route.archive : (action === "APPROVE" || action === "MEMBER_APPROVE") ? route.approve : route.update;
     const permissions = await resolvePermissions(userId, apiKey);
     if (!permissions.includes(permissionKey)) {
       await writeAudit({ actor: userId, route: route.module, action, result: "DENIED", reason: "Missing permission.", apiKey });
