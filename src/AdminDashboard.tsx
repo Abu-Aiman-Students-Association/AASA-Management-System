@@ -1,19 +1,27 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase, SUPER_ADMIN_EMAIL } from "./lib/supabase";
 import AdminAccountsPanel from "./AdminAccountsPanel";
+import MembershipModule from "./MembershipModule";
+import GovernanceModule from "./GovernanceModule";
+import MeetingsModule from "./MeetingsModule";
+import FinanceModule from "./FinanceModule";
+import WelfareModule from "./WelfareModule";
+import DocumentsModule from "./DocumentsModule";
+import ElectionsModule from "./ElectionsModule";
+import ElectionVotingModule from "./ElectionVotingModule";
 
-type Role = "super_admin" | "platform_admin";
-type Account = { id: string; email: string; roles: Role[]; status: string };
+type Role = string;
+type Account = { id: string; email: string; roles: Role[]; permissions: string[]; status: string };
 type Section = "overview" | "membership" | "governance" | "elections" | "meetings" | "finance" | "welfare" | "documents" | "administration";
 const moduleSections: { id: Section; icon: string; en: string; ha: string; ar: string; state: "available" | "planned" }[] = [
   { id: "overview", icon: "▦", en: "Overview", ha: "Shafin Farko", ar: "نظرة عامة", state: "available" },
-  { id: "membership", icon: "♙", en: "Membership", ha: "Membobinta", ar: "العضوية", state: "planned" },
-  { id: "governance", icon: "♜", en: "Leadership & Committees", ha: "Shugabanci da Kwamitoci", ar: "القيادة واللجان", state: "planned" },
-  { id: "elections", icon: "☑", en: "Elections", ha: "Zaɓe", ar: "الانتخابات", state: "planned" },
-  { id: "meetings", icon: "▤", en: "Meetings & Events", ha: "Taro da Ayyuka", ar: "الاجتماعات والفعاليات", state: "planned" },
-  { id: "finance", icon: "₦", en: "Finance", ha: "Kuɗaɗe", ar: "المالية", state: "planned" },
-  { id: "welfare", icon: "♡", en: "Welfare & Cases", ha: "Jindadi da Ƙorafe-ƙorafe", ar: "الرعاية والشكاوى", state: "planned" },
-  { id: "documents", icon: "▧", en: "Documents & Reports", ha: "Takardu da Rahotanni", ar: "الوثائق والتقارير", state: "planned" },
+  { id: "membership", icon: "♙", en: "Membership", ha: "Membobinta", ar: "العضوية", state: "available" },
+  { id: "governance", icon: "♜", en: "Leadership & Committees", ha: "Shugabanci da Kwamitoci", ar: "القيادة واللجان", state: "available" },
+  { id: "elections", icon: "☑", en: "Elections", ha: "Zaɓe", ar: "الانتخابات", state: "available" },
+  { id: "meetings", icon: "▤", en: "Meetings & Events", ha: "Taro da Ayyuka", ar: "الاجتماعات والفعاليات", state: "available" },
+  { id: "finance", icon: "₦", en: "Finance", ha: "Kuɗaɗe", ar: "المالية", state: "available" },
+  { id: "welfare", icon: "♡", en: "Welfare & Cases", ha: "Jindadi da Ƙorafe-ƙorafe", ar: "الرعاية والشكاوى", state: "available" },
+  { id: "documents", icon: "▧", en: "Documents & Reports", ha: "Takardu da Rahotanni", ar: "الوثائق والتقارير", state: "available" },
   { id: "administration", icon: "⚙", en: "Administration & Security", ha: "Gudanarwa da Tsaro", ar: "الإدارة والأمان", state: "available" }
 ];
 export default function AdminDashboard() {
@@ -33,16 +41,21 @@ export default function AdminDashboard() {
   }[lang];
   async function refresh(user: { id: string; email?: string }) {
     const p = await supabase.from("profiles").select("account_status").eq("user_id", user.id).maybeSingle();
-    const r = await supabase.from("user_roles").select("roles(role_key),expires_at").eq("user_id", user.id).is("revoked_at", null);
+    const r = await supabase.from("user_roles").select("role_id,roles(role_key),expires_at").eq("user_id", user.id).is("revoked_at", null);
     if (p.error) throw p.error;
     if (r.error) throw r.error;
     const status = p.data?.account_status ?? "pending";
     const now = Date.now();
-    const roles = status === "active" ? (r.data ?? []).flatMap((x: any) => {
-      const unexpired = !x.expires_at || Date.parse(x.expires_at) > now;
-      return unexpired && (x.roles?.role_key === "super_admin" || x.roles?.role_key === "platform_admin") ? [x.roles.role_key as Role] : [];
-    }) : [];
-    setAccount({ id: user.id, email: user.email ?? "", roles, status });
+    const activeRoleRows = status === "active" ? (r.data ?? []).filter((x: any) => !x.expires_at || Date.parse(x.expires_at) > now) : [];
+    const roles = activeRoleRows.map((x: any) => x.roles?.role_key).filter((x: unknown): x is string => typeof x === "string");
+    const roleIds = activeRoleRows.map((x: any) => x.role_id).filter(Boolean);
+    let permissions: string[] = [];
+    if (roleIds.length) {
+      const pr = await supabase.from("role_permissions").select("role_id,permissions(permission_key)").in("role_id", roleIds);
+      if (pr.error) throw pr.error;
+      permissions = (pr.data ?? []).map((x: any) => x.permissions?.permission_key).filter((x: unknown): x is string => typeof x === "string");
+    }
+    setAccount({ id: user.id, email: user.email ?? "", roles, permissions: [...new Set(permissions)], status });
     setView("dashboard");
   }
   useEffect(() => {
@@ -90,16 +103,34 @@ export default function AdminDashboard() {
     else { setAccount(null); setView("login"); setSent(false); setSection("overview"); }
     setBusy(false);
   }
-  const role = account?.roles.includes("super_admin") ? "super_admin" : account?.roles.includes("platform_admin") ? "platform_admin" : "";
+  const role = account?.roles.includes("super_admin") ? "super_admin" : account?.roles.includes("platform_admin") ? "platform_admin" : account?.roles[0] ?? "";
   const rtl = lang === "ar";
+  const canAccessSection = (id: Section) => {
+    if (role === "super_admin") return true;
+    if (id === "overview") return Boolean(role);
+    if (id === "administration") return account?.permissions.some(p => ["platform.admins.manage","system.users.manage","system.roles.manage"].includes(p)) ?? false;
+    const required: Record<Exclude<Section,"overview"|"administration">, string[]> = {
+      membership: ["membership.read"], governance: ["executives.manage","committees.manage"], elections: ["elections.manage","elections.results.review","elections.vote"], meetings: ["meetings.manage"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve"], welfare: ["welfare.cases.read","welfare.cases.manage"], documents: ["documents.manage"]
+    };
+    return account?.permissions.some(p => required[id as Exclude<Section,"overview"|"administration">]?.includes(p)) ?? false;
+  };
+  const visibleSections = moduleSections.filter(item => canAccessSection(item.id));
+  const roleLabel = role === "super_admin" ? copy.super : role === "platform_admin" ? copy.platform : role.replace(/_/g, " ");
   const label = (item: typeof moduleSections[number]) => lang === "ha" ? item.ha : lang === "ar" ? item.ar : item.en;
   return <main className={`aasa-admin ${rtl ? "rtl" : ""}`} dir={rtl ? "rtl" : "ltr"}>
     <header><div className="aasa-brand"><img className="aasa-brand-logo" src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="AASA crest" /><div><b>AASA</b><small>ABU-AIMAN STUDENTS' ASSOCIATION</small></div></div><div className="aasa-actions"><nav>{(["en", "ha", "ar"] as const).map(x => <button type="button" key={x} className={lang === x ? "on" : ""} onClick={() => setLang(x)}>{x === "ar" ? "عربي" : x.toUpperCase()}</button>)}</nav>{account && <button type="button" onClick={() => void logout()}>{copy.logout}</button>}</div></header>
     <section className="aasa-content"><p className="aasa-kicker">العلم نور · SECURE ADMINISTRATION</p><h1>{copy.title}</h1><p className="aasa-intro">{copy.intro}</p>
       {view === "login" && !account ? <form className="aasa-panel aasa-login" onSubmit={sendCode}><img className="aasa-login-logo" src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="AASA association crest" /><h2>{copy.title}</h2><p>Use an existing, verified AASA account. Public registration is disabled.</p><label htmlFor="aasa-email">{copy.email}</label><input id="aasa-email" type="email" autoComplete="email" required value={email} disabled={sent || busy} onChange={e => setEmail(e.target.value)} />{sent && <p className="aasa-notice" role="status">{copy.linkSent}</p>}{!sent && <button className="aasa-primary" disabled={busy}>{busy ? copy.wait : copy.send}</button>}{sent && <button className="aasa-link" type="button" onClick={() => { setSent(false); setNotice(""); setError(""); }}>{copy.back}</button>}</form> : account ? <>{!role ? <><section className="aasa-welcome"><div><p className="aasa-kicker">AUTHENTICATED ACCOUNT</p><h2>{copy.access}</h2><p>{account.email}</p></div><span className="aasa-pill">{copy.noRole}</span></section><section className="aasa-panel"><h3>{copy.noRole}</h3><p>{copy.locked}</p><p>{copy.status}: <strong>{account.status}</strong></p>{account.email.toLowerCase() === SUPER_ADMIN_EMAIL && <><p>{copy.claimHint}</p><button className="aasa-primary" disabled={busy || account.status === "suspended" || account.status === "disabled"} onClick={() => void claim()}>{busy ? copy.wait : copy.claim}</button></>}</section></> : <div className="aasa-workspace">
-        <aside className="aasa-sidebar"><div className="aasa-sidebar-account"><span className="aasa-avatar">A</span><div><strong>{account.email}</strong><small>{role === "super_admin" ? copy.super : copy.platform}</small></div></div><p className="aasa-nav-label">WORKSPACE</p><nav aria-label="AASA administration sections">{moduleSections.map(item => <button key={item.id} type="button" className={section === item.id ? "selected" : ""} onClick={() => setSection(item.id)}><span className="aasa-nav-icon">{item.icon}</span><span>{label(item)}</span>{item.state === "planned" && <i>•</i>}</button>)}</nav><div className="aasa-sidebar-foot"><span className="aasa-live-dot" /> {copy.status}: {account.status}</div></aside>
+        <aside className="aasa-sidebar"><div className="aasa-sidebar-account"><span className="aasa-avatar">A</span><div><strong>{account.email}</strong><small>{roleLabel}</small></div></div><p className="aasa-nav-label">WORKSPACE</p><nav aria-label="AASA administration sections">{visibleSections.map(item => <button key={item.id} type="button" className={section === item.id ? "selected" : ""} onClick={() => setSection(item.id)}><span className="aasa-nav-icon">{item.icon}</span><span>{label(item)}</span>{item.state === "planned" && <i>•</i>}</button>)}</nav><div className="aasa-sidebar-foot"><span className="aasa-live-dot" /> {copy.status}: {account.status}</div></aside>
         <div className="aasa-workspace-main">
-          {section === "overview" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">AASA · ADMIN WORKSPACE</p><h2>{copy.welcome}</h2><p>{copy.overviewText}</p></div><span className="aasa-pill active">{role === "super_admin" ? copy.super : copy.platform}</span></div><div className="aasa-overview-cards"><article><span className="aasa-card-icon">▦</span><small>{copy.liveModules}</small><strong>2</strong><p>Dashboard · Access control</p></article><article><span className="aasa-card-icon">◷</span><small>{copy.plannedModules}</small><strong>{moduleSections.filter(m => m.state === "planned").length}</strong><p>{copy.next}</p></article><article><span className="aasa-card-icon">♙</span><small>{copy.status}</small><strong>{account.status}</strong><p>{account.email}</p></article></div><section className="aasa-panel aasa-module-panel"><div className="aasa-section-heading"><div><p className="aasa-kicker">WORKSPACE MAP</p><h3>{copy.moduleStatus}</h3></div></div><div className="aasa-module-list">{moduleSections.filter(m => m.id !== "overview").map(item => <button type="button" key={item.id} onClick={() => setSection(item.id)}><span className="aasa-module-icon">{item.icon}</span><span className="aasa-module-copy"><strong>{label(item)}</strong><small>{item.state === "available" ? copy.available : copy.coming}</small></span><span className={item.state === "available" ? "aasa-status-available" : "aasa-status-planned"}>{item.state === "available" ? copy.available : copy.planned}</span><span aria-hidden="true">›</span></button>)}</div></section><section className="aasa-panel"><p className="aasa-kicker">{copy.foundation}</p><h3>{copy.platformState}</h3><p>{copy.foundationText}</p></section></>}
+          {section === "overview" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">AASA · ADMIN WORKSPACE</p><h2>{copy.welcome}</h2><p>{copy.overviewText}</p></div><span className="aasa-pill active">{roleLabel}</span></div><div className="aasa-overview-cards"><article><span className="aasa-card-icon">▦</span><small>{copy.liveModules}</small><strong>{visibleSections.filter(m => m.state === "available" && m.id !== "overview" && m.id !== "administration").length}</strong><p>Overview · Membership · Governance · Elections setup · Meetings · Finance · Welfare · Documents · Access control</p></article><article><span className="aasa-card-icon">◷</span><small>{copy.plannedModules}</small><strong>{visibleSections.filter(m => m.state === "planned").length}</strong><p>{copy.next}</p></article><article><span className="aasa-card-icon">♙</span><small>{copy.status}</small><strong>{account.status}</strong><p>{account.email}</p></article></div><section className="aasa-panel aasa-module-panel"><div className="aasa-section-heading"><div><p className="aasa-kicker">WORKSPACE MAP</p><h3>{copy.moduleStatus}</h3></div></div><div className="aasa-module-list">{visibleSections.filter(m => m.id !== "overview").map(item => <button type="button" key={item.id} onClick={() => setSection(item.id)}><span className="aasa-module-icon">{item.icon}</span><span className="aasa-module-copy"><strong>{label(item)}</strong><small>{item.state === "available" ? copy.available : copy.coming}</small></span><span className={item.state === "available" ? "aasa-status-available" : "aasa-status-planned"}>{item.state === "available" ? copy.available : copy.planned}</span><span aria-hidden="true">›</span></button>)}</div></section><section className="aasa-panel"><p className="aasa-kicker">{copy.foundation}</p><h3>{copy.platformState}</h3><p>{copy.foundationText}</p></section></>}
+          {section === "elections" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">ELECTIONS · NOMINATIONS</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Manage election phases and nominations, or cast a secret ballot if your verified member account is eligible.</p></div><span className="aasa-pill active">Permission controlled</span></div>{(role === "super_admin" || account.permissions.some(p => ["elections.manage","elections.results.review"].includes(p))) ? <ElectionsModule userId={account.id} /> : <ElectionVotingModule />}</>}
+          {section === "welfare" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">WELFARE · RESTRICTED CASES</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Record and manage confidential welfare requests and cases.</p></div><span className="aasa-pill active">Connected</span></div><WelfareModule userId={account.id} /></>}
+          {section === "documents" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">DOCUMENTS · PRIVATE STORAGE</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Upload, securely open and archive official AASA documents.</p></div><span className="aasa-pill active">Connected</span></div><DocumentsModule userId={account.id} /></>}
+          {section === "meetings" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">MEETINGS · EVENTS</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Schedule, track and close official association meetings and events.</p></div><span className="aasa-pill active">Connected</span></div><MeetingsModule userId={account.id} /></>}
+          {section === "finance" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">FINANCE · SEPARATION OF DUTIES</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Record financial activity and require independent review.</p></div><span className="aasa-pill active">Connected</span></div><FinanceModule userId={account.id} /></>}
+          {section === "governance" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">GOVERNANCE · ACCOUNTABILITY</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Manage positions and committees without fabricated records.</p></div><span className="aasa-pill active">Connected</span></div><GovernanceModule userId={account.id} /></>}
+          {section === "membership" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">MEMBERSHIP · VERIFIED RECORDS</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Member register, review status and accountable record updates.</p></div><span className="aasa-pill active">Connected</span></div><MembershipModule userId={account.id} /></>}
           {section === "administration" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">ACCESS CONTROL</p><h2>{copy.administration}</h2><p>Account controls are validated by database policies and trusted functions.</p></div></div><AdminAccountsPanel currentUserId={account.id} /></>}
           {section !== "overview" && section !== "administration" && moduleSections.find(m => m.id === section)?.state === "planned" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">AASA MODULE</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>{copy.comingText}</p></div><span className="aasa-status-planned">{copy.planned}</span></div><section className="aasa-panel aasa-coming-panel"><span className="aasa-coming-icon">{moduleSections.find(m => m.id === section)?.icon}</span><h3>{copy.coming}</h3><p>{copy.comingText}</p><button className="aasa-secondary" type="button" onClick={() => setSection("overview")}>← {copy.overview}</button></section></>}
         </div>
