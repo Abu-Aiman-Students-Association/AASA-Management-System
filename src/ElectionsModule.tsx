@@ -4,9 +4,9 @@ type Election={id:string;title:string;description:string|null;opens_at:string;cl
 type Member={id:string;full_name:string;member_number:string;status:string};
 type Position={id:string;title:string};
 type Candidate={id:string;election_id:string;position_id:string;member_id:string;status:string;statement:string|null};
-type Ballot={election_id:string;position_id:string;candidate_id:string};
+type ElectionResult={election_id:string;ballot_count:number;positions:Array<{position_id:string;candidates:Array<{candidate_id:string;votes:number}>}>};
 export default function ElectionsModule({userId,canReviewResults=false}:{userId:string;canReviewResults?:boolean}){
- const [elections,setElections]=useState<Election[]>([]),[members,setMembers]=useState<Member[]>([]),[positions,setPositions]=useState<Position[]>([]),[candidates,setCandidates]=useState<Candidate[]>([]),[ballots,setBallots]=useState<Ballot[]>([]);
+ const [elections,setElections]=useState<Election[]>([]),[members,setMembers]=useState<Member[]>([]),[positions,setPositions]=useState<Position[]>([]),[candidates,setCandidates]=useState<Candidate[]>([]),[results,setResults]=useState<ElectionResult[]>([]);
  const [title,setTitle]=useState(""),[desc,setDesc]=useState(""),[opens,setOpens]=useState(""),[closes,setCloses]=useState(""),[electionId,setElectionId]=useState(""),[memberId,setMemberId]=useState(""),[positionId,setPositionId]=useState(""),[statement,setStatement]=useState(""),[query,setQuery]=useState(""),[phaseFilter,setPhaseFilter]=useState("all");
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
  async function load(){
@@ -18,8 +18,7 @@ export default function ElectionsModule({userId,canReviewResults=false}:{userId:
     supabase.from("aasa_election_candidates").select("id,election_id,position_id,member_id,status,statement").order("created_at",{ascending:false}).limit(2000)
    ]);for(const r of [e,m,p,c])if(r.error)throw r.error;
    setElections(e.data??[]);setMembers(m.data??[]);setPositions(p.data??[]);setCandidates(c.data??[]);
-   const resultElectionIds=(e.data??[]).filter(x=>["closed","certified"].includes(x.status)).map(x=>x.id);
-   if(canReviewResults&&resultElectionIds.length){const {data,error}=await supabase.from("aasa_secret_ballots").select("election_id,position_id,candidate_id").in("election_id",resultElectionIds).limit(10000);if(error)throw error;setBallots(data??[])}else setBallots([]);
+   if(canReviewResults){const {data,error}=await supabase.rpc("aasa_get_closed_election_results");if(error)throw error;setResults((Array.isArray(data)?data:[]) as ElectionResult[])}else setResults([]);
    if(!electionId)setElectionId((e.data??[]).find(x=>x.status==="nominations")?.id??"");
   }finally{setLoading(false)}
  }
@@ -29,7 +28,7 @@ export default function ElectionsModule({userId,canReviewResults=false}:{userId:
  async function changePhase(e:Election,status:string){
   if(status==="voting"){const now=Date.now();if(now<new Date(e.opens_at).getTime()||now>new Date(e.closes_at).getTime()){setError("Voting can only be opened within the election's configured opening and closing window.");return}const pending=candidates.some(c=>c.election_id===e.id&&c.status==="pending");if(pending){setError("Review all pending candidate nominations before opening voting.");return}if(!candidates.some(c=>c.election_id===e.id&&c.status==="approved")){setError("At least one approved candidate is required before voting can open.");return}}
   if(status==="certified"&&!canReviewResults){setError("Your account does not have permission to certify election results.");return}
-  if(status==="certified"&&!ballots.some(b=>b.election_id===e.id)){setError("No ballots are recorded for this election. Results cannot be certified without recorded ballots.");return}
+  if(status==="certified"&&!(results.find(r=>r.election_id===e.id)?.ballot_count)){setError("No ballots are recorded for this election. Results cannot be certified without recorded ballots.");return}
   await run(async()=>{const {error}=await supabase.from("aasa_elections").update({status,...(status==="certified"?{certified_by:userId}:{})}).eq("id",e.id);if(error)throw error},status==="certified"?"Election results certified.":"Election phase updated.")
  }
  async function addCandidate(e:FormEvent){e.preventDefault();if(!electionId||!memberId||!positionId){setError("Choose an election, active member and position.");return}const selected=elections.find(x=>x.id===electionId);if(selected?.status!=="nominations"){setError("Nominations can only be submitted during the nominations phase.");return}await run(async()=>{const {error}=await supabase.from("aasa_election_candidates").insert({election_id:electionId,member_id:memberId,position_id:positionId,statement:statement.trim()||null});if(error)throw error;setStatement("");},"Candidate nomination saved as pending approval.")}
@@ -38,8 +37,8 @@ export default function ElectionsModule({userId,canReviewResults=false}:{userId:
  const approvedCandidates=candidates.filter(c=>c.status==="approved");
  const candidateName=(id:string)=>{const c=candidates.find(x=>x.id===id);const m=members.find(x=>x.id===c?.member_id);return m?.full_name??"Member record"};
  const positionName=(id:string)=>positions.find(p=>p.id===id)?.title??"Position record";
- const votesFor=(election:string,candidate:string)=>ballots.filter(b=>b.election_id===election&&b.candidate_id===candidate).length;
- const electionBallots=(id:string)=>ballots.filter(b=>b.election_id===id).length;
+ const votesFor=(election:string,candidate:string)=>results.find(r=>r.election_id===election)?.positions.flatMap(p=>p.candidates).find(c=>c.candidate_id===candidate)?.votes??0;
+ const electionBallots=(id:string)=>results.find(r=>r.election_id===id)?.ballot_count??0;
  return <div className="aasa-module-work"><div className="aasa-governance-hero"><div><p className="aasa-kicker">ELECTIONS · SECRET BALLOT · INDEPENDENT REVIEW</p><h3>Election operations centre</h3><p>Control nomination and voting phases, verify candidates, and review anonymous tallies before results certification.</p></div><button className="aasa-secondary" type="button" disabled={loading||busy} onClick={()=>void load().catch(e=>setError(e.message))}>{loading?"Refreshing…":"Refresh elections"}</button></div>
  <div className="aasa-overview-cards"><article><small>Total elections</small><strong>{elections.length}</strong><p>Official election records</p></article><article><small>Nominations pending</small><strong>{candidates.filter(c=>c.status==="pending").length}</strong><p>Require candidate review</p></article><article><small>Voting phase</small><strong>{elections.filter(e=>e.status==="voting").length}</strong><p>Election currently in voting state</p></article><article><small>Certified results</small><strong>{elections.filter(e=>e.status==="certified").length}</strong><p>Finalised by an authorised reviewer</p></article></div>
  <section className="aasa-panel"><p className="aasa-kicker">01 · ELECTION SETUP</p><h3>Create election</h3><form className="aasa-member-form" onSubmit={addElection}><label>Election title *<input required minLength={3} maxLength={180} value={title} onChange={e=>setTitle(e.target.value)}/></label><label>Description / election rules<textarea rows={3} maxLength={5000} value={desc} onChange={e=>setDesc(e.target.value)}/></label><label>Election opens at *<input required type="datetime-local" value={opens} onChange={e=>setOpens(e.target.value)}/></label><label>Election closes at *<input required type="datetime-local" min={opens||undefined} value={closes} onChange={e=>setCloses(e.target.value)}/></label><button className="aasa-primary" disabled={busy}>{busy?"Saving…":"Create draft election"}</button></form></section>
