@@ -1,74 +1,25 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase, SUPER_ADMIN_EMAIL } from "./lib/supabase";
-
-type Account = { user_id: string; email: string; full_name: string | null; account_status: string; assigned_roles: string[]; created_at: string };
-
-export default function AdminAccountsPanel({ currentUserId }: { currentUserId: string }) {
-  const [rows, setRows] = useState<Account[]>([]);
-  const [draft, setDraft] = useState<Record<string, string>>({});
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data, error: queryError } = await supabase.rpc("admin_list_accounts");
-      if (queryError) throw queryError;
-      const next = (data ?? []) as Account[];
-      setRows(next);
-      setDraft(previous => Object.fromEntries(next.map(row => [row.user_id, previous[row.user_id] ?? row.account_status])));
-      setError("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load administrator accounts.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void reload(); }, [reload]);
-
-  async function act(row: Account, action: string, status?: string) {
-    setBusy(row.user_id);
-    setError("");
-    setNotice("");
-    try {
-      const { error: actionError } = await supabase.rpc("admin_manage_account", {
-        p_target_user_id: row.user_id,
-        p_action: action,
-        p_role_key: action.includes("platform_admin") ? "platform_admin" : null,
-        p_account_status: status ?? null,
-      });
-      if (actionError) throw actionError;
-      setNotice("Administrator account updated successfully.");
-      await reload();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "The account change failed. No success was reported.");
-    } finally {
-      setBusy("");
-    }
-  }
-
-  return <section className="aasa-panel aasa-accounts">
-    <div className="aasa-section-heading"><div><p className="aasa-kicker">ACCESS CONTROL</p><h3>Administrator Accounts</h3><p>Manage registered accounts. Changes are validated by database rules and written to the security audit log.</p></div><button className="aasa-secondary" type="button" disabled={loading || !!busy} onClick={() => void reload()}>{loading ? "Refreshing…" : "Refresh"}</button></div>
-    <p>{rows.length} registered accounts · {rows.filter(row => row.account_status === "active").length} active</p>
-    {notice && <p className="aasa-notice" role="status">{notice}</p>}
-    {error && <p className="aasa-error" role="alert">{error}</p>}
-    <div className="aasa-account-list">{rows.map(row => {
-      const protectedUser = row.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
-      const self = row.user_id === currentUserId;
-      const admin = row.assigned_roles.includes("platform_admin");
-      const rowBusy = busy === row.user_id;
-      const nextStatus = draft[row.user_id] ?? row.account_status;
-      return <article className="aasa-account-row" key={row.user_id}>
-        <strong>{row.full_name || row.email}</strong><p>{row.email}</p>
-        <p>Status: {row.account_status} · Roles: {row.assigned_roles.join(", ") || "none"}</p>
-        <label>Status <select value={nextStatus} disabled={protectedUser || self || !!busy} onChange={e => setDraft(previous => ({ ...previous, [row.user_id]: e.target.value }))}>{["pending", "active", "suspended", "disabled"].map(status => <option key={status} value={status}>{status}</option>)}</select></label>
-        <button type="button" disabled={protectedUser || self || !!busy || nextStatus === row.account_status} onClick={() => void act(row, "set_status", nextStatus)}>Save status</button>
-        <button type="button" disabled={protectedUser || self || !!busy || (!admin && row.account_status !== "active")} onClick={() => void act(row, admin ? "revoke_platform_admin" : "assign_platform_admin")}>{rowBusy ? "Saving…" : admin ? "Remove Platform Admin" : "Assign Platform Admin"}</button>
-        {(protectedUser || self) && <small>Protected account</small>}
-      </article>;
-    })}</div>
-  </section>;
+type Account={user_id:string;email:string;full_name:string|null;preferred_language:string;account_status:string;assigned_roles:string[];created_at:string};
+type AuditEvent={id:number;occurred_at:string;actor_user_id:string|null;action_key:string;target_type:string;target_id:string|null;outcome:string;request_id:string|null;details:Record<string,unknown>};
+const csv=(v:unknown)=>'"'+String(v??"").replace(/"/g,'""')+'"';
+export default function AdminAccountsPanel({currentUserId}:{currentUserId:string}){
+ const [rows,setRows]=useState<Account[]>([]),[events,setEvents]=useState<AuditEvent[]>([]),[draft,setDraft]=useState<Record<string,string>>({}),[query,setQuery]=useState(""),[statusFilter,setStatusFilter]=useState("all"),[auditQuery,setAuditQuery]=useState(""),[error,setError]=useState(""),[auditError,setAuditError]=useState(""),[notice,setNotice]=useState(""),[busy,setBusy]=useState(""),[loading,setLoading]=useState(false),[auditLoading,setAuditLoading]=useState(false);
+ const reload=useCallback(async()=>{setLoading(true);try{const {data,error}=await supabase.rpc("admin_list_accounts");if(error)throw error;const next=(data??[]) as Account[];setRows(next);setDraft(previous=>Object.fromEntries(next.map(row=>[row.user_id,previous[row.user_id]??row.account_status])));setError("")}catch(e){setError(e instanceof Error?e.message:"Could not load administrator accounts.")}finally{setLoading(false)}},[]);
+ const reloadAudit=useCallback(async()=>{setAuditLoading(true);try{const {data,error}=await supabase.from("audit_events").select("id,occurred_at,actor_user_id,action_key,target_type,target_id,outcome,request_id,details").order("occurred_at",{ascending:false}).limit(200);if(error)throw error;setEvents((data??[]) as AuditEvent[]);setAuditError("")}catch(e){setAuditError(e instanceof Error?e.message:"Audit log could not be loaded. Check system.audit.read permission.")}finally{setAuditLoading(false)}},[]);
+ useEffect(()=>{void reload();void reloadAudit()},[reload,reloadAudit]);
+ async function act(row:Account,action:string,status?:string){setBusy(row.user_id);setError("");setNotice("");try{const {error}=await supabase.rpc("admin_manage_account",{p_target_user_id:row.user_id,p_action:action,p_role_key:action.includes("platform_admin")?"platform_admin":null,p_account_status:status??null});if(error)throw error;setNotice("Administrator account updated successfully.");await Promise.all([reload(),reloadAudit()])}catch(e){setError(e instanceof Error?e.message:"The account change failed. No success was reported.")}finally{setBusy("")}}
+ const filtered=useMemo(()=>rows.filter(r=>(statusFilter==="all"||r.account_status===statusFilter)&&[r.email,r.full_name??"",r.account_status,...r.assigned_roles].some(x=>x.toLowerCase().includes(query.toLowerCase()))),[rows,statusFilter,query]);
+ const filteredAudit=useMemo(()=>events.filter(e=>[e.action_key,e.target_type,e.target_id??"",e.outcome,e.actor_user_id??"",JSON.stringify(e.details??{})].join(" ").toLowerCase().includes(auditQuery.toLowerCase())),[events,auditQuery]);
+ function exportAudit(){const data=[["Timestamp","Actor user ID","Action","Target type","Target ID","Outcome","Request ID","Details"],...filteredAudit.map(e=>[e.occurred_at,e.actor_user_id??"",e.action_key,e.target_type,e.target_id??"",e.outcome,e.request_id??"",JSON.stringify(e.details??{})])];const blob=new Blob(["\uFEFF"+data.map(row=>row.map(csv).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="AASA-security-audit.csv";a.click();URL.revokeObjectURL(url);}
+ return <div className="aasa-module-work">
+ <section className="aasa-panel aasa-accounts"><div className="aasa-section-heading"><div><p className="aasa-kicker">ACCESS CONTROL · ACCOUNT LIFECYCLE</p><h3>Administrator accounts</h3><p>Manage existing accounts. Database functions enforce permissions, protect the permanent Super Admin and write account changes to the audit log.</p></div><button className="aasa-secondary" type="button" disabled={loading||!!busy} onClick={()=>void reload()}>{loading?"Refreshing…":"Refresh accounts"}</button></div>
+ <div className="aasa-overview-cards"><article><small>Registered accounts</small><strong>{rows.length}</strong></article><article><small>Active accounts</small><strong>{rows.filter(r=>r.account_status==="active").length}</strong></article><article><small>Platform administrators</small><strong>{rows.filter(r=>r.assigned_roles.includes("platform_admin")).length}</strong></article><article><small>Suspended / disabled</small><strong>{rows.filter(r=>["suspended","disabled"].includes(r.account_status)).length}</strong></article></div>
+ {notice&&<p className="aasa-notice" role="status">{notice}</p>}{error&&<p className="aasa-error" role="alert">{error}</p>}
+ <div className="aasa-register-filters"><input aria-label="Search administrator accounts" placeholder="Search email, name or role…" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="Filter account status" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">All statuses</option>{["pending","active","suspended","disabled"].map(s=><option key={s} value={s}>{s}</option>)}</select></div>
+ <div className="aasa-account-list">{filtered.map(row=>{const protectedUser=row.email.toLowerCase()===SUPER_ADMIN_EMAIL.toLowerCase();const self=row.user_id===currentUserId;const admin=row.assigned_roles.includes("platform_admin");const rowBusy=busy===row.user_id;const nextStatus=draft[row.user_id]??row.account_status;return <article className="aasa-account-row" key={row.user_id}><div className="aasa-account-row-head"><div><strong>{row.full_name||row.email}</strong><p>{row.email}</p></div><span className="aasa-pill">{row.account_status}</span></div><p>Roles: {row.assigned_roles.join(", ")||"none"}</p><small>Account created {new Date(row.created_at).toLocaleDateString()} · {row.user_id}</small><div className="aasa-account-controls"><label>Status<select value={nextStatus} disabled={protectedUser||self||!!busy} onChange={e=>setDraft(previous=>({...previous,[row.user_id]:e.target.value}))}>{["pending","active","suspended","disabled"].map(s=><option key={s} value={s}>{s}</option>)}</select></label><button className="aasa-secondary" type="button" disabled={protectedUser||self||!!busy||nextStatus===row.account_status} onClick={()=>void act(row,"set_status",nextStatus)}>{rowBusy?"Saving…":"Save status"}</button><button className="aasa-secondary" type="button" disabled={protectedUser||self||!!busy||(!admin&&row.account_status!=="active")} onClick={()=>void act(row,admin?"revoke_platform_admin":"assign_platform_admin")}>{admin?"Remove Platform Admin":"Assign Platform Admin"}</button></div>{(protectedUser||self)&&<small className="aasa-muted">Protected account — status and role controls are locked here.</small>}</article>})}</div>{!filtered.length&&!loading&&<p className="aasa-muted">No accounts match the selected filters.</p>}</section>
+ <section className="aasa-panel"><div className="aasa-section-heading"><div><p className="aasa-kicker">SECURITY · IMMUTABLE AUDIT TRAIL</p><h3>Security & administration audit log</h3><p>Recent events include account changes and other authorised system activity. Sensitive payloads are displayed only to accounts allowed by database policy.</p></div><button className="aasa-secondary" type="button" disabled={auditLoading} onClick={()=>void reloadAudit()}>{auditLoading?"Refreshing…":"Refresh log"}</button></div>
+ {auditError&&<p className="aasa-error" role="alert">{auditError}</p>}<div className="aasa-register-filters"><input aria-label="Search audit log" placeholder="Search action, target, outcome…" value={auditQuery} onChange={e=>setAuditQuery(e.target.value)}/><button className="aasa-secondary" type="button" disabled={!filteredAudit.length} onClick={exportAudit}>Export audit CSV</button></div>
+ {filteredAudit.length?<div className="aasa-table-wrap"><table className="aasa-table"><thead><tr><th>Timestamp</th><th>Actor</th><th>Action</th><th>Target</th><th>Outcome</th><th>Details</th></tr></thead><tbody>{filteredAudit.map(e=><tr key={e.id}><td>{new Date(e.occurred_at).toLocaleString()}</td><td>{e.actor_user_id?e.actor_user_id.slice(0,8)+"…":"System"}</td><td>{e.action_key}</td><td>{e.target_type}<br/><small>{e.target_id??"—"}</small></td><td><span className="aasa-pill">{e.outcome}</span></td><td><details><summary>View event details</summary><pre className="aasa-audit-json">{JSON.stringify(e.details??{},null,2)}</pre>{e.request_id&&<small>Request ID: {e.request_id}</small>}</details></td></tr>)}</tbody></table></div>:!auditError&&<p className="aasa-muted">{auditLoading?"Loading audit events…":"No audit events are available for this account or filter."}</p>}<p className="aasa-muted">Only the latest 200 audit events are loaded. Export is limited to the events currently loaded and filtered; use the authoritative database logs for a full forensic review.</p></section>
+ </div>;
 }
