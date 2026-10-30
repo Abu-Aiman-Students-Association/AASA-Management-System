@@ -205,7 +205,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
   async function linkAccount(m: Member) {
     setBusy(true); setError(""); setNotice("");
     try { const { error } = await supabase.rpc("aasa_link_member_account_by_email", { p_member_id: m.id }); if (error) throw error; await load(); setNotice("Member account linked after confirmed-email matching."); }
-    catch (e) { setError(e instanceof Error ? e.message : "Could not link account."); }
+    catch (e) { const issue = e as { message?: string; details?: string; hint?: string; code?: string }; const message = [issue?.message, issue?.details, issue?.hint, issue?.code ? `Code: ${issue.code}` : ""].filter(Boolean).join(" — "); setError(message || (e instanceof Error ? e.message : "Could not link account. Check the account, verified email and membership.review permission.")); }
     finally { setBusy(false); }
   }
   async function issueCard(m: Member) {
