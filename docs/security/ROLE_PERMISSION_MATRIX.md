@@ -27,6 +27,8 @@ Security principle: deny by default; backend-enforced least privilege.
 | Finance approval | Only if independent approval policy permits | No | Not own transactions where separation applies | No | No | No | Read-only | No |
 | Audit events | Restricted read; no client edits | No direct edit | No direct edit | No direct edit | No direct edit | No direct edit | Read-only | No |
 | Elections | Configuration oversight under separate reviewed workflow | No | No | Limited published notices | No | Manage approved setup; no ballot linkage | Audit approved events | Vote only when eligible and election open |
+| Project proposals, teams, milestones, tasks and risk register | Manage | Manage | Manage | Assigned project scope only | No | No | Read authorised audit scope | Assigned tasks only; update own task through guarded workflow |
+| Project budget and completion approval | Approve | No | No | No | No | No | Read authorised audit scope | No |
 
 ## Mandatory enforcement
 1. The frontend must not decide authorization by itself.
@@ -42,3 +44,8 @@ Security principle: deny by default; backend-enforced least privilege.
 
 ## Approval required
 This is a design proposal only. Do not create Supabase roles, tables, records, or production policies solely from this draft. The association owner must confirm role names, role assignment authority, and separation-of-duties rules first.
+
+
+## Current Projects permission implementation
+
+The current database grants `projects.manage` to `association_admin`, `president` and `vice_president`; `projects.approve` is granted only to `association_admin`. Super Admin retains the platform-level override. Assigned active project members can read their assigned project task records and update only their own assigned tasks through a server-side function; they do not receive project budget or approval fields. This implementation is narrower than a general committee-wide project permission and must be reflected in future role reviews.
