@@ -336,6 +336,8 @@ export default function MembershipModule({ userId }: { userId: string }) {
                 <h2>{cardPreview.member.full_name}</h2>
                 <p className="aasa-card-member-number">{cardPreview.member.member_number}</p>
                 <div className="aasa-card-meta"><span><small>MEMBERSHIP TYPE</small><b>{cardPreview.member.membership_type.toUpperCase()}</b></span><span><small>ISSUED</small><b>{new Date(cardPreview.card.issued_at).toLocaleDateString()}</b></span></div>
+              {/* Nigerian Coat of Arms artwork by Lumia1234, Wikimedia Commons, CC BY-SA 3.0. */}
+              <div className="aasa-card-national-emblem-wrap"><img className="aasa-card-national-emblem" src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Coat_of_arms_of_Nigeria.svg" alt="Coat of Arms of the Federal Republic of Nigeria" /></div>
               </div>
             </div>
             <div className="aasa-card-front-footer"><strong className={cardPreview.member.status === "active" && cardPreview.card.status === "active" ? "is-active" : "is-inactive"}>{cardPreview.member.status === "active" && cardPreview.card.status === "active" ? "ACTIVE MEMBER" : "NOT ACTIVE"}</strong><span>Card No. {cardPreview.card.card_number}</span></div>
@@ -356,7 +358,6 @@ export default function MembershipModule({ userId }: { userId: string }) {
                     ["STATE", cardPreview.member.state_of_residence],
                     ["STATE CAPITAL", cardPreview.member.country_of_residence === "Nigeria" ? STATE_CAPITALS[cardPreview.member.state_of_residence || ""] : null],
                     ["LGA", cardPreview.member.local_government_area],
-                    ["CITY / TOWN", cardPreview.member.city_of_residence],
                     ["WARD", cardPreview.member.ward],
                     ["OCCUPATION", cardPreview.member.occupation],
                     ["PHONE", cardPreview.member.phone],

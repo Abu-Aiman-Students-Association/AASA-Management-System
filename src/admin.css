@@ -105,3 +105,17 @@
 .aasa-card-details-grid b{font-size:4.5pt;line-height:1.1}
 .aasa-card-details-grid .aasa-card-detail-address b{font-size:4pt}
 }
+
+/* AASA member card: Nigerian national emblem on the front-right; city/town is intentionally omitted from the printed card. */
+.aasa-card-front-main{grid-template-columns:22% minmax(0,1fr) 13%;gap:9px}
+.aasa-card-national-emblem-wrap{display:flex;align-items:center;justify-content:center;align-self:stretch;min-width:0;padding:3px}
+.aasa-card-national-emblem{display:block;width:100%;max-width:76px;max-height:100px;object-fit:contain}
+@media(max-width:700px){
+  .aasa-card-front-main{grid-template-columns:22% minmax(0,1fr) 13%;gap:7px}
+  .aasa-card-national-emblem{max-width:64px;max-height:86px}
+}
+@media print{
+  .aasa-card-front-main{grid-template-columns:22% minmax(0,1fr) 13%!important;gap:2mm!important}
+  .aasa-card-national-emblem-wrap{padding:0}
+  .aasa-card-national-emblem{width:100%;max-width:15mm;max-height:25mm}
+}
