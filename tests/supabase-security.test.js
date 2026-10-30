@@ -101,6 +101,6 @@ test("assigned project members can see and update only their own assigned tasks 
   assert.match(projectMigration, /t\.assigned_to_member_id=v_member_id/i);
   assert.match(projectMigration, /aasa_is_project_member/);
   assert.match(projectPrivacyMigration, /aasa_list_my_project_tasks/);
-  assert.match(projectPrivacyMigration, /projects\\.approve/);
-  assert.match(projectPrivacyMigration, /p\\.status not in/);
+  assert.match(projectPrivacyMigration, /projects\.approve/);
+  assert.match(projectPrivacyMigration, /p\.status not in/);
 });
