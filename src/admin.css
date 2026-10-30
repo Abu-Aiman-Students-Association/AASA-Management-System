@@ -134,3 +134,54 @@
 .aasa-shortcut-arrow{font-size:11px;font-weight:800;white-space:nowrap}
 @media(max-width:900px){.aasa-sidebar nav{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:7px;padding:3px 2px 10px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}.aasa-sidebar nav button{flex:0 0 auto;width:auto;min-width:128px;justify-content:flex-start;white-space:nowrap;border:1px solid #e2eae4;background:#fbfdfb;scroll-snap-align:start}.aasa-sidebar nav button.selected{border-color:#9fc9aa;background:#eaf4ed}.aasa-sidebar{overflow:hidden}.aasa-nav-label{margin-bottom:6px}}
 @media(max-width:560px){.aasa-membership-shortcut{padding:13px 12px;gap:9px}.aasa-shortcut-icon{flex-basis:36px;height:36px}.aasa-membership-shortcut strong{font-size:12px}.aasa-membership-shortcut small{font-size:9px}.aasa-shortcut-arrow{font-size:9px}}
+
+
+/* AASA Projects & Development workspace */
+.aasa-projects{min-width:0}
+.aasa-projects .aasa-panel{min-width:0}
+.aasa-projects .aasa-register-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,220px);gap:10px;margin-top:14px}
+.aasa-projects .aasa-register-filters input,.aasa-projects .aasa-register-filters select{min-width:0;width:100%;border:1px solid #dce6df;border-radius:9px;background:#fbfcfb;padding:10px 12px;font:inherit;font-size:12px;color:#263b2f}
+.aasa-project-workspace{border-color:#cbded0;box-shadow:0 12px 32px #153d2a0a}
+.aasa-project-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;margin:12px 0 16px;border-bottom:1px solid #e8eee9;-webkit-overflow-scrolling:touch}
+.aasa-project-tabs button{flex:0 0 auto;border:1px solid #dfe8e1;border-radius:9px;background:#fff;color:#5b6f62;padding:9px 12px;font-size:10px;font-weight:750;white-space:nowrap;cursor:pointer}
+.aasa-project-tabs button.selected{background:#174b37;border-color:#174b37;color:#fff}
+.aasa-project-detail{display:grid;gap:16px}
+.aasa-project-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.aasa-project-summary article{display:grid;gap:7px;min-width:0;padding:14px;border:1px solid #e4ece6;border-radius:11px;background:#f9fcf9}
+.aasa-project-summary small{font-size:9px;color:#788a7e}
+.aasa-project-summary strong{font-size:13px;color:#214a35;overflow-wrap:anywhere}
+.aasa-project-copy{padding:16px;border:1px solid #e8eee9;border-radius:11px;background:#fff}
+.aasa-project-copy h4{margin:0 0 6px;color:#24543a;font-size:11px}
+.aasa-project-copy p{margin:0 0 14px;color:#5e7165;font-size:11px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.aasa-project-copy p:last-child{margin-bottom:0}
+.aasa-project-review{display:grid;gap:10px;padding:16px;border:1px solid #e0e9e2;border-radius:11px;background:#f8fbf8}
+.aasa-project-review h4{margin:0;color:#24543a;font-size:12px}
+.aasa-project-review label,.aasa-inline-form label{display:grid;gap:6px;color:#52665a;font-size:10px;font-weight:750;min-width:0}
+.aasa-project-review input,.aasa-project-review textarea,.aasa-inline-form input,.aasa-inline-form select,.aasa-inline-form textarea{width:100%;min-width:0;border:1px solid #dce6df;border-radius:8px;background:#fff;color:#263b2f;padding:10px 11px;font:inherit;font-size:11px}
+.aasa-project-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.aasa-inline-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:end;margin:14px 0 16px;padding:14px;border:1px solid #e7eee8;border-radius:11px;background:#fbfdfb}
+.aasa-inline-form button{min-height:38px;justify-self:start}
+.aasa-project-report-list{display:grid;gap:10px;margin-top:14px}
+.aasa-project-report-list article{padding:14px;border:1px solid #e4ece6;border-radius:10px;background:#fff}
+.aasa-project-report-list article>div{display:flex;justify-content:space-between;gap:12px;color:#24543a;font-size:11px}
+.aasa-project-report-list article>div span{font-weight:850}
+.aasa-project-report-list p{margin:8px 0 0;color:#5e7165;font-size:11px;line-height:1.7;white-space:pre-wrap}
+.aasa-projects .aasa-table select{max-width:170px;padding:7px;font-size:10px}
+.aasa-projects .aasa-table td{min-width:105px}
+.aasa-projects .aasa-table td:first-child{min-width:145px}
+.aasa-admin.rtl .aasa-project-tabs{direction:rtl}
+.aasa-admin.rtl .aasa-projects .aasa-table{text-align:right}
+@media(max-width:760px){
+ .aasa-project-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .aasa-projects .aasa-register-filters{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+ .aasa-inline-form{grid-template-columns:1fr;padding:11px}
+ .aasa-project-summary{gap:7px}
+ .aasa-project-summary article{padding:11px}
+ .aasa-project-summary strong{font-size:11px}
+ .aasa-project-review{padding:12px}
+ .aasa-project-actions{align-items:stretch}
+ .aasa-project-actions button{flex:1}
+ .aasa-project-tabs button{padding:8px 10px}
+}
