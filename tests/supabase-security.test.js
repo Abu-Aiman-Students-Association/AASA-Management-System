@@ -53,6 +53,7 @@ const projectDashboardSource = await readFile(new URL("../src/AdminDashboard.tsx
 const projectMigration = await readFile(new URL("../supabase/migrations/20261030170000_projects_management_core.sql", import.meta.url), "utf8");
 const projectGrantMigration = await readFile(new URL("../supabase/migrations/20261030173000_harden_projects_table_grants.sql", import.meta.url), "utf8");
 const projectWorkflowMigration = await readFile(new URL("../supabase/migrations/20261030180000_project_workflow_integrity.sql", import.meta.url), "utf8");
+const projectPrivacyMigration = await readFile(new URL("../supabase/migrations/20261030183000_restrict_project_budget_visibility.sql", import.meta.url), "utf8");
 
 test("Projects workspace is connected to the administrator dashboard with database permission gates", () => {
   assert.match(projectDashboardSource, /ProjectsModule/);
@@ -95,8 +96,11 @@ const memberTasksSource = await readFile(new URL("../src/MyProjectTasks.tsx", im
 
 test("assigned project members can see and update only their own assigned tasks through a permission-checked RPC", () => {
   assert.match(memberDashboardSource, /MyProjectTasks/);
-  assert.match(memberTasksSource, /eq\(["']assigned_to_member_id["'],memberId\)/);
+  assert.match(memberTasksSource, /aasa_list_my_project_tasks/);
   assert.match(memberTasksSource, /rpc\(["']aasa_update_own_project_task["']/);
   assert.match(projectMigration, /t\.assigned_to_member_id=v_member_id/i);
   assert.match(projectMigration, /aasa_is_project_member/);
+  assert.match(projectPrivacyMigration, /aasa_list_my_project_tasks/);
+  assert.match(projectPrivacyMigration, /projects\\.approve/);
+  assert.match(projectPrivacyMigration, /p\\.status not in/);
 });
