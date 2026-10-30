@@ -87,3 +87,15 @@ test("project tables have RLS, permission policies and audited lifecycle RPCs", 
   assert.match(projectWorkflowMigration, /length\(btrim\(coalesce\(new\.completion_report,''\)\)\)<50/i);
   assert.match(projectWorkflowMigration, /This project status transition is not permitted/i);
 });
+
+
+const memberDashboardSource = await readFile(new URL("../src/MemberDashboard.tsx", import.meta.url), "utf8");
+const memberTasksSource = await readFile(new URL("../src/MyProjectTasks.tsx", import.meta.url), "utf8");
+
+test("assigned project members can see and update only their own assigned tasks through a permission-checked RPC", () => {
+  assert.match(memberDashboardSource, /MyProjectTasks/);
+  assert.match(memberTasksSource, /eq\(["']assigned_to_member_id["'],memberId\)/);
+  assert.match(memberTasksSource, /rpc\(["']aasa_update_own_project_task["']/);
+  assert.match(projectMigration, /t\.assigned_to_member_id=v_member_id/i);
+  assert.match(projectMigration, /aasa_is_project_member/);
+});
