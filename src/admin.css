@@ -71,3 +71,37 @@
 @media(max-width:700px){.aasa-card-sheet{grid-template-columns:1fr;gap:12px}.aasa-card-sheet .aasa-print-card{max-width:480px;margin:0 auto}.aasa-card-front-header>img,.aasa-card-back-header>img{width:38px;height:38px;flex-basis:38px}.aasa-card-brand strong{font-size:10px}.aasa-card-brand span{font-size:7px}.aasa-card-identity h2{font-size:16px}.aasa-card-member-number{font-size:8px}.aasa-card-meta b{font-size:8px}}
 @page{size:A4 landscape;margin:12mm}
 @media print{.aasa-card-sheet{display:grid!important;grid-template-columns:repeat(2,85.6mm)!important;gap:5mm!important;justify-content:center;align-items:start;max-width:none;margin:20mm auto 0}.aasa-card-sheet .aasa-print-card{width:85.6mm!important;height:54mm!important;min-height:54mm!important;max-width:none!important;aspect-ratio:auto!important;margin:0!important;border-radius:3mm;box-shadow:none;break-inside:avoid;page-break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}.aasa-card-front-header{min-height:14mm;padding:2mm 3mm;gap:2mm}.aasa-card-front-header>img,.aasa-card-back-header>img{width:10mm;height:10mm;flex-basis:10mm}.aasa-card-brand strong{font-size:7pt}.aasa-card-brand span{font-size:5pt}.aasa-card-brand small{font-size:6pt}.aasa-card-kind{font-size:5pt}.aasa-card-front-main{gap:3mm;padding:2mm 3mm}.aasa-card-sheet .aasa-member-photo{max-height:25mm}.aasa-card-eyebrow{font-size:4.5pt}.aasa-card-identity h2{font-size:11pt}.aasa-card-member-number{font-size:6pt;margin-bottom:2mm}.aasa-card-meta{gap:3mm}.aasa-card-meta small{font-size:4pt}.aasa-card-meta b{font-size:5.5pt}.aasa-card-front-footer{padding:1.8mm 3mm;font-size:5pt}.aasa-card-front-footer strong{font-size:5pt}.aasa-card-front-footer span{font-size:4.5pt}.aasa-card-back-header{padding:2mm 3mm;gap:2mm}.aasa-card-back-header strong{font-size:6pt}.aasa-card-back-header small{font-size:5pt}.aasa-card-back-main{gap:3mm;padding:2mm 3mm}.aasa-card-back-copy>strong{font-size:6pt}.aasa-card-back-copy p{font-size:5pt}.aasa-card-back-copy small{font-size:4.5pt}.aasa-card-back-copy b{font-size:5pt}.aasa-card-back>footer{padding:1.5mm;font-size:4.5pt}}
+
+
+/* Member identity details on the reverse of the AASA membership card */
+.aasa-card-back-main{grid-template-columns:27% minmax(0,1fr);gap:8px;align-items:stretch}
+.aasa-card-verification{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0}
+.aasa-card-verification .aasa-card-qr-frame{width:100%;max-width:112px;margin:0 auto;padding:4px}
+.aasa-card-verification .aasa-card-back-copy{gap:3px}
+.aasa-card-verification .aasa-card-back-copy>strong{font-size:7px}
+.aasa-card-verification .aasa-card-back-copy p{font-size:6px;line-height:1.25}
+.aasa-card-verification .aasa-card-back-copy small{font-size:5px}
+.aasa-card-verification .aasa-card-back-copy b{font-size:6px}
+.aasa-card-member-details{min-width:0;align-self:center}
+.aasa-card-details-title{display:block;margin-bottom:5px;color:#15533a;font-size:8px;letter-spacing:.1em}
+.aasa-card-details-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 9px}
+.aasa-card-details-grid>span{display:grid;gap:2px;min-width:0}
+.aasa-card-details-grid small{color:#9b7935;font-size:6px;font-weight:900;letter-spacing:.06em}
+.aasa-card-details-grid b{color:#254a35;font-size:7px;font-weight:750;line-height:1.2;overflow-wrap:anywhere}
+.aasa-card-details-grid .aasa-card-detail-address{grid-column:1/-1}
+@media(max-width:700px){.aasa-card-back-main{grid-template-columns:27% minmax(0,1fr);gap:8px}.aasa-card-details-grid{gap:5px 7px}}
+@media print{
+.aasa-card-back-main{grid-template-columns:25% minmax(0,1fr)!important;gap:2mm!important;padding:1.5mm 2.5mm!important}
+.aasa-card-verification{gap:1mm}
+.aasa-card-verification .aasa-card-qr-frame{width:19mm;max-width:19mm;padding:1mm}
+.aasa-card-verification .aasa-card-back-copy{gap:.5mm}
+.aasa-card-verification .aasa-card-back-copy>strong{font-size:4.8pt}
+.aasa-card-verification .aasa-card-back-copy p{font-size:4pt;line-height:1.15}
+.aasa-card-verification .aasa-card-back-copy small{font-size:3.8pt}
+.aasa-card-verification .aasa-card-back-copy b{font-size:4.2pt}
+.aasa-card-details-title{margin-bottom:1mm;font-size:5pt}
+.aasa-card-details-grid{gap:1.2mm 2mm}
+.aasa-card-details-grid small{font-size:3.7pt}
+.aasa-card-details-grid b{font-size:4.5pt;line-height:1.1}
+.aasa-card-details-grid .aasa-card-detail-address b{font-size:4pt}
+}
