@@ -77,6 +77,7 @@ test("Projects workspace covers proposals, teams, milestones, tasks, progress, r
 
 test("project tables have RLS, permission policies and audited lifecycle RPCs", () => {
   assert.match(projectMigration, /enable row level security/i);
+  assert.doesNotMatch(projectMigration, /revoke all on all tables in schema public/i);
   assert.match(projectMigration, /create policy aasa_projects_read_authorised/i);
   assert.match(projectMigration, /projects\.approve/);
   assert.match(projectMigration, /aasa_update_own_project_task/);
