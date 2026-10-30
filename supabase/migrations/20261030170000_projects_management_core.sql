@@ -253,6 +253,14 @@ begin
   end if;
   if row(new.completion_reviewed_by,new.completion_reviewed_at,new.completion_review_note)
      is distinct from row(old.completion_reviewed_by,old.completion_reviewed_at,old.completion_review_note)
+     and not (
+       new.completion_status='pending'
+       and new.completion_requested_by=(select auth.uid())
+       and new.completion_reviewed_by is null
+       and new.completion_reviewed_at is null
+       and new.completion_review_note is null
+       and public.aasa_has_permission('projects.manage')
+     )
      and not public.aasa_has_permission('projects.approve') then
     raise exception 'Project completion review requires projects.approve permission' using errcode='42501';
   end if;
@@ -313,6 +321,29 @@ end;
 $$;
 revoke all on function public.aasa_review_project_budget(uuid,text,numeric,text) from public, anon;
 grant execute on function public.aasa_review_project_budget(uuid,text,numeric,text) to authenticated;
+
+
+create or replace function public.aasa_resubmit_project_budget(p_project_id uuid,p_revised_budget numeric,p_note text default null)
+returns void
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $
+begin
+  if auth.uid() is null or not public.aasa_has_permission('projects.manage') then
+    raise exception 'Not authorised to resubmit project budgets' using errcode='42501';
+  end if;
+  if p_revised_budget is null or p_revised_budget<0 then raise exception 'Enter a valid revised budget'; end if;
+  if p_note is not null and length(p_note)>2000 then raise exception 'Resubmission note is too long'; end if;
+  update public.aasa_projects
+  set budget_request=p_revised_budget,approval_status='pending',approved_budget=null,
+      approved_by=null,approved_at=null,approval_note=null,status='planned',updated_at=now()
+  where id=p_project_id and approval_status='rejected' and status='planned';
+  if not found then raise exception 'Only a rejected proposal can be resubmitted'; end if;
+end;
+$;
+revoke all on function public.aasa_resubmit_project_budget(uuid,numeric,text) from public, anon;
+grant execute on function public.aasa_resubmit_project_budget(uuid,numeric,text) to authenticated;
 
 create or replace function public.aasa_request_project_completion(p_project_id uuid,p_final_report text)
 returns void
