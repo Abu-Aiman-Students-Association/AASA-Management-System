@@ -122,3 +122,15 @@
   .aasa-card-national-emblem-wrap{flex:0 0 9mm;width:9mm;height:10mm;padding:0}
   .aasa-card-national-emblem{width:9mm;height:10mm;max-width:9mm;max-height:10mm}
 }
+
+/* Clear, touch-friendly module navigation and direct member-register entry */
+.aasa-sidebar nav button{min-height:44px;font-size:12px}
+.aasa-membership-shortcut{width:100%;display:flex;align-items:center;gap:13px;margin:0 0 16px;padding:16px 18px;border:1px solid #b9d8c2;border-radius:14px;background:linear-gradient(105deg,#eaf6ed,#fff);color:#174b37;text-align:left;cursor:pointer;box-shadow:0 6px 18px #153d2a0a}
+.aasa-membership-shortcut:focus-visible,.aasa-sidebar nav button:focus-visible{outline:3px solid #4b9468;outline-offset:2px}
+.aasa-shortcut-icon{display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:12px;background:#174b37;color:#fff;font-size:22px}
+.aasa-membership-shortcut>span:nth-child(2){display:grid;gap:5px;flex:1;min-width:0}
+.aasa-membership-shortcut strong{font-size:14px}
+.aasa-membership-shortcut small{font-size:10px;color:#6d8274}
+.aasa-shortcut-arrow{font-size:11px;font-weight:800;white-space:nowrap}
+@media(max-width:900px){.aasa-sidebar nav{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:7px;padding:3px 2px 10px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}.aasa-sidebar nav button{flex:0 0 auto;width:auto;min-width:128px;justify-content:flex-start;white-space:nowrap;border:1px solid #e2eae4;background:#fbfdfb;scroll-snap-align:start}.aasa-sidebar nav button.selected{border-color:#9fc9aa;background:#eaf4ed}.aasa-sidebar{overflow:hidden}.aasa-nav-label{margin-bottom:6px}}
+@media(max-width:560px){.aasa-membership-shortcut{padding:13px 12px;gap:9px}.aasa-shortcut-icon{flex-basis:36px;height:36px}.aasa-membership-shortcut strong{font-size:12px}.aasa-membership-shortcut small{font-size:9px}.aasa-shortcut-arrow{font-size:9px}}
