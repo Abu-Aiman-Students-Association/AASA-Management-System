@@ -106,16 +106,19 @@
 .aasa-card-details-grid .aasa-card-detail-address b{font-size:4pt}
 }
 
-/* AASA member card: Nigerian national emblem on the front-right; city/town is intentionally omitted from the printed card. */
-.aasa-card-front-main{grid-template-columns:22% minmax(0,1fr) 13%;gap:9px}
-.aasa-card-national-emblem-wrap{display:flex;align-items:center;justify-content:center;align-self:stretch;min-width:0;padding:3px}
-.aasa-card-national-emblem{display:block;width:100%;max-width:76px;max-height:100px;object-fit:contain}
+
+/* Keep the Nigerian Coat of Arms at the upper-right of the front-card header. */
+.aasa-card-front-main{grid-template-columns:26% minmax(0,1fr);gap:12px}
+.aasa-card-front-header{padding-right:9px}
+.aasa-card-national-emblem-wrap{display:flex;align-items:center;justify-content:center;flex:0 0 11mm;width:11mm;height:12mm;min-width:0;padding:0}
+.aasa-card-national-emblem{display:block;width:100%;height:100%;max-width:11mm;max-height:12mm;object-fit:contain}
 @media(max-width:700px){
-  .aasa-card-front-main{grid-template-columns:22% minmax(0,1fr) 13%;gap:7px}
-  .aasa-card-national-emblem{max-width:64px;max-height:86px}
+  .aasa-card-national-emblem-wrap{flex-basis:9mm;width:9mm;height:10mm}
+  .aasa-card-national-emblem{max-width:9mm;max-height:10mm}
 }
 @media print{
-  .aasa-card-front-main{grid-template-columns:22% minmax(0,1fr) 13%!important;gap:2mm!important}
-  .aasa-card-national-emblem-wrap{padding:0}
-  .aasa-card-national-emblem{width:100%;max-width:15mm;max-height:25mm}
+  .aasa-card-front-main{grid-template-columns:26% minmax(0,1fr)!important;gap:3mm!important}
+  .aasa-card-front-header{padding-right:2mm}
+  .aasa-card-national-emblem-wrap{flex:0 0 9mm;width:9mm;height:10mm;padding:0}
+  .aasa-card-national-emblem{width:9mm;height:10mm;max-width:9mm;max-height:10mm}
 }

@@ -328,6 +328,8 @@ export default function MembershipModule({ userId }: { userId: string }) {
               <img src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="Official AASA crest" />
               <div className="aasa-card-brand"><strong>ABU-AIMAN STUDENTS’ ASSOCIATION</strong><span>رابطة طلاب مدرسة أبوأيمن لتحفيظ القرآن الكريم والدراسات الإسلامية</span><small>العلم نور</small></div>
               <span className="aasa-card-kind">MEMBER</span>
+              {/* Nigerian Coat of Arms artwork by Lumia1234, Wikimedia Commons, CC BY-SA 3.0. */}
+              <div className="aasa-card-national-emblem-wrap"><img className="aasa-card-national-emblem" src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Coat_of_arms_of_Nigeria.svg" alt="Coat of Arms of the Federal Republic of Nigeria" /></div>
             </div>
             <div className="aasa-card-front-main">
               {cardPreview.photoUrl ? <img className="aasa-member-photo" src={cardPreview.photoUrl} alt={cardPreview.member.full_name} /> : <div className="aasa-member-photo aasa-photo-placeholder">PHOTO</div>}
@@ -336,8 +338,6 @@ export default function MembershipModule({ userId }: { userId: string }) {
                 <h2>{cardPreview.member.full_name}</h2>
                 <p className="aasa-card-member-number">{cardPreview.member.member_number}</p>
                 <div className="aasa-card-meta"><span><small>MEMBERSHIP TYPE</small><b>{cardPreview.member.membership_type.toUpperCase()}</b></span><span><small>ISSUED</small><b>{new Date(cardPreview.card.issued_at).toLocaleDateString()}</b></span></div>
-              {/* Nigerian Coat of Arms artwork by Lumia1234, Wikimedia Commons, CC BY-SA 3.0. */}
-              <div className="aasa-card-national-emblem-wrap"><img className="aasa-card-national-emblem" src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Coat_of_arms_of_Nigeria.svg" alt="Coat of Arms of the Federal Republic of Nigeria" /></div>
               </div>
             </div>
             <div className="aasa-card-front-footer"><strong className={cardPreview.member.status === "active" && cardPreview.card.status === "active" ? "is-active" : "is-inactive"}>{cardPreview.member.status === "active" && cardPreview.card.status === "active" ? "ACTIVE MEMBER" : "NOT ACTIVE"}</strong><span>Card No. {cardPreview.card.card_number}</span></div>
