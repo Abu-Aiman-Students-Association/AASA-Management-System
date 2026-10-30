@@ -151,6 +151,42 @@ $$;
 revoke all on function public.aasa_list_project_assignable_members() from public, anon;
 grant execute on function public.aasa_list_project_assignable_members() to authenticated;
 
+
+create or replace function public.aasa_validate_project_member()
+returns trigger language plpgsql security definer set search_path = pg_catalog, public as $
+begin
+  if not exists(select 1 from public.aasa_members where id=new.member_id and status='active') then
+    raise exception 'Only active AASA members may be assigned to a project';
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.aasa_validate_project_member() from public, anon, authenticated;
+drop trigger if exists aasa_project_members_validate on public.aasa_project_members;
+create trigger aasa_project_members_validate before insert or update on public.aasa_project_members for each row execute function public.aasa_validate_project_member();
+
+create or replace function public.aasa_validate_project_task_assignment()
+returns trigger language plpgsql security definer set search_path = pg_catalog, public as $
+begin
+  if new.assigned_to_member_id is not null and not exists(
+    select 1 from public.aasa_project_members pm
+    join public.aasa_members m on m.id=pm.member_id
+    where pm.project_id=new.project_id and pm.member_id=new.assigned_to_member_id and m.status='active'
+  ) then
+    raise exception 'Task assignee must be an active member of this project team';
+  end if;
+  if new.milestone_id is not null and not exists(
+    select 1 from public.aasa_project_milestones ms where ms.id=new.milestone_id and ms.project_id=new.project_id
+  ) then
+    raise exception 'Task milestone must belong to the same project';
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.aasa_validate_project_task_assignment() from public, anon, authenticated;
+drop trigger if exists aasa_project_tasks_validate_assignment on public.aasa_project_tasks;
+create trigger aasa_project_tasks_validate_assignment before insert or update on public.aasa_project_tasks for each row execute function public.aasa_validate_project_task_assignment();
+
 -- Team members may read only projects to which their active member record is assigned.
 create or replace function public.aasa_is_project_member(p_project_id uuid)
 returns boolean
@@ -205,10 +241,26 @@ begin
      and not public.aasa_has_permission('projects.approve') then
     raise exception 'Project budget approval requires projects.approve permission' using errcode='42501';
   end if;
-  if row(new.completion_status,new.completion_requested_by,new.completion_requested_at,new.completion_reviewed_by,new.completion_reviewed_at,new.completion_review_note)
-     is distinct from row(old.completion_status,old.completion_requested_by,old.completion_requested_at,old.completion_reviewed_by,old.completion_reviewed_at,old.completion_review_note)
+  if row(new.completion_status,new.completion_requested_by,new.completion_requested_at)
+     is distinct from row(old.completion_status,old.completion_requested_by,old.completion_requested_at)
+     and not (
+       new.completion_status='pending'
+       and new.completion_requested_by=(select auth.uid())
+       and public.aasa_has_permission('projects.manage')
+     )
+     and not public.aasa_has_permission('projects.approve') then
+    raise exception 'Project completion request requires projects.manage permission' using errcode='42501';
+  end if;
+  if row(new.completion_reviewed_by,new.completion_reviewed_at,new.completion_review_note)
+     is distinct from row(old.completion_reviewed_by,old.completion_reviewed_at,old.completion_review_note)
      and not public.aasa_has_permission('projects.approve') then
     raise exception 'Project completion review requires projects.approve permission' using errcode='42501';
+  end if;
+  if new.project_owner_member_id is distinct from old.project_owner_member_id then
+    raise exception 'Project owner is retained as a historical assignment; add or remove team members instead';
+  end if;
+  if new.status='approved' and new.approval_status<>'approved' then
+    raise exception 'A project cannot be marked approved before its budget is approved';
   end if;
   if new.status='active' and new.approval_status<>'approved' then
     raise exception 'Only an approved project can become active';
@@ -347,6 +399,7 @@ declare t text;
 begin
   foreach t in array array['aasa_projects','aasa_project_members','aasa_project_milestones','aasa_project_tasks','aasa_project_progress_reports','aasa_project_risks','aasa_project_documents'] loop
     execute format('alter table public.%I enable row level security',t);
+    execute format('revoke all on table public.%I from anon',t);
     execute format('grant all on table public.%I to service_role',t);
   end loop;
 end $$;
