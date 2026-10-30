@@ -30,7 +30,7 @@ export default function App() {
         const hasActiveAdminRole = profile?.account_status === "active" && (roleRows ?? []).some((row: any) => {
           const roleKey = row.roles?.role_key;
           const unexpired = !row.expires_at || Date.parse(row.expires_at) > now;
-          return Boolean(roleKey && unexpired);
+          return Boolean(roleKey && roleKey !== "ordinary_member" && unexpired);
         });
         if (hasActiveAdminRole) { if (alive) setRoute("admin"); return; }
       } catch {
