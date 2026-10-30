@@ -238,6 +238,11 @@ as $$
 begin
   if row(new.approval_status,new.approved_budget,new.approved_by,new.approved_at,new.approval_note)
      is distinct from row(old.approval_status,old.approved_budget,old.approved_by,old.approved_at,old.approval_note)
+     and not (
+       old.approval_status='rejected' and new.approval_status='pending'
+       and new.approved_budget is null and new.approved_by is null and new.approved_at is null and new.approval_note is null
+       and public.aasa_has_permission('projects.manage')
+     )
      and not public.aasa_has_permission('projects.approve') then
     raise exception 'Project budget approval requires projects.approve permission' using errcode='42501';
   end if;
