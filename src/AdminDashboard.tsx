@@ -66,13 +66,19 @@ export default function AdminDashboard() {
     supabase.auth.getSession().then(({ data, error: e }) => {
       if (!live) return;
       if (e) setError(e.message);
-      else if (data.session?.user) void refresh({ id: data.session.user.id, email: data.session.user.email }).catch(e => setError(e.message));
+      else if (data.session?.user) {
+        void supabase.rpc("aasa_link_own_member_account").then(() => undefined);
+        void refresh({ id: data.session.user.id, email: data.session.user.email }).catch(e => setError(e.message));
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!live) return;
       window.setTimeout(() => {
         if (!live) return;
-        if (session?.user) void refresh({ id: session.user.id, email: session.user.email }).catch(e => setError(e.message));
+        if (session?.user) {
+          void supabase.rpc("aasa_link_own_member_account").then(() => undefined);
+          void refresh({ id: session.user.id, email: session.user.email }).catch(e => setError(e.message));
+        }
         else { setAccount(null); setView("login"); }
       }, 0);
     });
