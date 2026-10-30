@@ -446,7 +446,6 @@ grant select,insert,update on public.aasa_project_tasks to authenticated;
 grant select,insert on public.aasa_project_progress_reports to authenticated;
 grant select,insert,update on public.aasa_project_risks to authenticated;
 grant select,insert,delete on public.aasa_project_documents to authenticated;
-revoke all on all tables in schema public from anon;
 
 drop policy if exists aasa_projects_read_authorised on public.aasa_projects;
 create policy aasa_projects_read_authorised on public.aasa_projects for select to authenticated
