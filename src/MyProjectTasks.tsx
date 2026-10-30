@@ -48,9 +48,9 @@ export default function MyProjectTasks({memberId,lang}:{memberId:string;lang:Lan
    <div className="aasa-member-task-heading"><strong>{task.title}</strong><small>{projectName(task)}</small></div>
    {task.description&&<p>{task.description}</p>}
    <div className="aasa-member-task-meta"><span>{t.due}: {task.due_date||"—"}</span><span>{task.priority}</span></div>
-   <label>{t.status}<select value={statuses[task.id]??task.status} onChange={e=>setStatuses(v=>({...v,[task.task_id]:e.target.value}))}><option value="todo">{t.todo}</option><option value="in_progress">{t.active}</option><option value="blocked">{t.blocked}</option><option value="completed">{t.done}</option></select></label>
-   <label>{t.progress}<input type="number" min="0" max="100" value={progress[task.id]??task.progress_percent} onChange={e=>setProgress(v=>({...v,[task.id]:e.target.value}))}/></label>
-   <label>{t.note}<textarea rows={2} maxLength={2000} value={notes[task.id]??task.completion_note??""} onChange={e=>setNotes(v=>({...v,[task.id]:e.target.value}))}/></label>
+   <label>{t.status}<select value={statuses[task.task_id]??task.status} onChange={e=>setStatuses(v=>({...v,[task.task_id]:e.target.value}))}><option value="todo">{t.todo}</option><option value="in_progress">{t.active}</option><option value="blocked">{t.blocked}</option><option value="completed">{t.done}</option></select></label>
+   <label>{t.progress}<input type="number" min="0" max="100" value={progress[task.task_id]??task.progress_percent} onChange={e=>setProgress(v=>({...v,[task.task_id]:e.target.value}))}/></label>
+   <label>{t.note}<textarea rows={2} maxLength={2000} value={notes[task.task_id]??task.completion_note??""} onChange={e=>setNotes(v=>({...v,[task.task_id]:e.target.value}))}/></label>
    <button type="button" disabled={!!busy} onClick={()=>void update(task)}>{busy===task.task_id?t.saving:t.save}</button>
   </article>)}</div>:<p>{t.empty}</p>}
   {notice&&<p className="aasa-member-task-success" role="status">{notice}</p>}
