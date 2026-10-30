@@ -175,7 +175,7 @@ export default function ProjectsModule({ userId, lang = "en", canManage, canAppr
   useEffect(()=>{void load("").catch(e=>setError(e instanceof Error?e.message:t.error));},[]);
   useEffect(()=>{if(selectedId) setApprovedBudget(String(selected?.approved_budget??selected?.budget_request??""));},[selectedId,selected?.approved_budget,selected?.budget_request]);
 
-  async function run(action:()=>Promise<void>,message=t.success,preferredId?:()=>string) {
+  async function run(action:()=>Promise<void>,message: string=t.success,preferredId?:()=>string) {
     setBusy(true);setError("");setNotice("");
     try { await action(); await load(preferredId?.() || selectedId); setNotice(message); }
     catch(e){setError(e instanceof Error?e.message:t.error);}
