@@ -54,6 +54,7 @@ const projectMigration = await readFile(new URL("../supabase/migrations/20261030
 const projectGrantMigration = await readFile(new URL("../supabase/migrations/20261030173000_harden_projects_table_grants.sql", import.meta.url), "utf8");
 const projectWorkflowMigration = await readFile(new URL("../supabase/migrations/20261030180000_project_workflow_integrity.sql", import.meta.url), "utf8");
 const projectPrivacyMigration = await readFile(new URL("../supabase/migrations/20261030183000_restrict_project_budget_visibility.sql", import.meta.url), "utf8");
+const projectBudgetLockMigration = await readFile(new URL("../supabase/migrations/20261030184000_lock_approved_project_budget.sql", import.meta.url), "utf8");
 
 test("Projects workspace is connected to the administrator dashboard with database permission gates", () => {
   assert.match(projectDashboardSource, /ProjectsModule/);
@@ -88,6 +89,8 @@ test("project tables have RLS, permission policies and audited lifecycle RPCs", 
   assert.match(projectGrantMigration, /revoke all on function public\.aasa_guard_project_approval_fields\(\) from public, anon, authenticated/i);
   assert.match(projectWorkflowMigration, /length\(btrim\(coalesce\(new\.completion_report,''\)\)\)<50/i);
   assert.match(projectWorkflowMigration, /This project status transition is not permitted/i);
+  assert.match(projectBudgetLockMigration, /approved project budget is locked/i);
+  assert.match(projectBudgetLockMigration, /final report awaiting review cannot be edited/i);
 });
 
 
