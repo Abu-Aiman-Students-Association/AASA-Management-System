@@ -322,12 +322,34 @@ export default function MembershipModule({ userId }: { userId: string }) {
     </section>{notice && <p className="aasa-notice" role="status">{notice}</p>}{error && <p className="aasa-error" role="alert">{error}</p>}
     {cardPreview && <div className="aasa-card-overlay" role="dialog" aria-modal="true" aria-label="Membership card preview">
       <div className="aasa-card-dialog"><div className="aasa-card-actions"><strong>Membership card preview</strong><button type="button" className="aasa-secondary" onClick={()=>setCardPreview(null)}>Close</button></div>
-        <article className="aasa-print-card"><div className="aasa-print-card-head"><strong>AASA</strong><span>ABU-AIMAN STUDENTS’ ASSOCIATION<br/><small>العلم نور</small></span></div>
-          <div className="aasa-print-card-body">{cardPreview.photoUrl ? <img className="aasa-member-photo" src={cardPreview.photoUrl} alt={cardPreview.member.full_name} /> : <div className="aasa-member-photo aasa-photo-placeholder">PHOTO</div>}
-            <div className="aasa-print-card-details"><h2>{cardPreview.member.full_name}</h2><p>Member: {cardPreview.member.member_number}</p><p>Card: {cardPreview.card.card_number}</p><p>{cardPreview.member.membership_type.toUpperCase()} MEMBER</p><p>Issued: {new Date(cardPreview.card.issued_at).toLocaleDateString()}</p><p>Status: ACTIVE</p></div>
-            <img className="aasa-card-qr" src={cardPreview.qrUrl} alt="QR code to verify this membership card" /></div>
-          <footer>Scan QR to verify membership status. Not a government-issued identity document.</footer>
-        </article><button type="button" className="aasa-primary" onClick={()=>window.print()}>Print membership card</button>
+        <div className="aasa-card-sheet">
+          <article className="aasa-print-card aasa-card-front">
+            <div className="aasa-card-front-header">
+              <img src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="Official AASA crest" />
+              <div className="aasa-card-brand"><strong>ABU-AIMAN STUDENTS’ ASSOCIATION</strong><span>رابطة طلاب مدرسة أبوأيمن لتحفيظ القرآن الكريم والدراسات الإسلامية</span><small>العلم نور</small></div>
+              <span className="aasa-card-kind">MEMBER</span>
+            </div>
+            <div className="aasa-card-front-main">
+              {cardPreview.photoUrl ? <img className="aasa-member-photo" src={cardPreview.photoUrl} alt={cardPreview.member.full_name} /> : <div className="aasa-member-photo aasa-photo-placeholder">PHOTO</div>}
+              <div className="aasa-card-identity">
+                <small className="aasa-card-eyebrow">OFFICIAL MEMBERSHIP CARD</small>
+                <h2>{cardPreview.member.full_name}</h2>
+                <p className="aasa-card-member-number">{cardPreview.member.member_number}</p>
+                <div className="aasa-card-meta"><span><small>MEMBERSHIP TYPE</small><b>{cardPreview.member.membership_type.toUpperCase()}</b></span><span><small>ISSUED</small><b>{new Date(cardPreview.card.issued_at).toLocaleDateString()}</b></span></div>
+              </div>
+            </div>
+            <div className="aasa-card-front-footer"><strong className={cardPreview.member.status === "active" && cardPreview.card.status === "active" ? "is-active" : "is-inactive"}>{cardPreview.member.status === "active" && cardPreview.card.status === "active" ? "ACTIVE MEMBER" : "NOT ACTIVE"}</strong><span>Card No. {cardPreview.card.card_number}</span></div>
+          </article>
+          <article className="aasa-print-card aasa-card-back">
+            <div className="aasa-card-back-header"><img src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="Official AASA crest" /><div><strong>AASA · MEMBER VERIFICATION</strong><small>العلم نور · KNOWLEDGE IS LIGHT</small></div></div>
+            <div className="aasa-card-back-main">
+              <div className="aasa-card-qr-frame"><img className="aasa-card-qr" src={cardPreview.qrUrl} alt="QR code to verify this membership card" /></div>
+              <div className="aasa-card-back-copy"><strong>VERIFY MEMBERSHIP</strong><p>Scan the QR code to confirm the member’s identity and current membership status.</p><small>Member ID</small><b>{cardPreview.member.member_number}</b><small>Card Number</small><b>{cardPreview.card.card_number}</b></div>
+            </div>
+            <footer>This card belongs to the named member. Not a government-issued identity document.</footer>
+          </article>
+        </div>
+        <button type="button" className="aasa-primary" onClick={()=>window.print()}>Print membership card</button>
       </div>
     </div>}
   </div>;
