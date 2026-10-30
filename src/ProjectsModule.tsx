@@ -231,6 +231,10 @@ export default function ProjectsModule({ userId, lang = "en", canManage, canAppr
   async function updateRisk(row:Risk,status:string) {
     await run(async()=>{const {error}=await supabase.from("aasa_project_risks").update({status,updated_at:new Date().toISOString()}).eq("id",row.id);if(error)throw error;});
   }
+  async function resubmitBudget() {
+    if(!selected)return;
+    await run(async()=>{const {error}=await supabase.rpc("aasa_resubmit_project_budget",{p_project_id:selected.id,p_revised_budget:Number(approvedBudget),p_note:reviewNote.trim()||null});if(error)throw error;setReviewNote("");},"Revised project budget resubmitted for approval.");
+  }
   async function reviewBudget(decision:"approved"|"rejected") {
     if(!selected)return;
     await run(async()=>{const {error}=await supabase.rpc("aasa_review_project_budget",{p_project_id:selected.id,p_decision:decision,p_approved_budget:decision==="approved"?Number(approvedBudget):null,p_note:reviewNote.trim()||null});if(error)throw error;setReviewNote("");},"Budget decision recorded.");
@@ -305,6 +309,7 @@ export default function ProjectsModule({ userId, lang = "en", canManage, canAppr
         <div className="aasa-project-copy"><h4>{t.proposal}</h4><p>{selected.proposal}</p><h4>{t.objectives}</h4><p>{selected.objectives}</p><h4>{t.outcomes}</h4><p>{selected.expected_outcomes}</p></div>
         {selected.approval_status==="pending"&&canApprove&&<form className="aasa-project-review" onSubmit={e=>{e.preventDefault();void reviewBudget("approved");}}><h4>{t.reviewBudget}</h4><label>{t.approvedAmount}<input required type="number" min="0" step="0.01" value={approvedBudget} onChange={e=>setApprovedBudget(e.target.value)}/></label><label>{t.reviewNote}<textarea rows={2} maxLength={2000} value={reviewNote} onChange={e=>setReviewNote(e.target.value)}/></label><div className="aasa-project-actions"><button className="aasa-primary" disabled={busy}>{t.approve}</button><button className="aasa-secondary" type="button" disabled={busy} onClick={()=>void reviewBudget("rejected")}>{t.reject}</button></div></form>}
         {selected.approval_status==="rejected"&&<p className="aasa-error">{t.budgetRejected} {selected.approval_note||""}</p>}
+        {selected.approval_status==="rejected"&&canManage&&<form className="aasa-project-review" onSubmit={e=>{e.preventDefault();void resubmitBudget();}}><h4>{t.resubmitBudget}</h4><label>{t.approvedAmount}<input required type="number" min="0" step="0.01" value={approvedBudget} onChange={e=>setApprovedBudget(e.target.value)}/></label><label>{t.reviewNote}<textarea rows={2} maxLength={2000} value={reviewNote} onChange={e=>setReviewNote(e.target.value)}/></label><button className="aasa-primary" disabled={busy}>{t.resubmitBudget}</button></form>}
         {selected.approval_status==="pending"&&!canApprove&&<p className="aasa-muted">{t.budgetPending}</p>}
         {canManage&&<div className="aasa-project-actions">
           {selected.status==="approved"&&<button className="aasa-primary" type="button" disabled={busy} onClick={()=>void changeStatus("active")}>{t.activate}</button>}
