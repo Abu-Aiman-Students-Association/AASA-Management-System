@@ -193,13 +193,43 @@ export default function MembershipModule({ userId }: { userId: string }) {
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save membership."); }
     finally { setBusy(false); }
   }
+  async function sendMemberInvitation(m: Member) {
+    if (!m.email) throw new Error("This member has no email address. Add an email address before sending an invitation.");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) throw new Error("Your administrator session has expired. Sign in again.");
+    const response = await fetch("https://pedmroseihpaflbzqgkf.supabase.co/functions/v1/aasa-send-member-invitation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + accessToken, "apikey": "sb_publishable_-nxBJ_GpzXqHTqMScffyvw_PTFoQ1xR" },
+      body: JSON.stringify({ member_id: m.id })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Invitation could not be sent. Check Auth email settings.");
+    return result as { status: string; email: string; member_number: string };
+  }
   async function setStatus(m: Member, status: string) {
     setBusy(true); setError(""); setNotice("");
     try {
       const { error } = await supabase.from("aasa_members").update({ status, updated_by: userId }).eq("id", m.id);
       if (error) throw error;
-      await load(); setNotice("Membership status updated.");
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not update status."); }
+      if (status === "active" && m.status !== "active" && m.email && !m.auth_user_id) {
+        const invitation = await sendMemberInvitation(m);
+        await load();
+        setNotice("Membership approved and invitation " + (invitation.status === "resent" ? "resent" : "sent") + " to " + invitation.email + ".");
+      } else {
+        await load(); setNotice("Membership status updated.");
+      }
+    } catch (e) {
+      await load().catch(() => undefined);
+      setError(e instanceof Error ? e.message : "Could not update membership status.");
+    } finally { setBusy(false); }
+  }
+  async function inviteExistingMember(m: Member) {
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const invitation = await sendMemberInvitation(m);
+      setNotice("Invitation " + (invitation.status === "resent" ? "resent" : "sent") + " to " + invitation.email + ".");
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not send member invitation."); }
     finally { setBusy(false); }
   }
   async function linkAccount(m: Member) {
@@ -286,7 +316,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
       {filtered.length ? <div className="aasa-table-wrap"><table className="aasa-table"><thead><tr><th>Member no.</th><th>Name & details</th><th>Contact</th><th>Type</th><th>Status</th><th>Joined</th><th>Card</th><th>Review</th></tr></thead><tbody>{filtered.map(m=><tr key={m.id}>
         <td>{m.member_number}</td><td><strong>{m.full_name}</strong><br/><small>DOB: {m.date_of_birth || "—"} · Gender: {m.gender || "—"}</small>{m.address && <><br/><small>{m.address}</small></>}{(m.state_of_residence || m.local_government_area) && <><br/><small>{[m.local_government_area,m.state_of_residence].filter(Boolean).join(", ")}</small></>}{m.nationality && <><br/><small>Nationality: {m.nationality}</small></>}{m.country_of_residence && <><br/><small>Country: {m.country_of_residence}</small></>}{m.city_of_residence && <><br/><small>City/Town: {m.city_of_residence}</small></>}{m.ward && <><br/><small>Ward: {m.ward}</small></>}{m.occupation && <><br/><small>Occupation: {m.occupation}</small></>}{m.emergency_contact_name && <><br/><small>Emergency: {m.emergency_contact_name} ({m.emergency_contact_relationship || "contact"}) · {m.emergency_contact_phone || "—"}</small></>}{m.notes && <><br/><small>Admin note: {m.notes}</small></>}</td>
         <td>{m.email || "—"}<br/>{m.phone || "—"}</td><td>{m.membership_type}</td><td><span className="aasa-pill">{m.status}</span></td><td>{m.joined_on}</td>
-        <td>{m.status==="active"&&m.email&&!m.auth_user_id&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void linkAccount(m)}>Link verified account</button>}{m.auth_user_id&&<small>Verified account linked</small>}{cards.filter(card=>card.member_id===m.id&&card.status==="active").map(card=><div key={card.id}>{card.card_number}<br/><small>Issued {new Date(card.issued_at).toLocaleDateString()}</small><br/><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void openCard(m,card)}>View / print</button><button type="button" className="aasa-link" disabled={busy} onClick={()=>void revokeCard(card)}>Revoke card</button></div>)}{m.status==="active"&&!cards.some(card=>card.member_id===m.id&&card.status==="active")&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void issueCard(m)}>Issue card</button>}</td>
+        <td>{m.status==="active"&&m.email&&!m.auth_user_id&&<><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void inviteExistingMember(m)}>Send / resend invitation</button><br/><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void linkAccount(m)}>Link verified account</button></>}{m.auth_user_id&&<small>Verified account linked</small>}{cards.filter(card=>card.member_id===m.id&&card.status==="active").map(card=><div key={card.id}>{card.card_number}<br/><small>Issued {new Date(card.issued_at).toLocaleDateString()}</small><br/><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void openCard(m,card)}>View / print</button><button type="button" className="aasa-link" disabled={busy} onClick={()=>void revokeCard(card)}>Revoke card</button></div>)}{m.status==="active"&&!cards.some(card=>card.member_id===m.id&&card.status==="active")&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void issueCard(m)}>Issue card</button>}</td>
         <td><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(m.id);setName(m.full_name);setEmail(m.email??"");setPhone(m.phone??"");setDob(m.date_of_birth??"");setGender(m.gender??"");setAddress(m.address??"");setCityOfResidence(m.city_of_residence??"");setOtherCityOfResidence("");setNotes(m.notes??"");setEmergencyName(m.emergency_contact_name??"");setEmergencyRelationship(m.emergency_contact_relationship??"");setEmergencyPhone(m.emergency_contact_phone??"");setOccupation(["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired","Other"].includes(m.occupation??"") ? (m.occupation??"") : "Other");setOtherOccupation(m.occupation && !["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired"].includes(m.occupation) ? m.occupation : "");setCountryOfResidence(["Nigeria","Niger","Cameroon","Chad","Ghana","Other"].includes(m.country_of_residence??"") ? (m.country_of_residence??"Nigeria") : "Other");setOtherCountry(m.country_of_residence && !["Nigeria","Niger","Cameroon","Chad","Ghana"].includes(m.country_of_residence) ? m.country_of_residence : "");setStateOfResidence(m.state_of_residence??"");setLga(m.local_government_area??"");setWard(m.ward??"");setOtherWardValue("");setNationality(["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian","Other"].includes(m.nationality??"") ? (m.nationality??"Nigerian") : "Other");setOtherNationality(m.nationality && !["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian"].includes(m.nationality) ? m.nationality : "");setMembershipConsent(m.membership_consent??false);setType(m.membership_type);setPhotoFile(null);window.scrollTo({top:0,behavior:"smooth"});}}>Edit details</button><br/>{m.status === "pending" ? <><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button> <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
       </tr>)}</tbody></table></div> : <p className="aasa-muted">No matching membership records. Add verified records using the form above.</p>}
     </section>{notice && <p className="aasa-notice" role="status">{notice}</p>}{error && <p className="aasa-error" role="alert">{error}</p>}
