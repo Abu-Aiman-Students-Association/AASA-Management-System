@@ -153,20 +153,20 @@ grant execute on function public.aasa_list_project_assignable_members() to authe
 
 
 create or replace function public.aasa_validate_project_member()
-returns trigger language plpgsql security definer set search_path = pg_catalog, public as $
+returns trigger language plpgsql security definer set search_path = pg_catalog, public as $$
 begin
   if not exists(select 1 from public.aasa_members where id=new.member_id and status='active') then
     raise exception 'Only active AASA members may be assigned to a project';
   end if;
   return new;
 end;
-$;
+$$;
 revoke all on function public.aasa_validate_project_member() from public, anon, authenticated;
 drop trigger if exists aasa_project_members_validate on public.aasa_project_members;
 create trigger aasa_project_members_validate before insert or update on public.aasa_project_members for each row execute function public.aasa_validate_project_member();
 
 create or replace function public.aasa_validate_project_task_assignment()
-returns trigger language plpgsql security definer set search_path = pg_catalog, public as $
+returns trigger language plpgsql security definer set search_path = pg_catalog, public as $$
 begin
   if new.assigned_to_member_id is not null and not exists(
     select 1 from public.aasa_project_members pm
@@ -182,7 +182,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 revoke all on function public.aasa_validate_project_task_assignment() from public, anon, authenticated;
 drop trigger if exists aasa_project_tasks_validate_assignment on public.aasa_project_tasks;
 create trigger aasa_project_tasks_validate_assignment before insert or update on public.aasa_project_tasks for each row execute function public.aasa_validate_project_task_assignment();
@@ -333,7 +333,7 @@ returns void
 language plpgsql
 security definer
 set search_path = pg_catalog, public
-as $
+as $$
 begin
   if auth.uid() is null or not public.aasa_has_permission('projects.manage') then
     raise exception 'Not authorised to resubmit project budgets' using errcode='42501';
@@ -346,7 +346,7 @@ begin
   where id=p_project_id and approval_status='rejected' and status='planned';
   if not found then raise exception 'Only a rejected proposal can be resubmitted'; end if;
 end;
-$;
+$$;
 revoke all on function public.aasa_resubmit_project_budget(uuid,numeric,text) from public, anon;
 grant execute on function public.aasa_resubmit_project_budget(uuid,numeric,text) to authenticated;
 
