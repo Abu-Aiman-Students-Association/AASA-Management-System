@@ -67,14 +67,17 @@ export default function MembershipModule({ userId }: { userId: string }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   async function load() {
-    const [members, cardRows] = await Promise.all([
-      supabase.from("aasa_members").select("id,member_number,full_name,email,phone,membership_type,status,joined_on,date_of_birth,gender,address,notes,photo_path,auth_user_id,emergency_contact_name,emergency_contact_relationship,emergency_contact_phone,occupation,state_of_residence,local_government_area,ward,nationality,country_of_residence,city_of_residence,membership_consent").order("created_at", { ascending: false }).limit(250),
-      supabase.from("aasa_member_cards").select("id,member_id,card_number,qr_token,status,issued_at").order("issued_at", { ascending: false }).limit(500)
-    ]);
+    const members = await supabase.from("aasa_members").select("id,member_number,full_name,email,phone,membership_type,status,joined_on,date_of_birth,gender,address,notes,photo_path,auth_user_id,emergency_contact_name,emergency_contact_relationship,emergency_contact_phone,occupation,state_of_residence,local_government_area,ward,nationality,country_of_residence,city_of_residence,membership_consent").order("created_at", { ascending: false }).limit(250);
     if (members.error) throw members.error;
-    if (cardRows.error) throw cardRows.error;
     setRows((members.data ?? []) as Member[]);
-    setCards((cardRows.data ?? []) as MemberCard[]);
+    // Card visibility is independent: a card-policy error must never hide valid member records.
+    const cardRows = await supabase.from("aasa_member_cards").select("id,member_id,card_number,qr_token,status,issued_at").order("issued_at", { ascending: false }).limit(500);
+    if (cardRows.error) {
+      setCards([]);
+      setNotice("Member records loaded. Membership card details could not be loaded due to access permissions.");
+    } else {
+      setCards((cardRows.data ?? []) as MemberCard[]);
+    }
   }
   useEffect(() => { void load().catch(e => setError(e instanceof Error ? e.message : "Could not load membership records.")); }, []);
   const ADMIN_API = "https://api.openadmindata.org/api/v1/ng";
