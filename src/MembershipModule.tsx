@@ -13,45 +13,6 @@ type Member = {
   nationality: string | null; country_of_residence: string | null; city_of_residence: string | null; membership_consent: boolean;
 };
 type MemberCard = { id: string; member_id: string; card_number: string; qr_token: string; status: string; issued_at: string };
-const STATE_CITIES: Record<string, string[]> = {
-  "Abia": ["Aba","Umuahia","Arochukwu","Ohafia","Bende","Isiala Ngwa","Osisioma"],
-  "Adamawa": ["Yola","Mubi","Numan","Jimeta","Ganye","Gombi","Michika"],
-  "Akwa Ibom": ["Uyo","Eket","Ikot Ekpene","Oron","Abak","Itu","Etinan"],
-  "Anambra": ["Awka","Onitsha","Nnewi","Ekwulobia","Ihiala","Aguata","Otuocha"],
-  "Bauchi": ["Bauchi","Azare","Misau","Jama'are","Ningi","Dass","Tafawa Balewa"],
-  "Bayelsa": ["Yenagoa","Ogbia","Brass","Nembe","Sagbama","Kaiama","Oporoma"],
-  "Benue": ["Makurdi","Gboko","Otukpo","Katsina-Ala","Adikpo","Vandeikya","Aliade"],
-  "Borno": ["Maiduguri","Biu","Bama","Dikwa","Monguno","Gwoza","Briyel","Konduga","Mafa","Damboa","Kaga","Gubio","Ngala","Jere"],
-  "Cross River": ["Calabar","Ogoja","Ikom","Ugep","Obudu","Akpabuyo","Akamkpa"],
-  "Delta": ["Asaba","Warri","Effurun","Sapele","Ughelli","Agbor","Oleh","Ozoro"],
-  "Ebonyi": ["Abakaliki","Afikpo","Onueke","Ezza","Ishielu","Onicha","Ikwo"],
-  "Edo": ["Benin City","Auchi","Ekpoma","Irrua","Uromi","Igarra","Ubiaja"],
-  "Ekiti": ["Ado-Ekiti","Ikere-Ekiti","Ijero-Ekiti","Ikole-Ekiti","Oye-Ekiti","Ise-Ekiti"],
-  "Enugu": ["Enugu","Nsukka","Agbani","Udi","Oji River","Awgu","Eha-Amufu"],
-  "Federal Capital Territory (FCT)": ["Abuja","Gwagwalada","Kuje","Kubwa","Bwari","Karu","Nyanya","Lugbe"],
-  "Gombe": ["Gombe","Kumo","Billiri","Bajoga","Dukku","Kaltungo","Deba"],
-  "Imo": ["Owerri","Orlu","Okigwe","Mbaise","Oguta","Nkwerre","Mbano"],
-  "Jigawa": ["Dutse","Hadejia","Kazaure","Gumel","Birnin Kudu","Ringim","Gwaram"],
-  "Kaduna": ["Kaduna","Zaria","Kafanchan","Saminaka","Birnin Gwari","Kachia","Kajuru"],
-  "Kano": ["Kano","Wudil","Gwarzo","Rano","Bichi","Gaya","Karaye"],
-  "Katsina": ["Katsina","Daura","Funtua","Malumfashi","Dutsin-Ma","Kankia","Jibia"],
-  "Kebbi": ["Birnin Kebbi","Argungu","Yauri","Zuru","Jega","Kamba","Bagudo"],
-  "Kogi": ["Lokoja","Okene","Idah","Kabba","Anyigba","Ankpa","Ajaokuta"],
-  "Kwara": ["Ilorin","Offa","Omu-Aran","Jebba","Lafiagi","Kaiama","Share"],
-  "Lagos": ["Ikeja","Lagos Island","Lekki","Epe","Badagry","Ikorodu","Festac Town","Agege","Surulere"],
-  "Nasarawa": ["Lafia","Keffi","Karu","Akwanga","Nasarawa","Doma","Toto"],
-  "Niger": ["Minna","Suleja","Bida","Kontagora","New Bussa","Lapai","Mokwa"],
-  "Ogun": ["Abeokuta","Ijebu-Ode","Sagamu","Ota","Ilaro","Ifo","Ayetoro"],
-  "Ondo": ["Akure","Ondo","Owo","Ikare-Akoko","Okitipupa","Ore","Idanre"],
-  "Osun": ["Osogbo","Ile-Ife","Ilesa","Ede","Ikirun","Iwo","Ejigbo"],
-  "Oyo": ["Ibadan","Ogbomoso","Oyo","Iseyin","Saki","Eruwa","Igbo-Ora"],
-  "Plateau": ["Jos","Bukuru","Barkin Ladi","Pankshin","Shendam","Vom","Langtang"],
-  "Rivers": ["Port Harcourt","Obio-Akpor","Bonny","Eleme","Bori","Okrika","Ahoada"],
-  "Sokoto": ["Sokoto","Tambuwal","Wurno","Gwadabawa","Illela","Kware","Yabo"],
-  "Taraba": ["Jalingo","Wukari","Bali","Takum","Serti","Zing","Gembu"],
-  "Yobe": ["Damaturu","Potiskum","Gashua","Nguru","Geidam","Buni Yadi","Fika"],
-  "Zamfara": ["Gusau","Kaura Namoda","Talata Mafara","Anka","Maru","Shinkafi","Tsafe"]
-};
 const STATE_CAPITALS: Record<string, string> = {
   "Abia":"Umuahia","Adamawa":"Yola","Akwa Ibom":"Uyo","Anambra":"Awka","Bauchi":"Bauchi",
   "Bayelsa":"Yenagoa","Benue":"Makurdi","Borno":"Maiduguri","Cross River":"Calabar","Delta":"Asaba",
@@ -61,12 +22,6 @@ const STATE_CAPITALS: Record<string, string> = {
   "Kwara":"Ilorin","Lagos":"Ikeja","Nasarawa":"Lafia","Niger":"Minna","Ogun":"Abeokuta",
   "Ondo":"Akure","Osun":"Osogbo","Oyo":"Ibadan","Plateau":"Jos","Rivers":"Port Harcourt",
   "Sokoto":"Sokoto","Taraba":"Jalingo","Yobe":"Damaturu","Zamfara":"Gusau"
-};
-const LGA_CITIES: Record<string, string[]> = {
-  "Borno:Jere": ["Maimusari","Mashamari","Mairi","Ngomari","Dusuman","Bale Galtimari","Zabarmari","Other"],
-};
-const LGA_WARDS: Record<string, string[]> = {
-  "Borno:Jere": ["Maimusari","Mashamari","Mairi","Ngomari","Dusuman","Bale Galtimari","Zabarmari","Other / not listed"],
 };
 export default function MembershipModule({ userId }: { userId: string }) {
   const [rows, setRows] = useState<Member[]>([]);
@@ -89,6 +44,14 @@ export default function MembershipModule({ userId }: { userId: string }) {
   const [otherCountry, setOtherCountry] = useState("");
   const [stateOfResidence, setStateOfResidence] = useState("");
   const [lga, setLga] = useState("");
+  type AdminOption = { id: string; name_en: string; parent_id?: string | null };
+  const [adminStates, setAdminStates] = useState<AdminOption[]>([]);
+  const [adminLgas, setAdminLgas] = useState<AdminOption[]>([]);
+  const [adminWards, setAdminWards] = useState<AdminOption[]>([]);
+  const [grid3Settlements, setGrid3Settlements] = useState<string[]>([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
   const [ward, setWard] = useState("");
   const [otherWardValue, setOtherWardValue] = useState("");
   const [nationality, setNationality] = useState("Nigerian");
@@ -114,6 +77,54 @@ export default function MembershipModule({ userId }: { userId: string }) {
     setCards((cardRows.data ?? []) as MemberCard[]);
   }
   useEffect(() => { void load().catch(e => setError(e instanceof Error ? e.message : "Could not load membership records.")); }, []);
+  const ADMIN_API = "https://api.openadmindata.org/api/v1/ng";
+  const GRID3_QUERY = "https://services3.arcgis.com/BU6Aadhn6tbBEdyk/ArcGIS/rest/services/Settlements_in_Nigeria/FeatureServer/0/query";
+  useEffect(() => {
+    let cancelled = false;
+    fetch(ADMIN_API + "/state.json").then(r => { if (!r.ok) throw new Error("State directory unavailable"); return r.json(); })
+      .then(data => { if (!cancelled) setAdminStates(Array.isArray(data.entities) ? data.entities : []); })
+      .catch(() => { if (!cancelled) setLocationError("Could not load the official Nigeria state list. Please refresh and try again."); });
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    setAdminLgas([]); setAdminWards([]); setGrid3Settlements([]);
+    if (countryOfResidence !== "Nigeria" || !stateOfResidence) return;
+    const stateName = stateOfResidence === "Federal Capital Territory (FCT)" ? "Federal Capital Territory" : stateOfResidence;
+    const stateRecord = adminStates.find(x => x.name_en === stateName);
+    if (!stateRecord) return;
+    setLocationLoading(true); setLocationError("");
+    fetch(ADMIN_API + "/lga.json").then(r => { if (!r.ok) throw new Error("LGA directory unavailable"); return r.json(); })
+      .then(data => { if (!cancelled) setAdminLgas((data.entities || []).filter((x: AdminOption) => x.parent_id === stateRecord.id)); })
+      .catch(() => { if (!cancelled) setLocationError("Could not load LGAs for the selected state."); })
+      .finally(() => { if (!cancelled) setLocationLoading(false); });
+    return () => { cancelled = true; };
+  }, [countryOfResidence, stateOfResidence, adminStates]);
+  useEffect(() => {
+    let cancelled = false;
+    setAdminWards([]); setGrid3Settlements([]);
+    if (countryOfResidence !== "Nigeria" || !stateOfResidence || !lga) return;
+    const stateName = stateOfResidence === "Federal Capital Territory (FCT)" ? "Federal Capital Territory" : stateOfResidence;
+    const lgaRecord = adminLgas.find(x => x.name_en === lga);
+    if (!lgaRecord) return;
+    setLocationLoading(true); setLocationError("");
+    Promise.all([
+      fetch(ADMIN_API + "/ward.json").then(r => { if (!r.ok) throw new Error("Ward directory unavailable"); return r.json(); }),
+      (() => {
+        const esc = (v: string) => v.replace(/'/g, "''");
+        const params = new URLSearchParams({ where: "statename='" + esc(stateName) + "' AND lganame='" + esc(lga) + "'", outFields: "set_name,set_altnam", returnDistinctValues: "true", returnGeometry: "false", orderByFields: "set_name ASC", f: "json" });
+        return fetch(GRID3_QUERY + "?" + params.toString()).then(r => { if (!r.ok) throw new Error("Settlement directory unavailable"); return r.json(); });
+      })()
+    ]).then(([wardData, settlementData]) => {
+      if (cancelled) return;
+      setAdminWards((wardData.entities || []).filter((x: AdminOption) => x.parent_id === lgaRecord.id));
+      const names = (settlementData.features || []).map((x: { attributes?: { set_name?: string; set_altnam?: string } }) => (x.attributes?.set_name || x.attributes?.set_altnam || "").trim()).filter(Boolean);
+      setGrid3Settlements(Array.from(new Set(names)).sort((a,b) => a.localeCompare(b)));
+    }).catch(() => { if (!cancelled) setLocationError("Could not load City / Town or Ward options for this LGA. You can retry by changing the LGA."); })
+      .finally(() => { if (!cancelled) setLocationLoading(false); });
+    return () => { cancelled = true; };
+  }, [countryOfResidence, stateOfResidence, lga, adminLgas]);
+
   async function add(e: FormEvent) {
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
@@ -242,11 +253,12 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <label>Membership type<select value={type} onChange={e=>setType(e.target.value)}><option value="ordinary">Ordinary</option><option value="associate">Associate</option><option value="honorary">Honorary</option><option value="life">Life</option></select></label>
         <label>Country of residence<select value={countryOfResidence} onChange={e=>{setCountryOfResidence(e.target.value);setStateOfResidence("");setLga("");setWard(""); setOtherWardValue("");setCityOfResidence("");setOtherCityOfResidence("");}} autoComplete="country-name"><option value="Nigeria">Nigeria</option><option value="Niger">Niger</option><option value="Cameroon">Cameroon</option><option value="Chad">Chad</option><option value="Ghana">Ghana</option><option value="Other">Other country</option></select></label>
         {countryOfResidence === "Other" && <label>Specify country<input required maxLength={100} value={otherCountry} onChange={e=>setOtherCountry(e.target.value)} /></label>}
-        <label>State of residence<select value={stateOfResidence} onChange={e=>{setStateOfResidence(e.target.value);setLga("");setWard(""); setOtherWardValue("");setCityOfResidence("");setOtherCityOfResidence("");}} autoComplete="address-level1"><option value="">Select state</option>{["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","Federal Capital Territory (FCT)","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"].map(s=><option key={s} value={s}>{s}</option>)}</select></label>
+        <label>State of residence<select value={stateOfResidence} onChange={e=>{setStateOfResidence(e.target.value);setLga("");setWard("");setOtherWardValue("");setCityOfResidence("");setOtherCityOfResidence("");}} autoComplete="address-level1"><option value="">Select state</option>{adminStates.map(s=><option key={s.id} value={s.name_en === "Federal Capital Territory" ? "Federal Capital Territory (FCT)" : s.name_en}>{s.name_en === "Federal Capital Territory" ? "Federal Capital Territory (FCT)" : s.name_en}</option>)}{stateOfResidence && !adminStates.some(s => s.name_en === stateOfResidence || (stateOfResidence === "Federal Capital Territory (FCT)" && s.name_en === "Federal Capital Territory")) && <option value={stateOfResidence}>{stateOfResidence}</option>}</select></label>
         <label>State Capital<input value={STATE_CAPITALS[stateOfResidence] ?? ""} readOnly placeholder="Automatically shown after selecting a state" aria-label="State capital" /></label>
-        {stateOfResidence === "Borno" ? <label>Local Government Area (LGA)<select value={lga} onChange={e=>{setLga(e.target.value);setCityOfResidence("");setOtherCityOfResidence("");setWard(""); setOtherWardValue("");}}><option value="">Select LGA</option>{["Abadam","Askira/Uba","Bama","Bayo","Biu","Chibok","Damboa","Dikwa","Gubio","Guzamala","Gwoza","Hawul","Jere","Kaga","Kala/Balge","Konduga","Kukawa","Kwaya Kusar","Mafa","Magumeri","Maiduguri","Marte","Mobbar","Monguno","Ngala","Nganzai","Shani"].map(s=><option key={s} value={s}>{s}</option>)}</select></label> : <label>Local Government Area (LGA)<input maxLength={120} value={lga} onChange={e=>setLga(e.target.value)} placeholder="Enter LGA" /></label>}
-        {countryOfResidence === "Nigeria" && stateOfResidence && (stateOfResidence !== "Borno" || lga) ? <label>City / Town<select value={cityOfResidence} onChange={e=>{setCityOfResidence(e.target.value);setOtherCityOfResidence("");}} autoComplete="address-level2"><option value="">Select city or town</option>{(LGA_CITIES[`${stateOfResidence}:${lga}`] ?? STATE_CITIES[stateOfResidence] ?? []).filter(city=>city !== "Other").map(city=><option key={city} value={city}>{city}</option>)}<option value="Other">Other / not listed</option></select></label> : <label>City / Town<input maxLength={120} value={cityOfResidence} onChange={e=>setCityOfResidence(e.target.value)} autoComplete="address-level2" placeholder={stateOfResidence === "Borno" && !lga ? "Select LGA first" : "Enter city or town"} /></label>}{cityOfResidence === "Other" && <label>Enter city / town<input required maxLength={120} value={otherCityOfResidence} onChange={e=>setOtherCityOfResidence(e.target.value)} placeholder="Enter city or town" /></label>}
-        <label>Ward<select value={ward} onChange={e=>setWard(e.target.value)}><option value="">Select ward</option>{(LGA_WARDS[`${stateOfResidence}:${lga}`] ?? ["Other / not listed"]).map(w=><option key={w} value={w}>{w}</option>)}</select></label>{ward === "Other / not listed" && <label>Specify ward<input required maxLength={120} value={otherWardValue} onChange={e=>setOtherWardValue(e.target.value)} placeholder="Enter ward name" /></label>}
+        {countryOfResidence === "Nigeria" ? <label>Local Government Area (LGA)<select value={lga} disabled={!stateOfResidence || locationLoading} onChange={e=>{setLga(e.target.value);setCityOfResidence("");setOtherCityOfResidence("");setWard("");setOtherWardValue("");}}><option value="">{stateOfResidence ? "Select LGA" : "Select state first"}</option>{adminLgas.map(x=><option key={x.id} value={x.name_en}>{x.name_en}</option>)}{lga && !adminLgas.some(x=>x.name_en===lga) && <option value={lga}>{lga}</option>}</select></label> : <label>Local Government Area (LGA)<input maxLength={120} value={lga} onChange={e=>setLga(e.target.value)} placeholder="Enter LGA" /></label>}
+        {countryOfResidence === "Nigeria" ? <label>City / Town<select value={cityOfResidence} disabled={!lga || locationLoading} onChange={e=>{setCityOfResidence(e.target.value);setOtherCityOfResidence("");}} autoComplete="address-level2"><option value="">{lga ? (locationLoading ? "Loading settlements…" : "Select city or town") : "Select LGA first"}</option>{grid3Settlements.map(city=><option key={city} value={city}>{city}</option>)}{cityOfResidence && cityOfResidence !== "Other" && !grid3Settlements.includes(cityOfResidence) && <option value={cityOfResidence}>{cityOfResidence}</option>}<option value="Other">Other / not listed</option></select></label> : <label>City / Town<input maxLength={120} value={cityOfResidence} onChange={e=>setCityOfResidence(e.target.value)} autoComplete="address-level2" placeholder="Enter city or town" /></label>}{cityOfResidence === "Other" && <label>Enter city / town<input required maxLength={120} value={otherCityOfResidence} onChange={e=>setOtherCityOfResidence(e.target.value)} placeholder="Enter city or town" /></label>}
+        <label>Ward<select value={ward} disabled={countryOfResidence === "Nigeria" && (!lga || locationLoading)} onChange={e=>{setWard(e.target.value);setOtherWardValue("");}}><option value="">{countryOfResidence === "Nigeria" ? (lga ? (locationLoading ? "Loading wards…" : "Select ward") : "Select LGA first") : "Select ward"}</option>{(countryOfResidence === "Nigeria" ? adminWards.map(x=>x.name_en) : []).map(w=><option key={w} value={w}>{w}</option>)}{ward && ward !== "Other / not listed" && !adminWards.some(x=>x.name_en===ward) && <option value={ward}>{ward}</option>}<option value="Other / not listed">Other / not listed</option></select></label>{ward === "Other / not listed" && <label>Specify ward<input required maxLength={120} value={otherWardValue} onChange={e=>setOtherWardValue(e.target.value)} placeholder="Enter ward name" /></label>}
+        {locationError && <p className="aasa-error aasa-full-span" role="alert">{locationError}</p>}
         <label>Residential address<textarea rows={2} maxLength={500} value={address} onChange={e=>setAddress(e.target.value)} autoComplete="street-address" /></label>
         <label>Nationality<select value={nationality} onChange={e=>setNationality(e.target.value)}><option value="Nigerian">Nigerian</option><option value="Nigerien">Nigerien</option><option value="Cameroonian">Cameroonian</option><option value="Chadian">Chadian</option><option value="Ghanaian">Ghanaian</option><option value="Other">Other nationality</option></select></label>
         {nationality === "Other" && <label>Specify nationality<input required maxLength={100} value={otherNationality} onChange={e=>setOtherNationality(e.target.value)} /></label>}
@@ -264,7 +276,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <button className="aasa-primary" disabled={busy}>{busy ? "Saving…" : editingId ? "Save member changes" : "Save pending member"}</button>
         {editingId && <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(null);setName("");setEmail("");setPhone("");setDob("");setGender("");setAddress("");setCityOfResidence("");setOtherCityOfResidence("");setNotes("");setEmergencyName("");setEmergencyRelationship("");setEmergencyPhone("");setOccupation("");setStateOfResidence("");setLga("");setWard(""); setOtherWardValue("");setMembershipConsent(false);setType("ordinary");setPhotoFile(null);}}>Cancel editing</button>}
       </form>
-      <p className="aasa-muted">Required: full name, at least one contact method, and declaration for new registrations. Nationality, emergency contact, occupation and location are optional. State and emergency relationship use dropdowns; Borno LGAs are listed for selection. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. Cards can be issued only after membership approval.</p>
+      <p className="aasa-muted">Required: full name, at least one contact method, and declaration for new registrations. Nationality, emergency contact, occupation and location are optional. Nigeria State, LGA, Ward and GRID3 City / Town options load from their respective data sources; City / Town and Ward are independently selected. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. Cards can be issued only after membership approval.</p>
     </section>
     <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">OFFICIAL REGISTER</p><h3>Members</h3></div>
@@ -275,7 +287,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <td>{m.member_number}</td><td><strong>{m.full_name}</strong><br/><small>DOB: {m.date_of_birth || "—"} · Gender: {m.gender || "—"}</small>{m.address && <><br/><small>{m.address}</small></>}{(m.state_of_residence || m.local_government_area) && <><br/><small>{[m.local_government_area,m.state_of_residence].filter(Boolean).join(", ")}</small></>}{m.nationality && <><br/><small>Nationality: {m.nationality}</small></>}{m.country_of_residence && <><br/><small>Country: {m.country_of_residence}</small></>}{m.city_of_residence && <><br/><small>City/Town: {m.city_of_residence}</small></>}{m.ward && <><br/><small>Ward: {m.ward}</small></>}{m.occupation && <><br/><small>Occupation: {m.occupation}</small></>}{m.emergency_contact_name && <><br/><small>Emergency: {m.emergency_contact_name} ({m.emergency_contact_relationship || "contact"}) · {m.emergency_contact_phone || "—"}</small></>}{m.notes && <><br/><small>Admin note: {m.notes}</small></>}</td>
         <td>{m.email || "—"}<br/>{m.phone || "—"}</td><td>{m.membership_type}</td><td><span className="aasa-pill">{m.status}</span></td><td>{m.joined_on}</td>
         <td>{m.status==="active"&&m.email&&!m.auth_user_id&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void linkAccount(m)}>Link verified account</button>}{m.auth_user_id&&<small>Verified account linked</small>}{cards.filter(card=>card.member_id===m.id&&card.status==="active").map(card=><div key={card.id}>{card.card_number}<br/><small>Issued {new Date(card.issued_at).toLocaleDateString()}</small><br/><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void openCard(m,card)}>View / print</button><button type="button" className="aasa-link" disabled={busy} onClick={()=>void revokeCard(card)}>Revoke card</button></div>)}{m.status==="active"&&!cards.some(card=>card.member_id===m.id&&card.status==="active")&&<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void issueCard(m)}>Issue card</button>}</td>
-        <td><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(m.id);setName(m.full_name);setEmail(m.email??"");setPhone(m.phone??"");setDob(m.date_of_birth??"");setGender(m.gender??"");setAddress(m.address??"");setCityOfResidence(m.city_of_residence && (LGA_CITIES[`${m.state_of_residence??""}:${m.local_government_area??""}`] ?? STATE_CITIES[m.state_of_residence??""] ?? []).includes(m.city_of_residence) ? m.city_of_residence : (m.city_of_residence ? "Other" : ""));setOtherCityOfResidence(m.city_of_residence && !(LGA_CITIES[`${m.state_of_residence??""}:${m.local_government_area??""}`] ?? STATE_CITIES[m.state_of_residence??""] ?? []).includes(m.city_of_residence) ? m.city_of_residence : "");setNotes(m.notes??"");setEmergencyName(m.emergency_contact_name??"");setEmergencyRelationship(m.emergency_contact_relationship??"");setEmergencyPhone(m.emergency_contact_phone??"");setOccupation(["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired","Other"].includes(m.occupation??"") ? (m.occupation??"") : "Other");setOtherOccupation(m.occupation && !["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired"].includes(m.occupation) ? m.occupation : "");setCountryOfResidence(["Nigeria","Niger","Cameroon","Chad","Ghana","Other"].includes(m.country_of_residence??"") ? (m.country_of_residence??"Nigeria") : "Other");setOtherCountry(m.country_of_residence && !["Nigeria","Niger","Cameroon","Chad","Ghana"].includes(m.country_of_residence) ? m.country_of_residence : "");setStateOfResidence(m.state_of_residence??"");setLga(m.local_government_area??"");setWard(m.ward && (LGA_WARDS[`${m.state_of_residence??''}:${m.local_government_area??''}`] ?? []).includes(m.ward) ? m.ward : (m.ward ? "Other / not listed" : ""));setOtherWardValue(m.ward && !(LGA_WARDS[`${m.state_of_residence??''}:${m.local_government_area??''}`] ?? []).includes(m.ward) ? m.ward : "");setNationality(["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian","Other"].includes(m.nationality??"") ? (m.nationality??"Nigerian") : "Other");setOtherNationality(m.nationality && !["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian"].includes(m.nationality) ? m.nationality : "");setMembershipConsent(m.membership_consent??false);setType(m.membership_type);setPhotoFile(null);window.scrollTo({top:0,behavior:"smooth"});}}>Edit details</button><br/>{m.status === "pending" ? <><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button> <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
+        <td><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(m.id);setName(m.full_name);setEmail(m.email??"");setPhone(m.phone??"");setDob(m.date_of_birth??"");setGender(m.gender??"");setAddress(m.address??"");setCityOfResidence(m.city_of_residence??"");setOtherCityOfResidence("");setNotes(m.notes??"");setEmergencyName(m.emergency_contact_name??"");setEmergencyRelationship(m.emergency_contact_relationship??"");setEmergencyPhone(m.emergency_contact_phone??"");setOccupation(["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired","Other"].includes(m.occupation??"") ? (m.occupation??"") : "Other");setOtherOccupation(m.occupation && !["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired"].includes(m.occupation) ? m.occupation : "");setCountryOfResidence(["Nigeria","Niger","Cameroon","Chad","Ghana","Other"].includes(m.country_of_residence??"") ? (m.country_of_residence??"Nigeria") : "Other");setOtherCountry(m.country_of_residence && !["Nigeria","Niger","Cameroon","Chad","Ghana"].includes(m.country_of_residence) ? m.country_of_residence : "");setStateOfResidence(m.state_of_residence??"");setLga(m.local_government_area??"");setWard(m.ward??"");setOtherWardValue("");setNationality(["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian","Other"].includes(m.nationality??"") ? (m.nationality??"Nigerian") : "Other");setOtherNationality(m.nationality && !["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian"].includes(m.nationality) ? m.nationality : "");setMembershipConsent(m.membership_consent??false);setType(m.membership_type);setPhotoFile(null);window.scrollTo({top:0,behavior:"smooth"});}}>Edit details</button><br/>{m.status === "pending" ? <><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button> <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
       </tr>)}</tbody></table></div> : <p className="aasa-muted">No matching membership records. Add verified records using the form above.</p>}
     </section>{notice && <p className="aasa-notice" role="status">{notice}</p>}{error && <p className="aasa-error" role="alert">{error}</p>}
     {cardPreview && <div className="aasa-card-overlay" role="dialog" aria-modal="true" aria-label="Membership card preview">
