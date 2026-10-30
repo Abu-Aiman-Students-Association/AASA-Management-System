@@ -118,8 +118,8 @@ export default function MembershipModule({ userId }: { userId: string }) {
     ]).then(([wardData, settlementData]) => {
       if (cancelled) return;
       setAdminWards((wardData.entities || []).filter((x: AdminOption) => x.parent_id === lgaRecord.id));
-      const names = (settlementData.features || []).map((x: { attributes?: { set_name?: string; set_altnam?: string } }) => (x.attributes?.set_name || x.attributes?.set_altnam || "").trim()).filter(Boolean);
-      setGrid3Settlements(Array.from(new Set(names)).sort((a,b) => a.localeCompare(b)));
+      const names: string[] = (settlementData.features || []).map((x: { attributes?: { set_name?: string; set_altnam?: string } }) => (x.attributes?.set_name || x.attributes?.set_altnam || "").trim()).filter((name: string) => name.length > 0);
+      setGrid3Settlements(Array.from(new Set<string>(names)).sort((a: string, b: string) => a.localeCompare(b)));
     }).catch(() => { if (!cancelled) setLocationError("Could not load City / Town or Ward options for this LGA. You can retry by changing the LGA."); })
       .finally(() => { if (!cancelled) setLocationLoading(false); });
     return () => { cancelled = true; };
