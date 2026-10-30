@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AdminDashboard from "./AdminDashboard";
 import MemberDashboard from "./MemberDashboard";
 import VerifyMemberCard from "./VerifyMemberCard";
+import PublicMemberRegistration from "./PublicMemberRegistration";
 import { supabase } from "./lib/supabase";
 import "./admin.css";
 
@@ -9,6 +10,7 @@ type Route = "loading" | "admin" | "member";
 
 export default function App() {
   const params = new URLSearchParams(window.location.search);
+  if (params.has("register")) return <PublicMemberRegistration />;
   const [route, setRoute] = useState<Route>("loading");
 
   useEffect(() => {
