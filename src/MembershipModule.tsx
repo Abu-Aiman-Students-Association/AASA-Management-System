@@ -343,8 +343,31 @@ export default function MembershipModule({ userId }: { userId: string }) {
           <article className="aasa-print-card aasa-card-back">
             <div className="aasa-card-back-header"><img src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="Official AASA crest" /><div><strong>AASA · MEMBER VERIFICATION</strong><small>العلم نور · KNOWLEDGE IS LIGHT</small></div></div>
             <div className="aasa-card-back-main">
-              <div className="aasa-card-qr-frame"><img className="aasa-card-qr" src={cardPreview.qrUrl} alt="QR code to verify this membership card" /></div>
-              <div className="aasa-card-back-copy"><strong>VERIFY MEMBERSHIP</strong><p>Scan the QR code to confirm the member’s identity and current membership status.</p><small>Member ID</small><b>{cardPreview.member.member_number}</b><small>Card Number</small><b>{cardPreview.card.card_number}</b></div>
+              <div className="aasa-card-verification">
+                <div className="aasa-card-qr-frame"><img className="aasa-card-qr" src={cardPreview.qrUrl} alt="QR code to verify this membership card" /></div>
+                <div className="aasa-card-back-copy"><strong>VERIFY MEMBERSHIP</strong><p>Scan to confirm identity and current membership status.</p><small>Member ID</small><b>{cardPreview.member.member_number}</b><small>Card Number</small><b>{cardPreview.card.card_number}</b></div>
+              </div>
+              <div className="aasa-card-member-details">
+                <strong className="aasa-card-details-title">MEMBER DETAILS</strong>
+                <div className="aasa-card-details-grid">
+                  {[
+                    ["NATIONALITY", cardPreview.member.nationality],
+                    ["COUNTRY", cardPreview.member.country_of_residence],
+                    ["STATE", cardPreview.member.state_of_residence],
+                    ["STATE CAPITAL", cardPreview.member.country_of_residence === "Nigeria" ? STATE_CAPITALS[cardPreview.member.state_of_residence || ""] : null],
+                    ["LGA", cardPreview.member.local_government_area],
+                    ["CITY / TOWN", cardPreview.member.city_of_residence],
+                    ["WARD", cardPreview.member.ward],
+                    ["OCCUPATION", cardPreview.member.occupation],
+                    ["PHONE", cardPreview.member.phone],
+                    ["ADDRESS", cardPreview.member.address, "address"]
+                  ].filter((item) => Boolean(item[1]?.trim())).map(([label, value, extra]) => (
+                    <span key={String(label)} className={extra === "address" ? "aasa-card-detail-address" : ""}>
+                      <small>{label}</small><b>{value}</b>
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
             <footer>This card belongs to the named member. Not a government-issued identity document.</footer>
           </article>
