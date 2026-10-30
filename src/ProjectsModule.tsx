@@ -28,7 +28,7 @@ const copy = {
     noProjects:"No project records yet. Submit an authorised proposal to begin; no sample projects are created.",
     details:"Project workspace", overview:"Overview", team:"Team", milestones:"Milestones", tasks:"Tasks", progress:"Progress reports", risks:"Risks", documents:"Supporting documents",
     code:"Project reference", ownerLabel:"Owner", budgetRequested:"Budget requested", budgetApproved:"Approved budget", approval:"Budget approval", status:"Status", dates:"Timeline",
-    reviewBudget:"Review budget request", approvedAmount:"Approved amount (NGN)", reviewNote:"Decision note", approve:"Approve budget", reject:"Reject proposal", activate:"Start project", pause:"Pause", resume:"Resume", cancel:"Cancel project",
+    reviewBudget:"Review budget request", resubmitBudget:"Revise and resubmit budget", approvedAmount:"Approved amount (NGN)", reviewNote:"Decision note", approve:"Approve budget", reject:"Reject proposal", activate:"Start project", pause:"Pause", resume:"Resume", cancel:"Cancel project",
     addTeam:"Assign team member", member:"Active member", role:"Project role", add:"Add", remove:"Remove", ownerRole:"Owner", lead:"Team lead", memberRole:"Team member", observer:"Observer",
     addMilestone:"Add milestone", milestoneTitle:"Milestone title *", milestoneDue:"Due date", milestoneDesc:"Description", milestoneStatus:"Milestone status",
     addTask:"Create task", taskTitle:"Task title *", taskDesc:"Task description", assignTo:"Assign to", noAssignee:"Unassigned", priority:"Priority", taskDue:"Deadline", taskStatus:"Task status", progressPercent:"Progress %",
@@ -49,7 +49,7 @@ const copy = {
     noProjects:"Babu aikin da aka yi rajista tukuna. Aika sahihiyar shawara domin farawa; ba a ƙirƙiri bayanan gwaji ba.",
     details:"Wurin gudanar da aiki", overview:"Taƙaitawa", team:"Tawaga", milestones:"Matakai", tasks:"Ayyuka ƙanana", progress:"Rahoton ci gaba", risks:"Haɗurra", documents:"Takardun tallafi",
     code:"Lambar aiki", ownerLabel:"Mai alhaki", budgetRequested:"Kuɗin da aka nema", budgetApproved:"Kuɗin da aka amince", approval:"Amincewar kasafi", status:"Matsayi", dates:"Lokaci",
-    reviewBudget:"Duba buƙatar kasafi", approvedAmount:"Adadin da aka amince (NGN)", reviewNote:"Bayanin hukunci", approve:"Amince da kasafi", reject:"Ƙi shawarar", activate:"Fara aiki", pause:"Dakatar na ɗan lokaci", resume:"Ci gaba", cancel:"Soke aiki",
+    reviewBudget:"Duba buƙatar kasafi", resubmitBudget:"Gyara kasafi sannan a sake aikawa", approvedAmount:"Adadin da aka amince (NGN)", reviewNote:"Bayanin hukunci", approve:"Amince da kasafi", reject:"Ƙi shawarar", activate:"Fara aiki", pause:"Dakatar na ɗan lokaci", resume:"Ci gaba", cancel:"Soke aiki",
     addTeam:"Ƙara ɗan tawaga", member:"Memba mai aiki", role:"Matsayin tawaga", add:"Ƙara", remove:"Cire", ownerRole:"Mai alhaki", lead:"Jagoran tawaga", memberRole:"Ɗan tawaga", observer:"Mai sa ido",
     addMilestone:"Ƙara mataki", milestoneTitle:"Sunan mataki *", milestoneDue:"Ranar ƙarshe", milestoneDesc:"Bayani", milestoneStatus:"Matsayin mataki",
     addTask:"Ƙirƙiri ƙaramin aiki", taskTitle:"Sunan aiki *", taskDesc:"Bayanin aiki", assignTo:"Ba wa", noAssignee:"Ba a ware ba", priority:"Muhimmanci", taskDue:"Wa'adin aiki", taskStatus:"Matsayin aiki", progressPercent:"Ci gaba %",
@@ -70,7 +70,7 @@ const copy = {
     noProjects:"لا توجد مشاريع مسجلة بعد. قدم مقترحًا معتمدًا للبدء؛ لا توجد سجلات تجريبية.",
     details:"مساحة المشروع", overview:"نظرة عامة", team:"الفريق", milestones:"المراحل", tasks:"المهام", progress:"تقارير التقدم", risks:"المخاطر", documents:"المستندات الداعمة",
     code:"مرجع المشروع", ownerLabel:"المسؤول", budgetRequested:"الميزانية المطلوبة", budgetApproved:"الميزانية المعتمدة", approval:"اعتماد الميزانية", status:"الحالة", dates:"الجدول الزمني",
-    reviewBudget:"مراجعة طلب الميزانية", approvedAmount:"المبلغ المعتمد (NGN)", reviewNote:"ملاحظة القرار", approve:"اعتماد الميزانية", reject:"رفض المقترح", activate:"بدء المشروع", pause:"إيقاف مؤقت", resume:"استئناف", cancel:"إلغاء المشروع",
+    reviewBudget:"مراجعة طلب الميزانية", resubmitBudget:"تعديل الميزانية وإعادة الإرسال", approvedAmount:"المبلغ المعتمد (NGN)", reviewNote:"ملاحظة القرار", approve:"اعتماد الميزانية", reject:"رفض المقترح", activate:"بدء المشروع", pause:"إيقاف مؤقت", resume:"استئناف", cancel:"إلغاء المشروع",
     addTeam:"إضافة عضو للفريق", member:"عضو نشط", role:"دور المشروع", add:"إضافة", remove:"إزالة", ownerRole:"المسؤول", lead:"قائد الفريق", memberRole:"عضو الفريق", observer:"مراقب",
     addMilestone:"إضافة مرحلة", milestoneTitle:"عنوان المرحلة *", milestoneDue:"تاريخ الاستحقاق", milestoneDesc:"الوصف", milestoneStatus:"حالة المرحلة",
     addTask:"إنشاء مهمة", taskTitle:"عنوان المهمة *", taskDesc:"وصف المهمة", assignTo:"إسناد إلى", noAssignee:"غير مسندة", priority:"الأولوية", taskDue:"الموعد النهائي", taskStatus:"حالة المهمة", progressPercent:"نسبة الإنجاز %",
@@ -147,10 +147,10 @@ export default function ProjectsModule({ userId, lang = "en", canManage, canAppr
     try {
       const [p,c] = await Promise.all([
         supabase.from("aasa_projects").select("*").order("created_at",{ascending:false}).limit(500),
-        supabase.from("aasa_committees").select("id,name").eq("status","active").order("name")
+        canManage ? supabase.rpc("aasa_list_project_committees") : Promise.resolve({data:[],error:null})
       ]);
       if(p.error) throw p.error;
-      if(c.error && canManage) throw c.error;
+      if(c.error) throw c.error;
       const rows=(p.data??[]) as Project[];
       setProjects(rows);setCommittees(c.data??[]);
       let memberRows:Member[]=[];
@@ -175,9 +175,9 @@ export default function ProjectsModule({ userId, lang = "en", canManage, canAppr
   useEffect(()=>{void load("").catch(e=>setError(e instanceof Error?e.message:t.error));},[]);
   useEffect(()=>{if(selectedId) setApprovedBudget(String(selected?.approved_budget??selected?.budget_request??""));},[selectedId,selected?.approved_budget,selected?.budget_request]);
 
-  async function run(action:()=>Promise<void>,message=t.success) {
+  async function run(action:()=>Promise<void>,message=t.success,preferredId?:()=>string) {
     setBusy(true);setError("");setNotice("");
-    try { await action(); await load(selectedId); setNotice(message); }
+    try { await action(); await load(preferredId?.() || selectedId); setNotice(message); }
     catch(e){setError(e instanceof Error?e.message:t.error);}
     finally{setBusy(false);}
   }
@@ -186,6 +186,7 @@ export default function ProjectsModule({ userId, lang = "en", canManage, canAppr
     e.preventDefault();
     if(!canManage){setError(t.noPermission);return;}
     if(targetDate&&startDate&&targetDate<startDate){setError("Target date cannot be earlier than the start date.");return;}
+    let createdProjectId="";
     await run(async()=>{
       const {data,error}=await supabase.from("aasa_projects").insert({
         title:title.trim(),proposal:proposal.trim(),objectives:objectives.trim(),expected_outcomes:outcomes.trim(),
@@ -194,8 +195,8 @@ export default function ProjectsModule({ userId, lang = "en", canManage, canAppr
       }).select("id").single();
       if(error)throw error;
       setTitle("");setProposal("");setObjectives("");setOutcomes("");setOwnerId("");setCommitteeId("");setBudget("0");setStartDate("");setTargetDate("");
-      if(data?.id)setSelectedId(data.id);
-    },"Project proposal submitted and is awaiting budget review.");
+      if(data?.id){createdProjectId=data.id;setSelectedId(data.id);}
+    },"Project proposal submitted and is awaiting budget review.",()=>createdProjectId);
   }
   async function addTeam(e:FormEvent) {
     e.preventDefault();if(!selected||!teamMemberId)return;
