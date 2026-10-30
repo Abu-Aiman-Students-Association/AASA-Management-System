@@ -1,17 +1,35 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "./lib/supabase";
 import "./public-registration.css";
 
+type DirectoryItem = { id: string; name_en: string; parent_id?: string | null };
+const ADMIN_API = "https://api.openadmindata.org/api/v1/ng";
+const GRID3_QUERY = "https://services3.arcgis.com/BU6Aadhn6tbBEdyk/ArcGIS/rest/services/Settlements_in_Nigeria/FeatureServer/0/query";
+const CAPITALS: Record<string,string> = {Abia:"Umuahia",Adamawa:"Yola","Akwa Ibom":"Uyo",Anambra:"Awka",Bauchi:"Bauchi",Bayelsa:"Yenagoa",Benue:"Makurdi",Borno:"Maiduguri","Cross River":"Calabar",Delta:"Asaba",Ebonyi:"Abakaliki",Edo:"Benin City",Ekiti:"Ado-Ekiti",Enugu:"Enugu","Federal Capital Territory (FCT)":"Abuja",Gombe:"Gombe",Imo:"Owerri",Jigawa:"Dutse",Kaduna:"Kaduna",Kano:"Kano",Katsina:"Katsina",Kebbi:"Birnin Kebbi",Kogi:"Lokoja",Kwara:"Ilorin",Lagos:"Ikeja",Nasarawa:"Lafia",Niger:"Minna",Ogun:"Abeokuta",Ondo:"Akure",Osun:"Osogbo",Oyo:"Ibadan",Plateau:"Jos",Rivers:"Port Harcourt",Sokoto:"Sokoto",Taraba:"Jalingo",Yobe:"Damaturu",Zamfara:"Gusau"};
+
 export default function PublicMemberRegistration() {
-  const [form,setForm]=useState({full_name:"",email:"",phone:"",date_of_birth:"",gender:"",country_of_residence:"Nigeria",state_of_residence:"",local_government_area:"",city_of_residence:"",ward:"",nationality:"Nigerian",address:"",membership_consent:false});
-  const [busy,setBusy]=useState(false); const [error,setError]=useState(""); const [receipt,setReceipt]=useState("");
+  const [form,setForm]=useState({full_name:"",email:"",phone:"",date_of_birth:"",gender:"",country_of_residence:"Nigeria",other_country:"",state_of_residence:"",local_government_area:"",city_of_residence:"",other_city:"",ward:"",other_ward:"",nationality:"Nigerian",address:"",membership_consent:false});
+  const [states,setStates]=useState<DirectoryItem[]>([]),[lgas,setLgas]=useState<DirectoryItem[]>([]),[wards,setWards]=useState<DirectoryItem[]>([]),[cities,setCities]=useState<string[]>([]);
+  const [locationLoading,setLocationLoading]=useState(false),[locationError,setLocationError]=useState("");
+  const [busy,setBusy]=useState(false),[error,setError]=useState(""),[receipt,setReceipt]=useState("");
   const update=(key:string,value:string|boolean)=>setForm(old=>({...old,[key]:value}));
-  async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");setReceipt("");
-    try{const {data,error}=await supabase.rpc("aasa_submit_member_application",{p_application:form});if(error)throw error;
-      const result=Array.isArray(data)?data[0]:data;if(!result?.member_number)throw new Error("The application could not be confirmed. Please try again.");
-      setReceipt(result.member_number);
-    }catch(e){setError(e instanceof Error?e.message:"Unable to submit the application.");}finally{setBusy(false);}
-  }
+  useEffect(()=>{let cancelled=false;fetch(ADMIN_API+"/state.json").then(r=>{if(!r.ok)throw Error();return r.json();}).then(d=>{if(!cancelled)setStates(Array.isArray(d.entities)?d.entities:[]);}).catch(()=>{if(!cancelled)setLocationError("Nigeria State list could not load. Refresh and try again.");});return()=>{cancelled=true;};},[]);
+  useEffect(()=>{let cancelled=false;setLgas([]);setWards([]);setCities([]);if(form.country_of_residence!=="Nigeria"||!form.state_of_residence)return;
+    const n=form.state_of_residence==="Federal Capital Territory (FCT)"?"Federal Capital Territory":form.state_of_residence;const st=states.find(x=>x.name_en===n);if(!st)return;
+    setLocationLoading(true);setLocationError("");fetch(ADMIN_API+"/lga.json").then(r=>{if(!r.ok)throw Error();return r.json();}).then(d=>{if(!cancelled)setLgas((d.entities||[]).filter((x:DirectoryItem)=>x.parent_id===st.id));}).catch(()=>{if(!cancelled)setLocationError("LGA list could not load for this State.");}).finally(()=>{if(!cancelled)setLocationLoading(false);});
+    return()=>{cancelled=true;};},[form.country_of_residence,form.state_of_residence,states]);
+  useEffect(()=>{let cancelled=false;setWards([]);setCities([]);if(form.country_of_residence!=="Nigeria"||!form.state_of_residence||!form.local_government_area)return;
+    const n=form.state_of_residence==="Federal Capital Territory (FCT)"?"Federal Capital Territory":form.state_of_residence;const lga=lgas.find(x=>x.name_en===form.local_government_area);if(!lga)return;
+    setLocationLoading(true);setLocationError("");const esc=(v:string)=>v.replace(/'/g,"''");const q=new URLSearchParams({where:"statename='"+esc(n)+"' AND lganame='"+esc(form.local_government_area)+"'",outFields:"set_name,set_altnam",returnDistinctValues:"true",returnGeometry:"false",orderByFields:"set_name ASC",f:"json"});
+    Promise.all([fetch(ADMIN_API+"/ward.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch(GRID3_QUERY+"?"+q).then(r=>{if(!r.ok)throw Error();return r.json();})]).then(([wd,sd])=>{if(cancelled)return;setWards((wd.entities||[]).filter((x:DirectoryItem)=>x.parent_id===lga.id));const names=(sd.features||[]).map((x:{attributes?:{set_name?:string;set_altnam?:string}})=>(x.attributes?.set_name||x.attributes?.set_altnam||"").trim()).filter((x:string)=>x);setCities(Array.from(new Set<string>(names)).sort((a,b)=>a.localeCompare(b)));}).catch(()=>{if(!cancelled)setLocationError("City/Town or Ward options could not load. You may choose Other / not listed.");}).finally(()=>{if(!cancelled)setLocationLoading(false);});
+    return()=>{cancelled=true;};},[form.country_of_residence,form.state_of_residence,form.local_government_area,lgas]);
+  async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");setReceipt("");try{
+    if(!form.email.trim()&&!form.phone.trim())throw Error("Provide at least one contact method: email or phone.");
+    const application:any={...form,country_of_residence:form.country_of_residence==="Other"?form.other_country.trim():form.country_of_residence,city_of_residence:form.city_of_residence==="Other / not listed"?form.other_city.trim():form.city_of_residence,ward:form.ward==="Other / not listed"?form.other_ward.trim():form.ward};
+    delete application.other_country;delete application.other_city;delete application.other_ward;
+    const {data,error}=await supabase.rpc("aasa_submit_member_application",{p_application:application});if(error)throw error;const result=Array.isArray(data)?data[0]:data;if(!result?.member_number)throw Error("The application could not be confirmed. Please try again.");setReceipt(result.member_number);
+  }catch(e){setError(e instanceof Error?e.message:"Unable to submit the application.");}finally{setBusy(false);}}
+  const nigeria=form.country_of_residence==="Nigeria";
   return <main className="aasa-public-reg">
     <header><div className="aasa-public-mark">AASA</div><div><strong>ABU-AIMAN STUDENTS’ ASSOCIATION</strong><small>رابطة طلاب مدرسة أبوأيمن لتحفيظ القرآن الكريم والدراسات الإسلامية</small><small>العلم نور</small></div></header>
     <section className="aasa-public-intro"><span>MEMBERSHIP · APPLICATION</span><h1>Member Registration</h1><p>Apply to join the Abu-Aiman Students’ Association. Your application will be reviewed by an authorised association officer.</p></section>
@@ -23,13 +41,18 @@ export default function PublicMemberRegistration() {
       <p className="aasa-public-help">Provide at least one contact method: email or phone.</p>
       <div className="aasa-public-two"><label>Date of birth<input type="date" max={new Date().toISOString().slice(0,10)} value={form.date_of_birth} onChange={e=>update("date_of_birth",e.target.value)}/></label><label>Gender *<select required value={form.gender} onChange={e=>update("gender",e.target.value)}><option value="">Select gender</option><option value="male">Male</option><option value="female">Female</option><option value="prefer_not_to_say">Prefer not to say</option></select></label></div>
       <h2>Residential address</h2>
-      <div className="aasa-public-two"><label>Country<input value={form.country_of_residence} maxLength={100} onChange={e=>update("country_of_residence",e.target.value)}/></label><label>State<input value={form.state_of_residence} maxLength={120} onChange={e=>update("state_of_residence",e.target.value)}/></label></div>
-      <div className="aasa-public-two"><label>Local Government Area<input value={form.local_government_area} maxLength={120} onChange={e=>update("local_government_area",e.target.value)}/></label><label>City / Town<input value={form.city_of_residence} maxLength={120} onChange={e=>update("city_of_residence",e.target.value)}/></label></div>
-      <div className="aasa-public-two"><label>Ward<input value={form.ward} maxLength={120} onChange={e=>update("ward",e.target.value)}/></label><label>Nationality<input value={form.nationality} maxLength={100} onChange={e=>update("nationality",e.target.value)}/></label></div>
+      <div className="aasa-public-two"><label>Country of residence *<select required value={form.country_of_residence} onChange={e=>setForm(o=>({...o,country_of_residence:e.target.value,state_of_residence:"",local_government_area:"",city_of_residence:"",other_city:"",ward:"",other_ward:""}))}><option>Nigeria</option><option>Niger</option><option>Cameroon</option><option>Chad</option><option>Ghana</option><option>Other</option></select></label><label>Nationality *<input required value={form.nationality} maxLength={100} onChange={e=>update("nationality",e.target.value)}/></label></div>
+      {form.country_of_residence==="Other"&&<label>Enter country<input required maxLength={100} value={form.other_country} onChange={e=>update("other_country",e.target.value)}/></label>}
+      {nigeria?<><div className="aasa-public-two"><label>State of residence *<select required value={form.state_of_residence} onChange={e=>setForm(o=>({...o,state_of_residence:e.target.value,local_government_area:"",city_of_residence:"",other_city:"",ward:"",other_ward:""}))}><option value="">Select State</option>{states.map(s=><option key={s.id} value={s.name_en==="Federal Capital Territory"?"Federal Capital Territory (FCT)":s.name_en}>{s.name_en==="Federal Capital Territory"?"FCT (Abuja)":s.name_en}</option>)}</select></label><label>State Capital<input readOnly value={CAPITALS[form.state_of_residence]||""} placeholder="Auto-filled after selecting State"/></label></div>
+      <div className="aasa-public-two"><label>Local Government Area (LGA) *<select required disabled={!form.state_of_residence||locationLoading} value={form.local_government_area} onChange={e=>setForm(o=>({...o,local_government_area:e.target.value,city_of_residence:"",other_city:"",ward:"",other_ward:""}))}><option value="">Select LGA</option>{lgas.map(x=><option key={x.id} value={x.name_en}>{x.name_en}</option>)}</select></label><label>City / Town *<select required disabled={!form.local_government_area||locationLoading} value={form.city_of_residence} onChange={e=>update("city_of_residence",e.target.value)}><option value="">Select City / Town</option>{cities.map(x=><option key={x} value={x}>{x}</option>)}<option>Other / not listed</option></select></label></div>
+      {form.city_of_residence==="Other / not listed"&&<label>Enter City / Town<input required maxLength={120} value={form.other_city} onChange={e=>update("other_city",e.target.value)}/></label>}
+      <label>Ward<select value={form.ward} disabled={!form.local_government_area||locationLoading} onChange={e=>update("ward",e.target.value)}><option value="">Select Ward (optional)</option>{wards.map(x=><option key={x.id} value={x.name_en}>{x.name_en}</option>)}<option>Other / not listed</option></select></label>
+      {form.ward==="Other / not listed"&&<label>Enter Ward<input required maxLength={120} value={form.other_ward} onChange={e=>update("other_ward",e.target.value)}/></label>}</>:
+      <div className="aasa-public-two"><label>State / Province<input maxLength={120} value={form.state_of_residence} onChange={e=>update("state_of_residence",e.target.value)}/></label><label>City / Town<input maxLength={120} value={form.city_of_residence} onChange={e=>update("city_of_residence",e.target.value)}/></label></div>}
+      {locationLoading&&<p className="aasa-public-help">Loading location options…</p>}{locationError&&<p className="aasa-public-error" role="status">{locationError}</p>}
       <label>Residential address<textarea rows={3} maxLength={500} value={form.address} onChange={e=>update("address",e.target.value)}/></label>
       <label className="aasa-public-consent"><input type="checkbox" required checked={form.membership_consent} onChange={e=>update("membership_consent",e.target.checked)}/><span>I confirm that the information provided is accurate and consent to its use for membership administration and association communications.</span></label>
-      {error&&<p className="aasa-public-error" role="alert">{error}</p>}
-      <button disabled={busy}>{busy?"Submitting…":"Submit membership application"}</button>
+      {error&&<p className="aasa-public-error" role="alert">{error}</p>}<button disabled={busy}>{busy?"Submitting…":"Submit membership application"}</button>
       <p className="aasa-public-help">Submitting this form does not grant membership, voting rights, a membership card, or administrator access. Approval is required.</p>
     </form>}
     <footer>العلم نور · AASA · Secure · Accountable</footer>
