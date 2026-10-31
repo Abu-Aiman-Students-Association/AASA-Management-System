@@ -124,3 +124,16 @@ test("ID Center uses approved member-card RPCs and QR verification rather than d
   assert.ok(!idCenterSource.includes('.from("aasa_member_cards").update'));
   assert.ok(!idCenterSource.includes('.from("aasa_member_cards").delete'));
 });
+
+const publicVerificationSource = await readFile(new URL("../src/VerifyMemberCard.tsx", import.meta.url), "utf8");
+const verificationFunctionSource = await readFile(new URL("../supabase/functions/aasa-public-card-verification/index.ts", import.meta.url), "utf8");
+test("public QR verification shows extended details and photo only with member consent", () => {
+  assert.match(publicVerificationSource, /aasa-public-card-verification/);
+  assert.match(publicVerificationSource, /record\.consent_shared && m\.photo_url/);
+  assert.match(publicVerificationSource, /m\.phone/);
+  assert.match(publicVerificationSource, /m\.address/);
+  assert.match(verificationFunctionSource, /membership_consent === true/);
+  assert.match(verificationFunctionSource, /createSignedUrl\(m\.photo_path,600\)/);
+  assert.match(verificationFunctionSource, /Cache-Control/);
+  assert.doesNotMatch(verificationFunctionSource, /date_of_birth|emergency_contact_phone/);
+});
