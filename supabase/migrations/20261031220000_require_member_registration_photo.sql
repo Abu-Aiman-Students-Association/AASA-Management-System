@@ -20,7 +20,7 @@ begin
   if v_phone is not null and length(v_phone) > 40 then raise exception 'Phone number is too long.'; end if;
   if v_gender is not null and v_gender not in ('female','male','prefer_not_to_say') then raise exception 'Invalid gender selection.'; end if;
   if coalesce((p_application->>'membership_consent')::boolean, false) is not true then raise exception 'Please accept the membership declaration.'; end if;
-  if v_photo_path is null or v_photo_path !~ '^member-applications/[A-Za-z0-9-]+[.](jpg|png|webp)$'
+  if v_photo_path is null or v_photo_path !~ '^member-applications/[A-Za-z0-9-]+[.](jpg|png)$'
      or not exists(select 1 from storage.objects o where o.bucket_id='aasa-documents' and o.name=v_photo_path) then
     raise exception 'A valid member passport photograph is required.';
   end if;
