@@ -185,3 +185,18 @@
  .aasa-project-actions button{flex:1}
  .aasa-project-tabs button{padding:8px 10px}
 }
+
+
+/* QR scan reliability: preserve a full four-module quiet zone and a larger physical scan target. */
+.aasa-card-back-main{grid-template-columns:34% minmax(0,1fr)!important;gap:8px}
+.aasa-card-verification .aasa-card-qr-frame{width:100%;max-width:160px;padding:5px}
+.aasa-card-sheet .aasa-card-qr{width:100%;height:100%;image-rendering:auto}
+@media(max-width:700px){
+  .aasa-card-back-main{grid-template-columns:34% minmax(0,1fr)!important;gap:8px}
+  .aasa-card-verification .aasa-card-qr-frame{max-width:160px}
+}
+@media print{
+  .aasa-card-back-main{grid-template-columns:34% minmax(0,1fr)!important;gap:2mm!important;padding:1.5mm 2.5mm!important}
+  .aasa-card-verification .aasa-card-qr-frame{width:24mm;max-width:24mm;padding:1mm}
+  .aasa-card-sheet .aasa-card-qr{width:100%;height:100%}
+}

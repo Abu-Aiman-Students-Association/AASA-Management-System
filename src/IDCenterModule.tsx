@@ -71,7 +71,7 @@ export default function IDCenterModule({ lang, canIssue, canRevoke }: { lang: "e
       let photoUrl="";
       if(member.photo_path){const {data,error:e}=await supabase.storage.from("aasa-documents").createSignedUrl(member.photo_path,300);if(e)throw e;photoUrl=data.signedUrl;}
       const verifyUrl=new URL(import.meta.env.BASE_URL,window.location.origin);verifyUrl.searchParams.set("verify",card.qr_token);
-      const qrUrl=await QRCode.toDataURL(verifyUrl.toString(),{width:260,margin:1,errorCorrectionLevel:"M"});
+      const qrUrl=await QRCode.toDataURL(verifyUrl.toString(),{width:512,margin:4,errorCorrectionLevel:"M"});
       setPreview({member,card,photoUrl,qrUrl});
     } catch(e){setError(e instanceof Error?e.message:"Could not prepare card preview.");}
     finally{setBusy(false);}
