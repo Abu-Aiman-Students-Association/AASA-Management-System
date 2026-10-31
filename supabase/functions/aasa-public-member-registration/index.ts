@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const PUBLIC_API_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "sb_publishable_-nxBJ_GpzXqHTqMScffyvw_PTFoQ1xR";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
@@ -17,6 +18,7 @@ function response(body: unknown, status = 200) {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return response({ error: "Method not allowed." }, 405);
+  if (req.headers.get("apikey") !== PUBLIC_API_KEY) return response({ error: "Unauthorized." }, 401);
 
   let uploadedPath: string | null = null;
   const db = createClient(

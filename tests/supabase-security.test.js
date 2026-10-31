@@ -147,6 +147,8 @@ test("public membership registration requires a validated passport photograph an
   assert.match(publicRegistrationSource, /photoFile\.size>5\*1024\*1024/);
   assert.match(publicRegistrationSource, /aasa-public-member-registration/);
   assert.match(registrationFunctionSource, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(registrationFunctionSource, /req\.headers\.get\("apikey"\)/);
+  assert.match(registrationFunctionSource, /SUPABASE_PUBLISHABLE_KEY/);
   assert.match(registrationFunctionSource, /createClient/);
   assert.match(registrationFunctionSource, /aasa_submit_member_application/);
   assert.match(registrationFunctionSource, /member-applications\//);
