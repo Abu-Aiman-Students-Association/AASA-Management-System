@@ -11,13 +11,15 @@ import ElectionsModule from "./ElectionsModule";
 import ElectionVotingModule from "./ElectionVotingModule";
 import ElectionResultsModule from "./ElectionResultsModule";
 import ProjectsModule from "./ProjectsModule";
+import IDCenterModule from "./IDCenterModule";
 
 type Role = string;
 type Account = { id: string; email: string; roles: Role[]; permissions: string[]; status: string };
-type Section = "overview" | "membership" | "governance" | "elections" | "meetings" | "projects" | "finance" | "welfare" | "documents" | "administration";
+type Section = "overview" | "membership" | "id_center" | "governance" | "elections" | "meetings" | "projects" | "finance" | "welfare" | "documents" | "administration";
 const moduleSections: { id: Section; icon: string; en: string; ha: string; ar: string; state: "available" | "planned" }[] = [
   { id: "overview", icon: "▦", en: "Overview", ha: "Shafin Farko", ar: "نظرة عامة", state: "available" },
   { id: "membership", icon: "♙", en: "Membership", ha: "Membobinta", ar: "العضوية", state: "available" },
+  { id: "id_center", icon: "▣", en: "ID Center", ha: "Cibiyar Katin Shaida", ar: "مركز بطاقات الهوية", state: "available" },
   { id: "governance", icon: "♜", en: "Leadership & Committees", ha: "Shugabanci da Kwamitoci", ar: "القيادة واللجان", state: "available" },
   { id: "elections", icon: "☑", en: "Elections", ha: "Zaɓe", ar: "الانتخابات", state: "available" },
   { id: "meetings", icon: "▤", en: "Meetings & Events", ha: "Taro da Ayyuka", ar: "الاجتماعات والفعاليات", state: "available" },
@@ -141,7 +143,7 @@ export default function AdminDashboard() {
     if (id === "overview") return Boolean(role);
     if (id === "administration") return account?.permissions.some(p => ["platform.admins.manage","system.users.manage","system.roles.manage"].includes(p)) ?? false;
     const required: Record<Exclude<Section,"overview"|"administration">, string[]> = {
-      membership: ["membership.read"], governance: ["executives.manage","committees.manage"], elections: ["elections.manage","elections.results.review","elections.vote"], meetings: ["meetings.manage"], projects: ["projects.manage","projects.approve"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve"], welfare: ["welfare.cases.read","welfare.cases.manage"], documents: ["documents.manage"]
+      membership: ["membership.read"], id_center: ["membership.read","cards.issue","cards.revoke"], governance: ["executives.manage","committees.manage"], elections: ["elections.manage","elections.results.review","elections.vote"], meetings: ["meetings.manage"], projects: ["projects.manage","projects.approve"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve"], welfare: ["welfare.cases.read","welfare.cases.manage"], documents: ["documents.manage"]
     };
     return account?.permissions.some(p => required[id as Exclude<Section,"overview"|"administration">]?.includes(p)) ?? false;
   };
@@ -163,6 +165,7 @@ export default function AdminDashboard() {
           {section === "finance" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">FINANCE · SEPARATION OF DUTIES</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Record financial activity and require independent review.</p></div><span className="aasa-pill active">Connected</span></div><FinanceModule userId={account.id} /></>}
           {section === "governance" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">GOVERNANCE · ACCOUNTABILITY</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Manage positions and committees without fabricated records.</p></div><span className="aasa-pill active">Connected</span></div><GovernanceModule userId={account.id} /></>}
           {section === "membership" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">MEMBERSHIP · VERIFIED RECORDS</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Member register, review status and accountable record updates.</p></div><span className="aasa-pill active">Connected</span></div><MembershipModule userId={account.id} /></>}
+          {section === "id_center" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">IDENTITY · CARDS · VERIFICATION</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Centralised issue, print, reissue and revocation of official AASA membership identity cards.</p></div><span className="aasa-pill active">Connected</span></div><IDCenterModule userId={account.id} lang={lang} canIssue={role === "super_admin" || account.permissions.includes("cards.issue")} canRevoke={role === "super_admin" || account.permissions.includes("cards.revoke")} /></>}
           {section === "administration" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">ACCESS CONTROL</p><h2>{copy.administration}</h2><p>Account controls are validated by database policies and trusted functions.</p></div></div><AdminAccountsPanel currentUserId={account.id} /></>}
           {section !== "overview" && section !== "administration" && moduleSections.find(m => m.id === section)?.state === "planned" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">AASA MODULE</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>{copy.comingText}</p></div><span className="aasa-status-planned">{copy.planned}</span></div><section className="aasa-panel aasa-coming-panel"><span className="aasa-coming-icon">{moduleSections.find(m => m.id === section)?.icon}</span><h3>{copy.coming}</h3><p>{copy.comingText}</p><button className="aasa-secondary" type="button" onClick={() => setSection("overview")}>← {copy.overview}</button></section></>}
         </div>

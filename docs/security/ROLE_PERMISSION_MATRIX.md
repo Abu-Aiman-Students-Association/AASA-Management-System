@@ -20,6 +20,7 @@ Security principle: deny by default; backend-enforced least privilege.
 |---|---|---|---|---|---|---|---|---|
 | Association settings | Manage | No | No | Limited | No | No | Read approved audit scope | Read published |
 | Membership applications | Manage/review | Review | No | No | No | No | Read authorized audit only | Submit/read own through approved flow |
+| Membership ID cards (ID Center) | Issue/revoke with audit | Issue/revoke only when explicitly granted | No | No | No | No | Read authorized audit only | View own verified card only |
 | Member profiles | Manage with audit | Manage assigned duties | Minimum required fields only | Minimum required fields only | Assigned scope only | Eligibility data only | Read authorized scope | Read own permitted fields |
 | Role assignments | Grant/revoke through trusted workflow | No | No | No | No | No | Read audit trail | No |
 | Meetings/minutes | Manage | No | No | Manage | Assigned committee only | No | Read authorized audit scope | Read published records |

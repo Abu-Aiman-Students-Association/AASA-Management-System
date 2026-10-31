@@ -107,3 +107,18 @@ test("assigned project members can see and update only their own assigned tasks 
   assert.match(projectPrivacyMigration, /projects\.approve/);
   assert.match(projectPrivacyMigration, /p\.status not in/);
 });
+
+const idCenterSource = await readFile(new URL("../src/IDCenterModule.tsx", import.meta.url), "utf8");
+test("AASA ID Center is a dedicated dashboard section adjacent to Membership", () => {
+  assert.match(dashboardSource, /IDCenterModule/);
+  assert.match(dashboardSource, /id_center/);
+  assert.match(dashboardSource, /cards\\.issue/);
+  assert.match(dashboardSource, /cards\\.revoke/);
+});
+test("ID Center uses approved member-card RPCs and QR verification rather than direct card writes", () => {
+  assert.match(idCenterSource, /aasa_issue_member_card/);
+  assert.match(idCenterSource, /aasa_revoke_member_card/);
+  assert.match(idCenterSource, /QRCode\\.toDataURL/);
+  assert.match(idCenterSource, /window\\.print\\(\\)/);
+  assert.doesNotMatch(idCenterSource, /from\\(["']aasa_member_cards["']\\)\\.(insert|update|delete)/);
+});
