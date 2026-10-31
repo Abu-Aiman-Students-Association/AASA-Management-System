@@ -200,3 +200,34 @@
   .aasa-card-verification .aasa-card-qr-frame{width:24mm;max-width:24mm;padding:1mm}
   .aasa-card-sheet .aasa-card-qr{width:100%;height:100%}
 }
+
+/* Public AASA QR membership verification */
+.aasa-verify-page{min-height:100vh;background:#f3f7f4;color:#193b2b}
+.aasa-verify-page>header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px max(20px,calc((100% - 1080px)/2));background:#103b2b;color:#fff}
+.aasa-verify-page .aasa-brand{display:flex;align-items:center;gap:10px}
+.aasa-verify-crest{width:42px;height:42px;object-fit:contain;border-radius:50%;background:#fff;padding:2px}
+.aasa-verify-page .aasa-brand>div{display:grid;gap:3px}
+.aasa-verify-page .aasa-brand small{font-size:9px;letter-spacing:.06em;color:#d9e8dc}
+.aasa-verify-page>header>span{font-size:11px;font-weight:800;color:#e9d28d}
+.aasa-verify-page .aasa-content{width:min(100% - 28px,780px);margin:28px auto;padding:0}
+.aasa-verify-card{padding:clamp(18px,4vw,32px);border:1px solid #dce8df;border-radius:18px;box-shadow:0 16px 44px #123b2910}
+.aasa-verify-card h1{margin:5px 0 20px;color:#173f2c;font-size:clamp(22px,4vw,30px);line-height:1.2}
+.aasa-verify-status{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid #b9ddc4;border-radius:12px;background:#eef8f0;color:#175b35}
+.aasa-verify-status>span{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#1b7b43;color:#fff;font-weight:900}
+.aasa-verify-status>div{display:grid;gap:3px}.aasa-verify-status small{font-size:10px;color:#52735d}
+.aasa-verify-profile{display:flex;align-items:center;gap:18px;margin:22px 0;padding:18px;border:1px solid #e3ebe5;border-radius:14px;background:#fbfdfb}
+.aasa-verify-profile>img,.aasa-verify-no-photo{width:104px;height:124px;flex:0 0 104px;object-fit:cover;border:2px solid #d7bd72;border-radius:9px;background:#edf3ee}
+.aasa-verify-no-photo{display:grid;place-items:center;padding:8px;text-align:center;color:#74877a;font-size:10px}
+.aasa-verify-profile>div{min-width:0}.aasa-verify-profile small,.aasa-verify-summary small{display:block;margin-bottom:6px;color:#8c743e;font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.aasa-verify-profile h2{margin:0 0 7px;color:#183e2c;font-size:clamp(18px,3vw,24px);overflow-wrap:anywhere}.aasa-verify-profile p{margin:0;color:#477052;font-size:12px;font-weight:850}
+.aasa-verify-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.aasa-verify-summary>div{min-width:0;padding:13px;border:1px solid #e3ebe5;border-radius:10px;background:#fff}.aasa-verify-summary strong{display:block;color:#254b34;font-size:11px;overflow-wrap:anywhere}
+.aasa-verify-details{margin-top:24px;padding-top:20px;border-top:1px solid #e5ece6}.aasa-verify-details h2{margin:0 0 12px;color:#174a32;font-size:13px;letter-spacing:.08em}
+.aasa-verify-details dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0}
+.aasa-verify-details dl>div{min-width:0;padding:11px 12px;border:1px solid #e7eee8;border-radius:9px;background:#fbfdfb}
+.aasa-verify-details dt{margin-bottom:5px;color:#8a7445;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.04em}
+.aasa-verify-details dd{margin:0;color:#294b36;font-size:12px;font-weight:700;overflow-wrap:anywhere;white-space:pre-wrap}
+.aasa-verify-details dl>div:last-child{grid-column:1/-1}
+.aasa-verify-consent{margin-top:20px;padding:14px;border:1px solid #eadfbf;border-radius:10px;background:#fffaf0;color:#715c2d;font-size:11px;line-height:1.7}
+.aasa-verify-card>.aasa-muted{margin-top:18px;font-size:10px;line-height:1.7}
+@media(max-width:560px){.aasa-verify-page>header{padding:13px 16px}.aasa-verify-page .aasa-brand small{font-size:8px}.aasa-verify-page .aasa-content{margin:16px auto}.aasa-verify-profile{gap:12px;padding:12px}.aasa-verify-profile>img,.aasa-verify-no-photo{width:84px;height:104px;flex-basis:84px}.aasa-verify-summary{grid-template-columns:1fr}.aasa-verify-details dl{grid-template-columns:1fr}.aasa-verify-details dl>div:last-child{grid-column:auto}}
