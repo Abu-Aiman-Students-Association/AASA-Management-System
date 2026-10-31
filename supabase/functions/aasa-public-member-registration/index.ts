@@ -39,10 +39,9 @@ Deno.serve(async (req: Request) => {
     const mimeToExt: Record<string, string> = {
       "image/jpeg": "jpg",
       "image/png": "png",
-      "image/webp": "webp",
     };
     const ext = mimeToExt[photo.type];
-    if (!ext) return response({ error: "Upload a JPG, PNG or WEBP photograph." }, 400);
+    if (!ext) return response({ error: "Upload a JPG or PNG photograph." }, 400);
     if (photo.data.length > 7_000_000) return response({ error: "The photograph must be 5 MB or smaller." }, 413);
 
     const binary = atob(photo.data);
@@ -53,9 +52,7 @@ Deno.serve(async (req: Request) => {
     }
     const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
     const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
-    const isWebp = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
-      && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
-    if (!(photo.type === "image/jpeg" && isJpeg) && !(photo.type === "image/png" && isPng) && !(photo.type === "image/webp" && isWebp)) {
+    if (!(photo.type === "image/jpeg" && isJpeg) && !(photo.type === "image/png" && isPng)) {
       return response({ error: "The uploaded file content does not match its image type." }, 400);
     }
 
