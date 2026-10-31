@@ -43,7 +43,7 @@ export default function IDCenterModule({ lang, canIssue, canRevoke }: { lang: "e
   const memberById = useMemo(()=>new Map(members.map(m=>[m.id,m])),[members]);
   const activeCount = cards.filter(c=>c.status==="active").length;
   const revokedCount = cards.filter(c=>c.status==="revoked"||c.status==="expired").length;
-  const eligible = members.filter(m=>m.status==="active"&&!cards.some(c=>c.member_id===m.id&&c.status==="active")).length;
+  const eligible = members.filter(m=>m.status==="active"&&Boolean(m.photo_path)&&!cards.some(c=>c.member_id===m.id&&c.status==="active")).length;
   const filtered = cards.filter(c=>{
     const m=memberById.get(c.member_id);
     const matchesStatus=filter==="all"||c.status===filter;
