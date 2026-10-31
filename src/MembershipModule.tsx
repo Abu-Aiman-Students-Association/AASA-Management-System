@@ -196,7 +196,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setCityOfResidence(""); setNotes("");
         setEmergencyName(""); setEmergencyRelationship(""); setEmergencyPhone(""); setOccupation(""); setStateOfResidence(""); setLga(""); setWard(""); setOtherWardValue(""); setMembershipConsent(false);
         setType("ordinary"); setPhotoFile(null);
-        await load(); setNotice("Member record saved as pending. Review identity and details before approval." + photoMessage);
+        await load(); setNotice("Member record saved as pending with its passport photograph. Review identity and details before approval.");
       }
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save membership."); }
     finally { setBusy(false); }
