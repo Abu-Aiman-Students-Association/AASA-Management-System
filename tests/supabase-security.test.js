@@ -143,7 +143,7 @@ const registrationFunctionSource = await readFile(new URL("../supabase/functions
 const registrationPhotoMigration = await readFile(new URL("../supabase/migrations/20261031220000_require_member_registration_photo.sql", import.meta.url), "utf8");
 test("public membership registration requires a validated passport photograph and submits through the secure upload function", () => {
   assert.match(publicRegistrationSource, /type="file"/);
-  assert.match(publicRegistrationSource, /required=\\{!photoFile\\}/);
+  assert.match(publicRegistrationSource, /required=\{!photoFile\}/);
   assert.match(publicRegistrationSource, /photoFile\.size>5\*1024\*1024/);
   assert.match(publicRegistrationSource, /aasa-public-member-registration/);
   assert.match(registrationFunctionSource, /SUPABASE_SERVICE_ROLE_KEY/);
