@@ -3,3 +3,5 @@
 .aasa-public-form input[readonly]{background:#f2f7f4;color:#285c42;font-weight:750}
 .aasa-public-form input:focus,.aasa-public-form select:focus,.aasa-public-form textarea:focus{outline:3px solid #2b6a4a20;border-color:#6d9c7d}
 .aasa-public-form button:disabled{opacity:.55;cursor:wait}
+
+.aasa-public-photo-preview{display:flex;align-items:center;gap:14px;margin:-4px 0 18px;padding:12px;border:1px solid #dce6ef;border-radius:12px;background:#f8fbff;color:#31506e;font-size:13px;font-weight:700}.aasa-public-photo-preview img{width:84px;height:104px;object-fit:cover;border-radius:8px;border:1px solid #d6e0eb}.aasa-card-id-label{display:block;margin-top:4px;font-size:9px;font-weight:800;letter-spacing:1.2px;color:#55708c}.aasa-card-member-number{margin-top:2px}
