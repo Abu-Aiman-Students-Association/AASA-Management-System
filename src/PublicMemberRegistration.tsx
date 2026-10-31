@@ -38,7 +38,7 @@ export default function PublicMemberRegistration() {
   }catch(e){setError(e instanceof Error?e.message:"Unable to submit the application.");}finally{setBusy(false);}}
   const nigeria=form.country_of_residence==="Nigeria";
   return <main className="aasa-public-reg">
-    <header><div className="aasa-public-mark">AASA</div><div><strong>ABU-AIMAN STUDENTS’ ASSOCIATION</strong><small>رابطة طلاب مدرسة أبوأيمن لتحفيظ القرآن الكريم والدراسات الإسلامية</small><small>العلم نور</small></div></header>
+    <header><img className="aasa-public-logo" src={import.meta.env.BASE_URL+"aasa-school-logo.jpg"} alt="Official AASA crest"/><div><strong>ABU-AIMAN STUDENTS’ ASSOCIATION</strong><small>رابطة طلاب مدرسة أبوأيمن لتحفيظ القرآن الكريم والدراسات الإسلامية</small><small>العلم نور</small></div></header>
     <section className="aasa-public-intro"><span>MEMBERSHIP · APPLICATION</span><h1>Member Registration</h1><p>Apply to join the Abu-Aiman Students’ Association. Your application will be reviewed by an authorised association officer.</p></section>
     {receipt?<section className="aasa-public-success" role="status"><div>✓</div><h2>Application submitted</h2><p>Your application has been received and is awaiting review. It is not an active membership yet.</p><strong>Application reference</strong><code>{receipt}</code><p>Keep this reference and contact the association office if you need assistance.</p><button onClick={()=>window.location.assign(window.location.pathname)}>Finish</button></section>:
     <form onSubmit={submit} className="aasa-public-form">
