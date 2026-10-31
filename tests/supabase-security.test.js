@@ -137,3 +137,26 @@ test("public QR verification shows extended details and photo only with member c
   assert.match(verificationFunctionSource, /Cache-Control/);
   assert.doesNotMatch(verificationFunctionSource, /date_of_birth|emergency_contact_phone/);
 });
+
+const publicRegistrationSource = await readFile(new URL("../src/PublicMemberRegistration.tsx", import.meta.url), "utf8");
+const registrationFunctionSource = await readFile(new URL("../supabase/functions/aasa-public-member-registration/index.ts", import.meta.url), "utf8");
+const registrationPhotoMigration = await readFile(new URL("../supabase/migrations/20261031220000_require_member_registration_photo.sql", import.meta.url), "utf8");
+test("public membership registration requires a validated passport photograph and submits through the secure upload function", () => {
+  assert.match(publicRegistrationSource, /type="file" accept="image\/jpeg,image\/png,image\/webp" required/);
+  assert.match(publicRegistrationSource, /photoFile\.size>5\*1024\*1024/);
+  assert.match(publicRegistrationSource, /aasa-public-member-registration/);
+  assert.match(registrationFunctionSource, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(registrationFunctionSource, /createClient/);
+  assert.match(registrationFunctionSource, /createClient/);
+  assert.match(registrationFunctionSource, /aasa_submit_member_application/);
+  assert.match(registrationFunctionSource, /member-applications\//);
+  assert.match(registrationFunctionSource, /5 \* 1024 \* 1024/);
+  assert.match(registrationPhotoMigration, /photo_path/);
+  assert.match(registrationPhotoMigration, /revoke all on function public\.aasa_submit_member_application\(jsonb\) from public, anon, authenticated/i);
+  assert.match(registrationPhotoMigration, /grant execute on function public\.aasa_submit_member_application\(jsonb\) to service_role/i);
+});
+test("membership identity card and QR verification explicitly label the unique member number as ID Number", () => {
+  assert.match(idCenterSource, /memberNo:"ID number"/);
+  assert.match(idCenterSource, /aasa-card-id-label/);
+  assert.match(publicVerificationSource, /ID Number/);
+});
