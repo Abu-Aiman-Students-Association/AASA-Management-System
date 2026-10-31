@@ -27,7 +27,7 @@ export default function PublicMemberRegistration() {
     return()=>{cancelled=true;};},[form.country_of_residence,form.state_of_residence,form.local_government_area,lgas]);
   async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");setReceipt("");try{
     if(!photoFile)throw Error("A member passport photograph is required.");
-    if(!["image/jpeg","image/png","image/webp"].includes(photoFile.type))throw Error("Upload a JPG, PNG or WEBP photograph.");
+    if(!["image/jpeg","image/png"].includes(photoFile.type))throw Error("Upload a JPG or PNG photograph.");
     if(photoFile.size>5*1024*1024)throw Error("The photograph must be 5 MB or smaller.");
     if(!form.email.trim()&&!form.phone.trim())throw Error("Provide at least one contact method: email or phone.");
     const application:any={...form,country_of_residence:form.country_of_residence==="Other"?form.other_country.trim():form.country_of_residence,city_of_residence:form.city_of_residence==="Other / not listed"?form.other_city.trim():form.city_of_residence,ward:form.ward==="Other / not listed"?form.other_ward.trim():form.ward};
@@ -44,7 +44,7 @@ export default function PublicMemberRegistration() {
     <form onSubmit={submit} className="aasa-public-form">
       <h2>Personal information</h2>
       <label>Full name *<input required minLength={2} maxLength={160} autoComplete="name" value={form.full_name} onChange={e=>update("full_name",e.target.value)}/></label>
-      <label>Member passport photograph *<input type="file" accept="image/jpeg,image/png,image/webp" required={!photoFile} onChange={e=>{const file=e.target.files?.[0]||null;setPhotoFile(file);setPhotoPreview(file?URL.createObjectURL(file):"");}}/><small className="aasa-public-help">Required. JPG, PNG or WEBP; maximum 5 MB. Use a clear, recent passport-style photograph. Your photo and the membership details you consent to share will be visible when your active AASA card QR code is scanned.</small></label>
+      <label>Member passport photograph *<input type="file" accept="image/jpeg,image/png" required={!photoFile} onChange={e=>{const file=e.target.files?.[0]||null;setPhotoFile(file);setPhotoPreview(file?URL.createObjectURL(file):"");}}/><small className="aasa-public-help">Required. JPG, PNG or WEBP; maximum 5 MB. Use a clear, recent passport-style photograph. Your photo and the membership details you consent to share will be visible when your active AASA card QR code is scanned.</small></label>
       {photoPreview&&<div className="aasa-public-photo-preview"><img src={photoPreview} alt="Member photograph preview"/><span>Photograph selected</span></div>}
       <div className="aasa-public-two"><label>Email address<input type="email" maxLength={254} autoComplete="email" value={form.email} onChange={e=>update("email",e.target.value)}/></label><label>Phone number<input type="tel" maxLength={40} autoComplete="tel" value={form.phone} onChange={e=>update("phone",e.target.value)}/></label></div>
       <p className="aasa-public-help">Provide at least one contact method: email or phone.</p>
