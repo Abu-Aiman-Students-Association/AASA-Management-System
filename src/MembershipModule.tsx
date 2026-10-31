@@ -132,6 +132,8 @@ export default function MembershipModule({ userId }: { userId: string }) {
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
       if (!email.trim() && !phone.trim()) throw new Error("Enter at least one contact method: email address or phone number.");
+      const existingMember = editingId ? rows.find(row => row.id === editingId) : null;
+      if (!photoFile && (!editingId || !existingMember?.photo_path)) throw new Error("A member passport photograph is required before registration can be saved.");
       if (!editingId && !membershipConsent) throw new Error("Please confirm the membership declaration before saving.");
       if (photoFile && (!["image/jpeg", "image/png"].includes(photoFile.type) || photoFile.size > 5 * 1024 * 1024)) {
         throw new Error("Member photo must be JPG or PNG and no larger than 5 MB.");
@@ -177,16 +179,19 @@ export default function MembershipModule({ userId }: { userId: string }) {
           status: "pending", created_by: userId
         }).select("id,member_number").single();
         if (error) throw error;
-        let photoMessage = "";
-        if (photoFile && inserted) {
-          const ext = photoFile.type === "image/png" ? "png" : "jpg";
-          const path = userId + "/member-photo-" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
-          const uploaded = await supabase.storage.from("aasa-documents").upload(path, photoFile, { contentType: photoFile.type, upsert: false });
-          if (uploaded.error) photoMessage = " Member record saved, but photo upload failed: " + uploaded.error.message;
-          else {
-            const saved = await supabase.from("aasa_members").update({ photo_path: path, updated_by: userId }).eq("id", inserted.id);
-            if (saved.error) photoMessage = " Member record saved, but photo path could not be saved: " + saved.error.message;
-          }
+        if (!photoFile || !inserted) throw new Error("A member photograph is required.");
+        const ext = photoFile.type === "image/png" ? "png" : "jpg";
+        const path = userId + "/member-photo-" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
+        const uploaded = await supabase.storage.from("aasa-documents").upload(path, photoFile, { contentType: photoFile.type, upsert: false });
+        if (uploaded.error) {
+          await supabase.from("aasa_members").delete().eq("id", inserted.id);
+          throw new Error("Photograph upload failed; the incomplete member record was not kept. " + uploaded.error.message);
+        }
+        const saved = await supabase.from("aasa_members").update({ photo_path: path, updated_by: userId }).eq("id", inserted.id);
+        if (saved.error) {
+          await supabase.storage.from("aasa-documents").remove([path]);
+          await supabase.from("aasa_members").delete().eq("id", inserted.id);
+          throw new Error("Could not link the photograph to the member record; the incomplete registration was rolled back. " + saved.error.message);
         }
         setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setCityOfResidence(""); setNotes("");
         setEmergencyName(""); setEmergencyRelationship(""); setEmergencyPhone(""); setOccupation(""); setStateOfResidence(""); setLga(""); setWard(""); setOtherWardValue(""); setMembershipConsent(false);
@@ -213,6 +218,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
   async function setStatus(m: Member, status: string) {
     setBusy(true); setError(""); setNotice("");
     try {
+      if (status === "active" && !m.photo_path) throw new Error("Upload the member photograph before approving this membership.");
       const { error } = await supabase.from("aasa_members").update({ status, updated_by: userId }).eq("id", m.id);
       if (error) throw error;
       if (status === "active" && m.status !== "active" && m.email && !m.auth_user_id) {
@@ -243,7 +249,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
   }
   async function issueCard(m: Member) {
     setBusy(true); setError(""); setNotice("");
-    try { const { error } = await supabase.rpc("aasa_issue_member_card", { p_member_id: m.id }); if (error) throw error; await load(); setNotice("Membership card issued. Open View / print to render the member photo and QR verification code."); }
+    try { if (!m.photo_path) throw new Error("A member photograph is required before an ID card can be issued."); const { error } = await supabase.rpc("aasa_issue_member_card", { p_member_id: m.id }); if (error) throw error; await load(); setNotice("Membership card issued. Open View / print to render the member photo and QR verification code."); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not issue card."); }
     finally { setBusy(false); }
   }
@@ -300,7 +306,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <label>Emergency contact name<input maxLength={160} value={emergencyName} onChange={e=>setEmergencyName(e.target.value)} /></label>
         <label>Emergency contact relationship<select value={emergencyRelationship} onChange={e=>setEmergencyRelationship(e.target.value)}><option value="">Select relationship</option>{["Parent","Spouse","Child","Sibling","Guardian","Relative","Friend","Other"].map(s=><option key={s} value={s}>{s}</option>)}</select></label>
         <label>Emergency contact phone<input type="tel" maxLength={30} value={emergencyPhone} onChange={e=>setEmergencyPhone(e.target.value)} /></label>
-        <label>Member photo (optional)<input type="file" accept="image/jpeg,image/png" onChange={e=>setPhotoFile(e.target.files?.[0] ?? null)} />{photoFile && <small>{photoFile.name} · {(photoFile.size / 1024).toFixed(0)} KB</small>}</label>
+        <label>Member passport photograph *<input type="file" accept="image/jpeg,image/png" required={!editingId || !rows.find(m=>m.id===editingId)?.photo_path} onChange={e=>setPhotoFile(e.target.files?.[0] ?? null)} />{photoFile && <small>{photoFile.name} · {(photoFile.size / 1024).toFixed(0)} KB</small>}<small>Required for every new member. Existing members may keep their current photo; members without a photo must upload one before saving, approval or card issuance. JPG/PNG, maximum 5 MB.</small></label>
         <label>Administrative notes (restricted)<textarea rows={2} maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)} /></label>
         <label className="aasa-full-span" style={{display:"flex",alignItems:"flex-start",gap:".65rem"}}>
           <input type="checkbox" checked={membershipConsent} onChange={e=>setMembershipConsent(e.target.checked)} required={!editingId} style={{width:"auto",marginTop:".25rem"}} />
@@ -309,7 +315,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <button className="aasa-primary" disabled={busy}>{busy ? "Saving…" : editingId ? "Save member changes" : "Save pending member"}</button>
         {editingId && <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(null);setName("");setEmail("");setPhone("");setDob("");setGender("");setAddress("");setCityOfResidence("");setOtherCityOfResidence("");setNotes("");setEmergencyName("");setEmergencyRelationship("");setEmergencyPhone("");setOccupation("");setStateOfResidence("");setLga("");setWard(""); setOtherWardValue("");setMembershipConsent(false);setType("ordinary");setPhotoFile(null);}}>Cancel editing</button>}
       </form>
-      <p className="aasa-muted">Required: full name, at least one contact method, and declaration for new registrations. Nationality, emergency contact, occupation and location are optional. Nigeria State, LGA, Ward and GRID3 City / Town options load from their respective data sources; City / Town and Ward are independently selected. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. Cards can be issued only after membership approval.</p>
+      <p className="aasa-muted">Required: full name, member passport photograph, at least one contact method, and declaration for new registrations. Nationality, emergency contact, occupation and location are optional. Nigeria State, LGA, Ward and GRID3 City / Town options load from their respective data sources; City / Town and Ward are independently selected. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. Cards can be issued only after membership approval.</p>
     </section>
     <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">OFFICIAL REGISTER</p><h3>Members</h3></div>
