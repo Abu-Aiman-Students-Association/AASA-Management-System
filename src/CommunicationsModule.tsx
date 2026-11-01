@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "./lib/supabase";
+import "./communications.css";
 
 type Lang = "en" | "ha" | "ar";
 type Announcement = { id: string; title: string; body: string; audience_type: string; published_at: string };
