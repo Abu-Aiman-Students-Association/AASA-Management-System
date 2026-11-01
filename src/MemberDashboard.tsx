@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { supabase } from "./lib/supabase";
 import MyProjectTasks from "./MyProjectTasks";
+import NotificationsInbox from "./NotificationsInbox";
 import "./member.css";
 
 type Member = {
@@ -85,6 +86,7 @@ export default function MemberDashboard() {
           {card ? <div className="aasa-member-card"><div><strong>{member.full_name}</strong><span>{member.member_number}</span><span>{t.cardNo}: {card.card_number}</span><span>{t.issued}: {new Date(card.issued_at).toLocaleDateString()}</span></div>{qr && <img src={qr} alt="Membership verification QR code" />}</div> : <p>{t.noCard}</p>}
         </section>
       </div>}
+      {member && <NotificationsInbox lang={lang} />}
       {member && <MyProjectTasks memberId={member.id} lang={lang} />}
       <footer>العلم نور · AASA · Secure · Accountable · Multilingual</footer>
     </section>
