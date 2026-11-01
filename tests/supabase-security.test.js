@@ -213,3 +213,13 @@ test("official announcements use permission-checked atomic in-app delivery and e
   assert.match(notificationsInboxSource, /aasa_mark_notification_read/);
   assert.match(notificationsInboxSource, /from\("aasa_notifications"\)/);
 });
+
+
+const notificationConstraintFix = await readFile(new URL("../supabase/migrations/20261101184500_align_notification_delivery_with_status_constraints.sql", import.meta.url), "utf8");
+test("in-app notification channel and read state respect the existing delivery status constraints", () => {
+  assert.match(notificationConstraintFix, /select user_id,'IN_APP'/);
+  assert.match(notificationConstraintFix, /'DELIVERED'/);
+  assert.match(notificationConstraintFix, /set read_at = coalesce\(read_at,now\(\)\)/);
+  assert.doesNotMatch(notificationConstraintFix, /delivery_status\s*=\s*'READ'/);
+  assert.match(notificationConstraintFix, /aasa_announcements\.publish/);
+});
