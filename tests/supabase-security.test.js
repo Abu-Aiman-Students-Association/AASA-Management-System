@@ -181,3 +181,14 @@ test("highly restricted welfare cases have separate read and management permissi
   assert.match(sensitiveWelfareMigration, /confidentiality = 'highly_restricted'[\s\S]*assigned_to = \(select auth\.uid\(\)\)/);
   assert.match(sensitiveWelfareMigration, /with check[\s\S]*confidentiality = 'highly_restricted'/i);
 });
+
+
+const electionEligibilityMigration = await readFile(new URL("../supabase/migrations/20261101112025_enforce_election_voter_eligibility_snapshots.sql", import.meta.url), "utf8");
+test("election opening snapshots eligible active members and voting RPCs enforce the snapshot", () => {
+  assert.match(electionEligibilityMigration, /aasa_snapshot_voter_eligibility_on_voting_open/);
+  assert.match(electionEligibilityMigration, /on conflict \(election_id, member_id\) do nothing/i);
+  assert.match(electionEligibilityMigration, /membership_status/);
+  assert.match(electionEligibilityMigration, /aasa_voter_eligibility ve[\s\S]*ve\.eligible = true/i);
+  assert.match(electionEligibilityMigration, /This member is not eligible to vote in this election/);
+  assert.match(electionEligibilityMigration, /set search_path = ''/i);
+});
