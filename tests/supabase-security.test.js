@@ -162,3 +162,11 @@ test("membership identity card and QR verification explicitly label the unique m
   assert.match(idCenterSource, /aasa-card-id-label/);
   assert.match(publicVerificationSource, /ID Number/);
 });
+
+const anonOperationalTablesMigration = await readFile(new URL("../supabase/migrations/20261101083346_revoke_anon_access_from_private_aasa_operational_tables.sql", import.meta.url), "utf8");
+test("private operational AASA tables explicitly revoke anonymous table privileges", () => {
+  for (const table of ["aasa_complaints","aasa_financial_approvals","aasa_notifications","aasa_system_settings","aasa_tasks","aasa_voter_eligibility"]) {
+    assert.ok(anonOperationalTablesMigration.includes("public." + table), "private table is covered");
+  }
+  assert.match(anonOperationalTablesMigration, /revoke all privileges[\s\S]*from anon/i);
+});
