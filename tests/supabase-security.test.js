@@ -170,3 +170,14 @@ test("private operational AASA tables explicitly revoke anonymous table privileg
   }
   assert.match(anonOperationalTablesMigration, /revoke all privileges[\s\S]*from anon/i);
 });
+
+
+const welfareSource = await readFile(new URL("../src/WelfareModule.tsx", import.meta.url), "utf8");
+const sensitiveWelfareMigration = await readFile(new URL("../supabase/migrations/20261101111855_restrict_high_sensitivity_welfare_case_access.sql", import.meta.url), "utf8");
+test("highly restricted welfare cases have separate read and management permissions and remain assigned-handler scoped", () => {
+  assert.match(welfareSource, /highly_restricted/);
+  assert.match(sensitiveWelfareMigration, /welfare\.cases\.sensitive\.read/);
+  assert.match(sensitiveWelfareMigration, /welfare\.cases\.sensitive\.manage/);
+  assert.match(sensitiveWelfareMigration, /confidentiality = 'highly_restricted'[\s\S]*assigned_to = \(select auth\.uid\(\)\)/);
+  assert.match(sensitiveWelfareMigration, /with check[\s\S]*confidentiality = 'highly_restricted'/i);
+});
