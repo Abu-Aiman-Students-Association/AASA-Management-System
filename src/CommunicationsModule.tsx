@@ -56,7 +56,7 @@ export default function CommunicationsModule({ userId, lang }: { userId: string;
   }
 
   const audienceLabel = (value:string) => value === "all_members" ? t.all : value === "executives" ? t.executives : t.committee;
-  return <div className="aasa-module-work">
+  return <div className="aasa-module-work" data-actor-user-id={userId}>
     <div className="aasa-governance-hero"><div><p className="aasa-kicker">AASA · COMMUNICATIONS</p><h3>{t.title}</h3><p>{t.intro}</p></div><button className="aasa-secondary" type="button" disabled={loading||busy} onClick={()=>void load()}>{loading ? t.loading : "Refresh"}</button></div>
     <section className="aasa-panel"><p className="aasa-kicker">01 · {t.compose.toUpperCase()}</p><h3>{t.compose}</h3>
       <form className="aasa-member-form" onSubmit={publish}>
