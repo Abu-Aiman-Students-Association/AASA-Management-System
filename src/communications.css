@@ -1,0 +1,5 @@
+.aasa-communication-item{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:15px 4px;border-bottom:1px solid #edf1ee;background:#fff}
+.aasa-communication-item>div{min-width:0;display:grid;gap:7px}
+.aasa-communication-item strong{font-size:12px;color:#203b2b;overflow-wrap:anywhere}
+.aasa-communication-item p{margin:0;color:#617568;font-size:11px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.aasa-communication-item small{color:#849187;font-size:9px}
