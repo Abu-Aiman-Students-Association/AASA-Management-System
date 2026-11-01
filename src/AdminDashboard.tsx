@@ -12,10 +12,11 @@ import ElectionVotingModule from "./ElectionVotingModule";
 import ElectionResultsModule from "./ElectionResultsModule";
 import ProjectsModule from "./ProjectsModule";
 import IDCenterModule from "./IDCenterModule";
+import CommunicationsModule from "./CommunicationsModule";
 
 type Role = string;
 type Account = { id: string; email: string; roles: Role[]; permissions: string[]; status: string };
-type Section = "overview" | "membership" | "id_center" | "governance" | "elections" | "meetings" | "projects" | "finance" | "welfare" | "documents" | "administration";
+type Section = "overview" | "membership" | "id_center" | "governance" | "elections" | "meetings" | "projects" | "finance" | "welfare" | "documents" | "communications" | "administration";
 const moduleSections: { id: Section; icon: string; en: string; ha: string; ar: string; state: "available" | "planned" }[] = [
   { id: "overview", icon: "▦", en: "Overview", ha: "Shafin Farko", ar: "نظرة عامة", state: "available" },
   { id: "membership", icon: "♙", en: "Membership", ha: "Membobinta", ar: "العضوية", state: "available" },
@@ -27,6 +28,7 @@ const moduleSections: { id: Section; icon: string; en: string; ha: string; ar: s
   { id: "finance", icon: "₦", en: "Finance", ha: "Kuɗaɗe", ar: "المالية", state: "available" },
   { id: "welfare", icon: "♡", en: "Welfare & Cases", ha: "Jindadi da Ƙorafe-ƙorafe", ar: "الرعاية والشكاوى", state: "available" },
   { id: "documents", icon: "▧", en: "Documents & Reports", ha: "Takardu da Rahotanni", ar: "الوثائق والتقارير", state: "available" },
+  { id: "communications", icon: "✉", en: "Announcements & Notifications", ha: "Sanarwa da Saƙonni", ar: "الإعلانات والإشعارات", state: "available" },
   { id: "administration", icon: "⚙", en: "Administration & Security", ha: "Gudanarwa da Tsaro", ar: "الإدارة والأمان", state: "available" }
 ];
 export default function AdminDashboard() {
@@ -143,7 +145,7 @@ export default function AdminDashboard() {
     if (id === "overview") return Boolean(role);
     if (id === "administration") return account?.permissions.some(p => ["platform.admins.manage","system.users.manage","system.roles.manage"].includes(p)) ?? false;
     const required: Record<Exclude<Section,"overview"|"administration">, string[]> = {
-      membership: ["membership.read"], id_center: ["membership.read","cards.issue","cards.revoke"], governance: ["executives.manage","committees.manage"], elections: ["elections.manage","elections.results.review","elections.vote"], meetings: ["meetings.manage"], projects: ["projects.manage","projects.approve"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve"], welfare: ["welfare.cases.read","welfare.cases.manage"], documents: ["documents.manage"]
+      membership: ["membership.read"], id_center: ["membership.read","cards.issue","cards.revoke"], governance: ["executives.manage","committees.manage"], communications: ["announcements.publish"], elections: ["elections.manage","elections.results.review","elections.vote"], meetings: ["meetings.manage"], projects: ["projects.manage","projects.approve"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve"], welfare: ["welfare.cases.read","welfare.cases.manage"], documents: ["documents.manage"]
     };
     return account?.permissions.some(p => required[id as Exclude<Section,"overview"|"administration">]?.includes(p)) ?? false;
   };
@@ -162,6 +164,7 @@ export default function AdminDashboard() {
           {section === "documents" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">DOCUMENTS · PRIVATE STORAGE</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Upload, securely open and archive official AASA documents.</p></div><span className="aasa-pill active">Connected</span></div><DocumentsModule userId={account.id} /></>}
           {section === "meetings" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">MEETINGS · EVENTS</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Schedule, track and close official association meetings and events.</p></div><span className="aasa-pill active">Connected</span></div><MeetingsModule userId={account.id} /></>}
           {section === "projects" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">PROJECTS · DEVELOPMENT · ACCOUNTABILITY</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Manage proposals, budgets, project teams, milestones, assigned tasks, risks and completion approvals.</p></div><span className="aasa-pill active">Connected</span></div><ProjectsModule userId={account.id} lang={lang} canManage={role === "super_admin" || account.permissions.includes("projects.manage")} canApprove={role === "super_admin" || account.permissions.includes("projects.approve")} canLinkDocs={role === "super_admin" || account.permissions.includes("documents.manage")} /></>}
+          {section === "communications" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">COMMUNICATIONS · OFFICIAL MESSAGES</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Publish announcements to all active members, executive officers or a selected committee.</p></div><span className="aasa-pill active">In-app delivery</span></div><CommunicationsModule userId={account.id} lang={lang} />}</>}
           {section === "finance" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">FINANCE · SEPARATION OF DUTIES</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Record financial activity and require independent review.</p></div><span className="aasa-pill active">Connected</span></div><FinanceModule userId={account.id} /></>}
           {section === "governance" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">GOVERNANCE · ACCOUNTABILITY</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Manage positions and committees without fabricated records.</p></div><span className="aasa-pill active">Connected</span></div><GovernanceModule userId={account.id} /></>}
           {section === "membership" && <><div className="aasa-page-heading"><div><p className="aasa-kicker">MEMBERSHIP · VERIFIED RECORDS</p><h2>{label(moduleSections.find(m => m.id === section)!)}</h2><p>Member register, review status and accountable record updates.</p></div><span className="aasa-pill active">Connected</span></div><MembershipModule userId={account.id} /></>}
