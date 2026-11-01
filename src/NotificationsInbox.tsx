@@ -31,7 +31,7 @@ export default function NotificationsInbox({lang}:{lang:Lang}) {
   async function markRead(id:string){
     setBusyId(id);setError("");
     const {error:e}=await supabase.rpc("aasa_mark_notification_read",{p_notification_id:id});
-    if(e)setError(e.message);else setRows(prev=>prev.map(row=>row.id===id?{...row,read_at:row.read_at??new Date().toISOString(),delivery_status:"READ"}:row));
+    if(e)setError(e.message);else setRows(prev=>prev.map(row=>row.id===id?{...row,read_at:row.read_at??new Date().toISOString()}:row));
     setBusyId("");
   }
   const unread=rows.filter(row=>!row.read_at).length;
