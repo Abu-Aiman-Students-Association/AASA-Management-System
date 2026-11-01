@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
+import "./notifications.css";
 
 type Lang = "en" | "ha" | "ar";
 type Notification = { id:string; title:string; message:string; delivery_status:string; created_at:string; read_at:string|null };
