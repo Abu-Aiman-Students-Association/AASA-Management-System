@@ -192,3 +192,24 @@ test("election opening snapshots eligible active members and voting RPCs enforce
   assert.match(electionEligibilityMigration, /This member is not eligible to vote in this election/);
   assert.match(electionEligibilityMigration, /set search_path = ''/i);
 });
+
+
+const communicationsMigration = await readFile(new URL("../supabase/migrations/20261101142000_aasa_announcements_and_in_app_notification_delivery.sql", import.meta.url), "utf8");
+const announcementAudienceMigration = await readFile(new URL("../supabase/migrations/20261101143000_add_secure_announcement_committee_audience_lookup.sql", import.meta.url), "utf8");
+const announcementTestExclusionMigration = await readFile(new URL("../supabase/migrations/20261101143500_exclude_test_members_from_announcement_delivery.sql", import.meta.url), "utf8");
+const communicationsSource = await readFile(new URL("../src/CommunicationsModule.tsx", import.meta.url), "utf8");
+const notificationsInboxSource = await readFile(new URL("../src/NotificationsInbox.tsx", import.meta.url), "utf8");
+test("official announcements use permission-checked atomic in-app delivery and exclude test members", () => {
+  assert.match(communicationsMigration, /aasa_publish_announcement/);
+  assert.match(communicationsMigration, /aasa_has_permission\('announcements\.publish'\)/);
+  assert.match(communicationsMigration, /aasa_notifications/);
+  assert.match(communicationsMigration, /aasa_mark_notification_read/);
+  assert.match(communicationsMigration, /recipient_user_id = auth\.uid\(\)/);
+  assert.match(announcementAudienceMigration, /aasa_list_announcement_committees/);
+  assert.match(announcementTestExclusionMigration, /coalesce\(m\.is_test_record,false\) = false/);
+  assert.match(communicationsSource, /all_members/);
+  assert.match(communicationsSource, /executives/);
+  assert.match(communicationsSource, /committee/);
+  assert.match(notificationsInboxSource, /aasa_mark_notification_read/);
+  assert.match(notificationsInboxSource, /from\("aasa_notifications"\)/);
+});
