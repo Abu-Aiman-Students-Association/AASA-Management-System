@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { supabase } from "./lib/supabase";
 import MyProjectTasks from "./MyProjectTasks";
 import NotificationsInbox from "./NotificationsInbox";
+import ComplaintsModule from "./ComplaintsModule";
 import "./member.css";
 
 type Member = {
@@ -38,7 +39,7 @@ export default function MemberDashboard() {
         if (authError) throw authError;
         if (!auth.user) throw new Error("No authenticated account");
         const { data, error: memberError } = await supabase.from("aasa_members")
-          .select("id,member_number,full_name,email,membership_type,status,joined_on")
+          .select("id,auth_user_id,member_number,full_name,email,membership_type,status,joined_on")
           .eq("auth_user_id", auth.user.id).eq("status", "active").maybeSingle();
         if (memberError) throw memberError;
         if (!data) throw new Error("No active linked membership");
@@ -86,7 +87,7 @@ export default function MemberDashboard() {
           {card ? <div className="aasa-member-card"><div><strong>{member.full_name}</strong><span>{member.member_number}</span><span>{t.cardNo}: {card.card_number}</span><span>{t.issued}: {new Date(card.issued_at).toLocaleDateString()}</span></div>{qr && <img src={qr} alt="Membership verification QR code" />}</div> : <p>{t.noCard}</p>}
         </section>
       </div>}
-      {member && <NotificationsInbox lang={lang} />}
+      {member && <NotificationsInbox lang={lang} />}\n      {member && <section className="aasa-member-panel"><p className="aasa-member-kicker">AASA · CONFIDENTIAL CHANNEL</p><ComplaintsModule userId={member.auth_user_id} canReview={false} lang={lang} /></section>}
       {member && <MyProjectTasks memberId={member.id} lang={lang} />}
       <footer>العلم نور · AASA · Secure · Accountable · Multilingual</footer>
     </section>
