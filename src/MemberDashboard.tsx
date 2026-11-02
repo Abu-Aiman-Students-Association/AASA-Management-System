@@ -88,7 +88,8 @@ export default function MemberDashboard() {
           {card ? <div className="aasa-member-card"><div><strong>{member.full_name}</strong><span>{member.member_number}</span><span>{t.cardNo}: {card.card_number}</span><span>{t.issued}: {new Date(card.issued_at).toLocaleDateString()}</span></div>{qr && <img src={qr} alt="Membership verification QR code" />}</div> : <p>{t.noCard}</p>}
         </section>
       </div>}
-      {member && <NotificationsInbox lang={lang} />}\n      {member && <section className="aasa-member-panel"><p className="aasa-member-kicker">AASA · CONFIDENTIAL CHANNEL</p><ComplaintsModule userId={member.auth_user_id} canReview={false} lang={lang} /></section>}
+      {member && <NotificationsInbox lang={lang} />}
+      {member && <section className="aasa-member-panel"><p className="aasa-member-kicker">AASA · CONFIDENTIAL CHANNEL</p><ComplaintsModule userId={member.auth_user_id} canReview={false} lang={lang} /></section>}
       {member && <MyProjectTasks memberId={member.id} lang={lang} />}
       <footer>العلم نور · AASA · Secure · Accountable · Multilingual</footer>
     </section>
