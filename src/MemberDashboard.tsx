@@ -8,6 +8,7 @@ import "./member.css";
 
 type Member = {
   id: string;
+  auth_user_id: string;
   member_number: string;
   full_name: string;
   email: string | null;
