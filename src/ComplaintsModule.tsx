@@ -51,7 +51,7 @@ export default function ComplaintsModule({userId,canReview,lang="en"}:{userId:st
   try{const {error}=await supabase.rpc("aasa_review_complaint_appeal",{p_appeal_id:appeal.id,p_status:status,p_outcome:outcome});if(error)throw error;setAppealOutcomes(v=>({...v,[appeal.id]:""}));await load()}
   catch(e){setError(e instanceof Error?e.message:t.error)}finally{setBusy(false)}
  }
- async function reviewAppeal(id:string,status:"UNDER_REVIEW"|"UPHELD"|"REJECTED") {\n  const outcome=(appealOutcomes[id]||"").trim();if(outcome.length<10){setError(t.error);return}\n  setBusy(true);setError("");\n  try{const {error}=await supabase.rpc("aasa_review_complaint_appeal",{p_appeal_id:id,p_status:status,p_outcome:outcome});if(error)throw error;await load()}\n  catch(e){setError(e instanceof Error?e.message:t.error)}finally{setBusy(false)}\n }\n async function decide(row:Row){
+ async function decide(row:Row){
   const decision=(decisions[row.id]||"").trim();if(decision.length<10){setError(t.error);return}
   setBusy(true);setError("");
   try{const {error}=await supabase.rpc("aasa_record_complaint_decision",{p_complaint_id:row.id,p_decision:decision,p_status:"DECISION_RECORDED"});if(error)throw error;setDecisions(v=>({...v,[row.id]:""}));await load()}
