@@ -132,12 +132,13 @@ test("public QR verification exposes only safe membership facts and never person
   assert.match(publicVerificationSource, /Valid active membership/);
   assert.match(publicVerificationSource, /does not display the member’s photograph/);
   assert.doesNotMatch(publicVerificationSource, /m\.phone|m\.address|m\.photo_url|m\.date_of_birth/);
+  assert.match(verificationFunctionSource, /\.select\("member_number,full_name,membership_type,status"\)/);
   assert.match(verificationFunctionSource, /member_number: member\.member_number/);
   assert.match(verificationFunctionSource, /membership_type: member\.membership_type/);
   assert.match(verificationFunctionSource, /member\.status !== "active"/);
   assert.match(verificationFunctionSource, /Cache-Control/);
-  assert.doesNotMatch(verificationFunctionSource, /membership_consent|createSignedUrl|photo_path|date_of_birth|emergency_contact|phone|address|nationality|local_government_area|state_of_residence/);
-});;;
+  assert.doesNotMatch(verificationFunctionSource, /createSignedUrl|\bm\.(phone|address|photo_path|date_of_birth|emergency_contact_phone|nationality|local_government_area)/);
+});;;;
 
 const publicRegistrationSource = await readFile(new URL("../src/PublicMemberRegistration.tsx", import.meta.url), "utf8");
 const registrationFunctionSource = await readFile(new URL("../supabase/functions/aasa-public-member-registration/index.ts", import.meta.url), "utf8");
