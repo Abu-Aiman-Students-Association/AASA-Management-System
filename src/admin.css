@@ -231,3 +231,44 @@
 .aasa-verify-consent{margin-top:20px;padding:14px;border:1px solid #eadfbf;border-radius:10px;background:#fffaf0;color:#715c2d;font-size:11px;line-height:1.7}
 .aasa-verify-card>.aasa-muted{margin-top:18px;font-size:10px;line-height:1.7}
 @media(max-width:560px){.aasa-verify-page>header{padding:13px 16px}.aasa-verify-page .aasa-brand small{font-size:8px}.aasa-verify-page .aasa-content{margin:16px auto}.aasa-verify-profile{gap:12px;padding:12px}.aasa-verify-profile>img,.aasa-verify-no-photo{width:84px;height:104px;flex-basis:84px}.aasa-verify-summary{grid-template-columns:1fr}.aasa-verify-details dl{grid-template-columns:1fr}.aasa-verify-details dl>div:last-child{grid-column:auto}}
+
+/* AASA Pro Max executive dashboard */
+.aasa-dashboard-hero{position:relative;display:flex;justify-content:space-between;align-items:center;gap:24px;min-height:220px;margin:2px 0 24px;padding:clamp(22px,3vw,36px);overflow:hidden;border:1px solid #235a40;border-radius:22px;background:radial-gradient(ellipse at 78% 12%,#367957 0,transparent 36%),radial-gradient(ellipse at 12% 110%,#244f3b 0,transparent 42%),linear-gradient(115deg,#0d3024,#174b36 58%,#1c6043);color:#fff;box-shadow:0 18px 42px #123b291f}
+.aasa-dashboard-hero:after{content:"";position:absolute;width:300px;height:300px;right:18%;top:-205px;border:1px solid #ffffff13;border-radius:50%;box-shadow:0 0 0 24px #ffffff08,0 0 0 50px #ffffff06;pointer-events:none}
+.aasa-dashboard-hero-copy{position:relative;z-index:1;max-width:650px}
+.aasa-dashboard-hero .aasa-kicker{color:#c0dfc9}
+.aasa-dashboard-hero h2{margin:8px 0 10px;font:800 clamp(27px,3.5vw,38px)/1.12 Manrope,sans-serif;letter-spacing:-.045em;color:#fff}
+.aasa-dashboard-hero-copy>p:not(.aasa-kicker){max-width:560px;margin:0;color:#d4e6da;font-size:12px;line-height:1.85}
+.aasa-hero-meta{display:flex;align-items:center;flex-wrap:wrap;gap:13px;margin-top:20px}
+.aasa-dashboard-hero .aasa-pill.active{border-color:#a8d5b5;background:#e8f8ed;color:#205e3c}
+.aasa-hero-secure{display:inline-flex;align-items:center;gap:7px;color:#d6e8db;font-size:10px;font-weight:700}
+.aasa-hero-secure i{width:7px;height:7px;border-radius:50%;background:#8ee0a8;box-shadow:0 0 0 4px #8ee0a81d}
+.aasa-hero-seal{position:relative;z-index:1;flex:0 0 155px;display:grid;justify-items:center;gap:8px;padding:15px;border:1px solid #ffffff32;border-radius:17px;background:#ffffff0c;backdrop-filter:blur(8px)}
+.aasa-hero-seal img{width:90px;height:90px;object-fit:contain;filter:drop-shadow(0 6px 12px #061b1280)}
+.aasa-hero-seal strong{color:#f0d995;font:800 16px Manrope,serif}
+.aasa-hero-seal small{color:#c8ddd0;font-size:7px;font-weight:800;letter-spacing:.13em;text-align:center}
+.aasa-dashboard-section-title{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:20px 0 12px}
+.aasa-dashboard-section-title h3{margin:4px 0 0;color:#1c3d2b;font:800 17px Manrope,sans-serif;letter-spacing:-.025em}
+.aasa-dashboard-section-title>span{color:#8a998f;font-size:9px;text-align:right}
+.aasa-dashboard-hero+.aasa-dashboard-section-title{margin-top:0}
+.aasa-live-metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.aasa-live-metrics article{position:relative;min-height:150px;padding:17px;border-radius:15px;transition:transform .18s ease,box-shadow .18s ease}
+.aasa-live-metrics article:hover{transform:translateY(-2px);box-shadow:0 13px 28px #153d2a10}
+.aasa-live-metrics article strong{font-size:29px;letter-spacing:-.05em;color:#173f2d}
+.aasa-live-metrics article small{font-weight:750}
+.aasa-live-metrics article p{padding-top:8px;border-top:1px solid #edf2ee}
+.aasa-quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.aasa-quick-grid button{display:grid;justify-items:start;gap:9px;min-width:0;min-height:116px;padding:15px;border:1px solid #e0e9e2;border-radius:13px;background:linear-gradient(145deg,#fff,#f8fbf8);color:#244532;text-align:left;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.aasa-quick-grid button:hover{transform:translateY(-2px);border-color:#b7d5bf;box-shadow:0 10px 24px #153d2a0d}
+.aasa-quick-grid button>span{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#eaf4ed;color:#236344;font-size:17px}
+.aasa-quick-grid button>strong{font-size:11px;line-height:1.4}
+.aasa-quick-grid button>small{display:flex;justify-content:space-between;gap:10px;width:100%;margin-top:auto;color:#89988e;font-size:9px}
+.aasa-quick-grid button>small b{color:#397654;font-size:12px}
+.aasa-dashboard-quick{margin:22px 0}
+.aasa-membership-shortcut{margin-top:4px}
+.aasa-admin.rtl .aasa-dashboard-hero,.aasa-admin.rtl .aasa-quick-grid button{text-align:right}
+.aasa-admin.rtl .aasa-quick-grid button{justify-items:stretch}
+@media(max-width:1050px){.aasa-live-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.aasa-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.aasa-dashboard-hero{min-height:0;padding:22px;gap:12px}.aasa-hero-seal{flex-basis:105px;padding:10px}.aasa-hero-seal img{width:62px;height:62px}.aasa-hero-seal strong{font-size:13px}.aasa-live-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.aasa-live-metrics article{min-height:135px;padding:14px}.aasa-live-metrics article strong{font-size:25px}.aasa-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:460px){.aasa-dashboard-hero{align-items:flex-start}.aasa-hero-seal{flex-basis:78px;padding:7px;gap:5px}.aasa-hero-seal img{width:48px;height:48px}.aasa-hero-seal small{font-size:6px}.aasa-hero-seal strong{font-size:11px}.aasa-hero-meta{gap:8px}.aasa-hero-secure{font-size:9px}.aasa-dashboard-section-title{align-items:flex-start;flex-direction:column}.aasa-dashboard-section-title>span{text-align:left}.aasa-live-metrics{gap:8px}.aasa-live-metrics article{min-height:130px;padding:12px}.aasa-live-metrics article strong{font-size:23px}.aasa-quick-grid{gap:8px}.aasa-quick-grid button{min-height:108px;padding:12px}}
+@media(prefers-reduced-motion:reduce){.aasa-live-metrics article,.aasa-quick-grid button{transition:none}.aasa-live-metrics article:hover,.aasa-quick-grid button:hover{transform:none}}
