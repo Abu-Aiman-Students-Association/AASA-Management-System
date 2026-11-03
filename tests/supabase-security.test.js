@@ -127,20 +127,22 @@ test("ID Center uses approved member-card RPCs and QR verification rather than d
 
 const publicVerificationSource = await readFile(new URL("../src/VerifyMemberCard.tsx", import.meta.url), "utf8");
 const verificationFunctionSource = await readFile(new URL("../supabase/functions/aasa-public-card-verification/index.ts", import.meta.url), "utf8");
-test("public QR verification shows extended details and photo only with member consent", () => {
+test("public QR verification exposes only safe membership facts and never personal contact or location data", () => {
   assert.match(publicVerificationSource, /aasa-public-card-verification/);
-  assert.match(publicVerificationSource, /record\.consent_shared && m\.photo_url/);
-  assert.match(publicVerificationSource, /m\.phone/);
-  assert.match(publicVerificationSource, /m\.address/);
-  assert.match(verificationFunctionSource, /membership_consent === true/);
-  assert.match(verificationFunctionSource, /createSignedUrl\(m\.photo_path,600\)/);
+  assert.match(publicVerificationSource, /Valid active membership/);
+  assert.match(publicVerificationSource, /does not display the member’s photograph/);
+  assert.doesNotMatch(publicVerificationSource, /m\\.phone|m\\.address|m\\.photo_url|m\\.date_of_birth/);
+  assert.match(verificationFunctionSource, /member_number: member\\.member_number/);
+  assert.match(verificationFunctionSource, /membership_type: member\\.membership_type/);
+  assert.match(verificationFunctionSource, /member\\.status !== "active"/);
   assert.match(verificationFunctionSource, /Cache-Control/);
-  assert.doesNotMatch(verificationFunctionSource, /date_of_birth|emergency_contact_phone/);
-});
+  assert.doesNotMatch(verificationFunctionSource, /membership_consent|createSignedUrl|photo_path|date_of_birth|emergency_contact|phone|address|nationality|local_government_area|state_of_residence/);
+});;
 
 const publicRegistrationSource = await readFile(new URL("../src/PublicMemberRegistration.tsx", import.meta.url), "utf8");
 const registrationFunctionSource = await readFile(new URL("../supabase/functions/aasa-public-member-registration/index.ts", import.meta.url), "utf8");
 const registrationPhotoMigration = await readFile(new URL("../supabase/migrations/20261031220000_require_member_registration_photo.sql", import.meta.url), "utf8");
+const completeRegistrationMigration = await readFile(new URL("../supabase/migrations/20261103190000_complete_public_member_application.sql", import.meta.url), "utf8");
 test("public membership registration requires a validated passport photograph and submits through the secure upload function", () => {
   assert.match(publicRegistrationSource, /type="file"/);
   assert.match(publicRegistrationSource, /required=\{!photoFile\}/);
@@ -156,6 +158,12 @@ test("public membership registration requires a validated passport photograph an
   assert.match(registrationPhotoMigration, /photo_path/);
   assert.match(registrationPhotoMigration, /revoke all on function public\.aasa_submit_member_application\(jsonb\) from public, anon, authenticated/i);
   assert.match(registrationPhotoMigration, /grant execute on function public\.aasa_submit_member_application\(jsonb\) to service_role/i);
+  assert.match(publicRegistrationSource, /Occupation \\/ Current status/);
+  assert.match(publicRegistrationSource, /emergency_contact_name/);
+  assert.match(publicRegistrationSource, /Complete all three emergency contact fields/);
+  assert.match(publicRegistrationSource, /My photograph, phone number, email, address, date of birth and emergency contact details remain private/);
+  assert.match(completeRegistrationMigration, /occupation,emergency_contact_name,emergency_contact_relationship,emergency_contact_phone/);
+  assert.match(completeRegistrationMigration, /Complete all emergency contact fields/);
 });
 test("membership identity card and QR verification explicitly label the unique member number as ID Number", () => {
   assert.match(idCenterSource, /memberNo:"ID number"/);
