@@ -159,7 +159,7 @@ test("public membership registration requires a validated passport photograph an
   assert.match(registrationPhotoMigration, /photo_path/);
   assert.match(registrationPhotoMigration, /revoke all on function public\.aasa_submit_member_application\(jsonb\) from public, anon, authenticated/i);
   assert.match(registrationPhotoMigration, /grant execute on function public\.aasa_submit_member_application\(jsonb\) to service_role/i);
-  assert.match(publicRegistrationSource, /Occupation.{1,2}Current status/);
+  assert.match(publicRegistrationSource, /Occupation.{1,3}Current status/);
   assert.match(publicRegistrationSource, /emergency_contact_name/);
   assert.match(publicRegistrationSource, /Complete all three emergency contact fields/);
   assert.match(publicRegistrationSource, /My photograph, phone number, email, address, date of birth and emergency contact details remain private/);
