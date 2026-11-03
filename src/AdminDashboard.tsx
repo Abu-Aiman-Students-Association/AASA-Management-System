@@ -106,7 +106,7 @@ export default function AdminDashboard() {
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
       const code = otp.replace(/\D/g, "");
-      if (!/^\d{8}$/.test(code)) throw new Error("Enter the complete 6-digit verification code.");
+      if (!/^\d{6}$/.test(code)) throw new Error("Enter the complete 6-digit verification code.");
       const { error: e } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "email" });
       if (e) throw e;
       setNotice("Email verified. Checking your AASA administrator permissions…");
