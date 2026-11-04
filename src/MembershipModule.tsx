@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "./lib/supabase";
-import QRCode from "qrcode";
 
 type Member = {
   id: string; member_number: string; full_name: string; email: string | null;
@@ -12,7 +11,6 @@ type Member = {
   state_of_residence: string | null; local_government_area: string | null; ward: string | null;
   nationality: string | null; country_of_residence: string | null; city_of_residence: string | null; membership_consent: boolean;
 };
-type MemberCard = { id: string; member_id: string; card_number: string; qr_token: string; status: string; issued_at: string };
 const STATE_CAPITALS: Record<string, string> = {
   "Abia":"Umuahia","Adamawa":"Yola","Akwa Ibom":"Uyo","Anambra":"Awka","Bauchi":"Bauchi",
   "Bayelsa":"Yenagoa","Benue":"Makurdi","Borno":"Maiduguri","Cross River":"Calabar","Delta":"Asaba",
@@ -25,7 +23,6 @@ const STATE_CAPITALS: Record<string, string> = {
 };
 export default function MembershipModule({ userId }: { userId: string }) {
   const [rows, setRows] = useState<Member[]>([]);
-  const [cards, setCards] = useState<MemberCard[]>([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -59,7 +56,6 @@ export default function MembershipModule({ userId }: { userId: string }) {
   const [membershipConsent, setMembershipConsent] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [cardPreview, setCardPreview] = useState<{ member: Member; card: MemberCard; photoUrl: string; qrUrl: string } | null>(null);
   const [type, setType] = useState("ordinary");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -70,14 +66,6 @@ export default function MembershipModule({ userId }: { userId: string }) {
     const members = await supabase.from("aasa_members").select("id,member_number,full_name,email,phone,membership_type,status,joined_on,date_of_birth,gender,address,notes,photo_path,auth_user_id,emergency_contact_name,emergency_contact_relationship,emergency_contact_phone,occupation,state_of_residence,local_government_area,ward,nationality,country_of_residence,city_of_residence,membership_consent").order("created_at", { ascending: false }).limit(250);
     if (members.error) throw members.error;
     setRows((members.data ?? []) as Member[]);
-    // Card visibility is independent: a card-policy error must never hide valid member records.
-    const cardRows = await supabase.from("aasa_member_cards").select("id,member_id,card_number,qr_token,status,issued_at").order("issued_at", { ascending: false }).limit(500);
-    if (cardRows.error) {
-      setCards([]);
-      setNotice("Member records loaded. Membership card details could not be loaded due to access permissions.");
-    } else {
-      setCards((cardRows.data ?? []) as MemberCard[]);
-    }
   }
   useEffect(() => { void load().catch(e => setError(e instanceof Error ? e.message : "Could not load membership records.")); }, []);
   const ADMIN_API = "https://api.openadmindata.org/api/v1/ng";
@@ -247,34 +235,6 @@ export default function MembershipModule({ userId }: { userId: string }) {
     catch (e) { const issue = e as { message?: string; details?: string; hint?: string; code?: string }; const message = [issue?.message, issue?.details, issue?.hint, issue?.code ? `Code: ${issue.code}` : ""].filter(Boolean).join(" — "); setError(message || (e instanceof Error ? e.message : "Could not link account. Check the account, verified email and membership.review permission.")); }
     finally { setBusy(false); }
   }
-  async function issueCard(m: Member) {
-    setBusy(true); setError(""); setNotice("");
-    try { if (!m.photo_path) throw new Error("A member photograph is required before an ID card can be issued."); const { error } = await supabase.rpc("aasa_issue_member_card", { p_member_id: m.id }); if (error) throw error; await load(); setNotice("Membership card issued. Open View / print to render the member photo and QR verification code."); }
-    catch (e) { setError(e instanceof Error ? e.message : "Could not issue card."); }
-    finally { setBusy(false); }
-  }
-  async function openCard(member: Member, card: MemberCard) {
-    setBusy(true); setError(""); setNotice("");
-    try {
-      let photoUrl = "";
-      if (member.photo_path) {
-        const { data, error } = await supabase.storage.from("aasa-documents").createSignedUrl(member.photo_path, 300);
-        if (error) throw error;
-        photoUrl = data.signedUrl;
-      }
-      const verifyUrl = new URL(import.meta.env.BASE_URL, window.location.origin);
-      verifyUrl.searchParams.set("verify", card.qr_token);
-      const qrUrl = await QRCode.toDataURL(verifyUrl.toString(), { width: 260, margin: 1, errorCorrectionLevel: "M" });
-      setCardPreview({ member, card, photoUrl, qrUrl });
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not prepare the membership card."); }
-    finally { setBusy(false); }
-  }
-  async function revokeCard(card: MemberCard) {
-    setBusy(true); setError(""); setNotice("");
-    try { const { error } = await supabase.rpc("aasa_revoke_member_card", { p_card_id: card.id }); if (error) throw error; await load(); setNotice("Membership card revoked."); }
-    catch (e) { setError(e instanceof Error ? e.message : "Could not revoke card."); }
-    finally { setBusy(false); }
-  }
   const filtered = rows.filter(m =>
     (statusFilter === "all" || m.status === statusFilter) &&
     [m.full_name,m.member_number,m.email ?? "",m.phone ?? "",m.status].some(v => v.toLowerCase().includes(query.toLowerCase()))
@@ -283,7 +243,7 @@ export default function MembershipModule({ userId }: { userId: string }) {
     <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">MEMBERSHIP REGISTER</p><h3>Register a member</h3></div><span className="aasa-pill">{rows.length} records loaded</span></div>
       <form className="aasa-member-form" onSubmit={add}>
-        {editingId && <p className="aasa-notice aasa-full-span">Editing {rows.find(m=>m.id===editingId)?.member_number}. Saving changes will not change membership status or existing card validity.</p>}
+        {editingId && <p className="aasa-notice aasa-full-span">Editing {rows.find(m=>m.id===editingId)?.member_number}. Saving changes will not change membership status.</p>}
         <label>Full name *<input required minLength={2} maxLength={160} value={name} onChange={e=>setName(e.target.value)} autoComplete="name" /></label>
         <label>Email address<input type="email" maxLength={254} value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" /></label>
         <label>Phone number<input type="tel" maxLength={40} value={phone} onChange={e=>setPhone(e.target.value)} autoComplete="tel" /></label>
@@ -315,75 +275,18 @@ export default function MembershipModule({ userId }: { userId: string }) {
         <button className="aasa-primary" disabled={busy}>{busy ? "Saving…" : editingId ? "Save member changes" : "Save pending member"}</button>
         {editingId && <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(null);setName("");setEmail("");setPhone("");setDob("");setGender("");setAddress("");setCityOfResidence("");setOtherCityOfResidence("");setNotes("");setEmergencyName("");setEmergencyRelationship("");setEmergencyPhone("");setOccupation("");setStateOfResidence("");setLga("");setWard(""); setOtherWardValue("");setMembershipConsent(false);setType("ordinary");setPhotoFile(null);}}>Cancel editing</button>}
       </form>
-      <p className="aasa-muted">Required: full name, member passport photograph, at least one contact method, and declaration for new registrations. Nationality, emergency contact, occupation and location are optional. Nigeria State, LGA, Ward and GRID3 City / Town options load from their respective data sources; City / Town and Ward are independently selected. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. Cards can be issued only after membership approval.</p>
+      <p className="aasa-muted">Required: full name, member passport photograph, at least one contact method, and declaration for new registrations. Nationality, emergency contact, occupation and location are optional. Nigeria State, LGA, Ward and GRID3 City / Town options load from their respective data sources; City / Town and Ward are independently selected. Do not enter passwords, ID numbers or unnecessary sensitive information in notes. Member photos accept JPG/PNG up to 5 MB. ID card issuance and revocation are handled only in the separate ID Centre module.</p>
     </section>
     <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">OFFICIAL REGISTER</p><h3>Members</h3></div>
         <div className="aasa-register-filters"><input aria-label="Search members" placeholder="Search name, number, email, phone…" value={query} onChange={e=>setQuery(e.target.value)} />
         <select aria-label="Filter by membership status" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">All statuses</option><option value="pending">Pending</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="inactive">Inactive</option><option value="rejected">Rejected</option></select></div>
       </div>
-      {filtered.length ? <div className="aasa-table-wrap"><table className="aasa-table"><thead><tr><th>Member no.</th><th>Name & details</th><th>Contact</th><th>Type</th><th>Status</th><th>Joined</th><th>Card</th><th>Review</th></tr></thead><tbody>{filtered.map(m=><tr key={m.id}>
+      {filtered.length ? <div className="aasa-table-wrap"><table className="aasa-table"><thead><tr><th>Member no.</th><th>Name & details</th><th>Contact</th><th>Type</th><th>Status</th><th>Joined</th><th>Review</th></tr></thead><tbody>{filtered.map(m=><tr key={m.id}>
         <td>{m.member_number}</td><td><strong>{m.full_name}</strong><br/><small>DOB: {m.date_of_birth || "—"} · Gender: {m.gender || "—"}</small>{m.address && <><br/><small>{m.address}</small></>}{(m.state_of_residence || m.local_government_area) && <><br/><small>{[m.local_government_area,m.state_of_residence].filter(Boolean).join(", ")}</small></>}{m.nationality && <><br/><small>Nationality: {m.nationality}</small></>}{m.country_of_residence && <><br/><small>Country: {m.country_of_residence}</small></>}{m.city_of_residence && <><br/><small>City/Town: {m.city_of_residence}</small></>}{m.ward && <><br/><small>Ward: {m.ward}</small></>}{m.occupation && <><br/><small>Occupation: {m.occupation}</small></>}{m.emergency_contact_name && <><br/><small>Emergency: {m.emergency_contact_name} ({m.emergency_contact_relationship || "contact"}) · {m.emergency_contact_phone || "—"}</small></>}{m.notes && <><br/><small>Admin note: {m.notes}</small></>}</td>
         <td>{m.email || "—"}<br/>{m.phone || "—"}</td><td>{m.membership_type}</td><td><span className="aasa-pill">{m.status}</span></td><td>{m.joined_on}</td>
-        <td>{m.status==="active"&&m.email&&!m.auth_user_id&&<><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void inviteExistingMember(m)}>Send / resend invitation</button><br/><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void linkAccount(m)}>Link verified account</button></>}{m.auth_user_id&&<small>Verified account linked</small>}{cards.filter(card=>card.member_id===m.id&&card.status==="active").map(card=><div key={card.id}>{card.card_number}<br/><small>Issued {new Date(card.issued_at).toLocaleDateString()}</small><br/><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void openCard(m,card)}>View / print</button><button type="button" className="aasa-link" disabled={busy} onClick={()=>void revokeCard(card)}>Revoke card</button></div>)}{m.status==="active"&&!cards.some(card=>card.member_id===m.id&&card.status==="active")&&(m.photo_path?<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void issueCard(m)}>Issue card</button>:<small className="aasa-error">Upload member photo before card issuance</small>)}</td>
-        <td><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(m.id);setName(m.full_name);setEmail(m.email??"");setPhone(m.phone??"");setDob(m.date_of_birth??"");setGender(m.gender??"");setAddress(m.address??"");setCityOfResidence(m.city_of_residence??"");setOtherCityOfResidence("");setNotes(m.notes??"");setEmergencyName(m.emergency_contact_name??"");setEmergencyRelationship(m.emergency_contact_relationship??"");setEmergencyPhone(m.emergency_contact_phone??"");setOccupation(["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired","Other"].includes(m.occupation??"") ? (m.occupation??"") : "Other");setOtherOccupation(m.occupation && !["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired"].includes(m.occupation) ? m.occupation : "");setCountryOfResidence(["Nigeria","Niger","Cameroon","Chad","Ghana","Other"].includes(m.country_of_residence??"") ? (m.country_of_residence??"Nigeria") : "Other");setOtherCountry(m.country_of_residence && !["Nigeria","Niger","Cameroon","Chad","Ghana"].includes(m.country_of_residence) ? m.country_of_residence : "");setStateOfResidence(m.state_of_residence??"");setLga(m.local_government_area??"");setWard(m.ward??"");setOtherWardValue("");setNationality(["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian","Other"].includes(m.nationality??"") ? (m.nationality??"Nigerian") : "Other");setOtherNationality(m.nationality && !["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian"].includes(m.nationality) ? m.nationality : "");setMembershipConsent(m.membership_consent??false);setType(m.membership_type);setPhotoFile(null);window.scrollTo({top:0,behavior:"smooth"});}}>Edit details</button><br/>{m.status === "pending" ? <>{m.photo_path?<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button>:<small className="aasa-error">Photo required before approval</small>} <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
+                <td><button type="button" className="aasa-secondary" disabled={busy} onClick={()=>{setEditingId(m.id);setName(m.full_name);setEmail(m.email??"");setPhone(m.phone??"");setDob(m.date_of_birth??"");setGender(m.gender??"");setAddress(m.address??"");setCityOfResidence(m.city_of_residence??"");setOtherCityOfResidence("");setNotes(m.notes??"");setEmergencyName(m.emergency_contact_name??"");setEmergencyRelationship(m.emergency_contact_relationship??"");setEmergencyPhone(m.emergency_contact_phone??"");setOccupation(["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired","Other"].includes(m.occupation??"") ? (m.occupation??"") : "Other");setOtherOccupation(m.occupation && !["Student","Teacher / Lecturer","School Administrator","Civil Servant","Healthcare Worker","Business Owner / Trader","Farmer","Artisan / Technician","Driver / Transport Worker","Engineer","Accountant / Finance","IT / Technology","Religious Worker","Lawyer / Legal","Security / Armed Forces","NGO / Community Worker","Unemployed","Retired"].includes(m.occupation) ? m.occupation : "");setCountryOfResidence(["Nigeria","Niger","Cameroon","Chad","Ghana","Other"].includes(m.country_of_residence??"") ? (m.country_of_residence??"Nigeria") : "Other");setOtherCountry(m.country_of_residence && !["Nigeria","Niger","Cameroon","Chad","Ghana"].includes(m.country_of_residence) ? m.country_of_residence : "");setStateOfResidence(m.state_of_residence??"");setLga(m.local_government_area??"");setWard(m.ward??"");setOtherWardValue("");setNationality(["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian","Other"].includes(m.nationality??"") ? (m.nationality??"Nigerian") : "Other");setOtherNationality(m.nationality && !["Nigerian","Nigerien","Cameroonian","Chadian","Ghanaian"].includes(m.nationality) ? m.nationality : "");setMembershipConsent(m.membership_consent??false);setType(m.membership_type);setPhotoFile(null);window.scrollTo({top:0,behavior:"smooth"});}}>Edit details</button><br/>{m.status === "pending" ? <>{m.photo_path?<button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Approve</button>:<small className="aasa-error">Photo required before approval</small>} <button type="button" className="aasa-link" disabled={busy} onClick={()=>void setStatus(m,"rejected")}>Reject</button></> : m.status === "active" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"suspended")}>Suspend</button> : m.status === "suspended" ? <button type="button" className="aasa-secondary" disabled={busy} onClick={()=>void setStatus(m,"active")}>Reactivate</button> : "—"}</td>
       </tr>)}</tbody></table></div> : <p className="aasa-muted">No matching membership records. Add verified records using the form above.</p>}
     </section>{notice && <p className="aasa-notice" role="status">{notice}</p>}{error && <p className="aasa-error" role="alert">{error}</p>}
-    {cardPreview && <div className="aasa-card-overlay" role="dialog" aria-modal="true" aria-label="Membership card preview">
-      <div className="aasa-card-dialog"><div className="aasa-card-actions"><strong>Membership card preview</strong><button type="button" className="aasa-secondary" onClick={()=>setCardPreview(null)}>Close</button></div>
-        <div className="aasa-card-sheet">
-          <article className="aasa-print-card aasa-card-front">
-            <div className="aasa-card-front-header">
-              <img src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="Official AASA crest" />
-              <div className="aasa-card-brand"><strong>ABU-AIMAN STUDENTS’ ASSOCIATION</strong><span>رابطة طلاب مدرسة أبوأيمن لتحفيظ القرآن الكريم والدراسات الإسلامية</span><small>العلم نور</small></div>
-              <span className="aasa-card-kind">MEMBER</span>
-              {/* Nigerian Coat of Arms artwork by Lumia1234, Wikimedia Commons, CC BY-SA 3.0. */}
-              <div className="aasa-card-national-emblem-wrap"><img className="aasa-card-national-emblem" src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Coat_of_arms_of_Nigeria.svg" alt="Coat of Arms of the Federal Republic of Nigeria" /></div>
-            </div>
-            <div className="aasa-card-front-main">
-              {cardPreview.photoUrl ? <img className="aasa-member-photo" src={cardPreview.photoUrl} alt={cardPreview.member.full_name} /> : <div className="aasa-member-photo aasa-photo-placeholder">PHOTO</div>}
-              <div className="aasa-card-identity">
-                <small className="aasa-card-eyebrow">OFFICIAL MEMBERSHIP CARD</small>
-                <h2>{cardPreview.member.full_name}</h2>
-                <p className="aasa-card-member-number">{cardPreview.member.member_number}</p>
-                <div className="aasa-card-meta"><span><small>MEMBERSHIP TYPE</small><b>{cardPreview.member.membership_type.toUpperCase()}</b></span><span><small>ISSUED</small><b>{new Date(cardPreview.card.issued_at).toLocaleDateString()}</b></span></div>
-              </div>
-            </div>
-            <div className="aasa-card-front-footer"><strong className={cardPreview.member.status === "active" && cardPreview.card.status === "active" ? "is-active" : "is-inactive"}>{cardPreview.member.status === "active" && cardPreview.card.status === "active" ? "ACTIVE MEMBER" : "NOT ACTIVE"}</strong><span>Card No. {cardPreview.card.card_number}</span></div>
-          </article>
-          <article className="aasa-print-card aasa-card-back">
-            <div className="aasa-card-back-header"><img src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="Official AASA crest" /><div><strong>AASA · MEMBER VERIFICATION</strong><small>العلم نور · KNOWLEDGE IS LIGHT</small></div></div>
-            <div className="aasa-card-back-main">
-              <div className="aasa-card-verification">
-                <div className="aasa-card-qr-frame"><img className="aasa-card-qr" src={cardPreview.qrUrl} alt="QR code to verify this membership card" /></div>
-                <div className="aasa-card-back-copy"><strong>VERIFY MEMBERSHIP</strong><p>Scan to confirm identity and current membership status.</p><small>Member ID</small><b>{cardPreview.member.member_number}</b><small>Card Number</small><b>{cardPreview.card.card_number}</b></div>
-              </div>
-              <div className="aasa-card-member-details">
-                <strong className="aasa-card-details-title">MEMBER DETAILS</strong>
-                <div className="aasa-card-details-grid">
-                  {[
-                    ["NATIONALITY", cardPreview.member.nationality],
-                    ["COUNTRY", cardPreview.member.country_of_residence],
-                    ["STATE", cardPreview.member.state_of_residence],
-                    ["STATE CAPITAL", cardPreview.member.country_of_residence === "Nigeria" ? STATE_CAPITALS[cardPreview.member.state_of_residence || ""] : null],
-                    ["LGA", cardPreview.member.local_government_area],
-                    ["WARD", cardPreview.member.ward],
-                    ["OCCUPATION", cardPreview.member.occupation],
-                    ["PHONE", cardPreview.member.phone],
-                    ["ADDRESS", cardPreview.member.address, "address"]
-                  ].filter((item) => Boolean(item[1]?.trim())).map(([label, value, extra]) => (
-                    <span key={String(label)} className={extra === "address" ? "aasa-card-detail-address" : ""}>
-                      <small>{label}</small><b>{value}</b>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <footer>This card belongs to the named member. Not a government-issued identity document.</footer>
-          </article>
-        </div>
-        <button type="button" className="aasa-primary" onClick={()=>window.print()}>Print membership card</button>
-      </div>
-    </div>}
   </div>;
 }
