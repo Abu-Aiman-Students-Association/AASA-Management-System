@@ -278,7 +278,7 @@ const documentsModuleSource = await readFile(new URL("../src/DocumentsModule.tsx
 const projectsModuleSource = await readFile(new URL("../src/ProjectsModule.tsx", import.meta.url), "utf8");
 
 test("module workspaces cannot directly mutate another module's owned records", () => {
-  const mutation = (table) => new RegExp("\\.from\\([\"\']" + table + "[\"\']\\)\\.(insert|update|upsert|delete)\\s*\\(");
+  const mutation = (table) => new RegExp(String.raw`\.from\(["']${table}["']\)\.(insert|update|upsert|delete)\s*\(`);
   assert.doesNotMatch(idCenterSource, mutation("aasa_members"));
   assert.doesNotMatch(membershipSource, /aasa_member_cards/);
   assert.doesNotMatch(documentsModuleSource, mutation("aasa_project_documents"));
