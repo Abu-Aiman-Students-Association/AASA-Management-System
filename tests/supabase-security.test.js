@@ -117,6 +117,8 @@ test("AASA ID Center is a dedicated dashboard section adjacent to Membership", (
 });
 test("ID Center uses approved member-card RPCs and QR verification rather than direct card writes", () => {
   assert.ok(idCenterSource.includes("aasa_issue_member_card"));
+  assert.ok(idCenterSource.includes('rpc("aasa_list_id_center_members")'));
+  assert.doesNotMatch(idCenterSource, /\\.from\\(["\']aasa_members["\']/);
   assert.ok(idCenterSource.includes("aasa_revoke_member_card"));
   assert.ok(idCenterSource.includes("QRCode.toDataURL"));
   assert.ok(idCenterSource.includes("window.print()"));
@@ -306,4 +308,15 @@ test("admin workspace navigation recognises each module's own granular permissio
     "welfare.cases.sensitive.read","welfare.cases.sensitive.manage","reports.read","reports.export",
     "system.audit.read","platform.health.read","system.settings.manage"
   ]) assert.ok(accessMap.includes(permission), "workspace access map includes " + permission);
+});
+
+
+const idCenterReadMigration = await readFile(new URL("../supabase/migrations/20261104100300_separate_id_center_read_access.sql", import.meta.url), "utf8");
+test("ID Centre card access has its own read permission and uses a scoped member lookup RPC", () => {
+  assert.match(idCenterReadMigration, /cards\.read/);
+  assert.match(idCenterReadMigration, /aasa_list_id_center_members/);
+  assert.match(idCenterReadMigration, /set search_path = ''/);
+  assert.match(idCenterReadMigration, /revoke all on function public\.aasa_list_id_center_members\(\) from public, anon, authenticated/i);
+  assert.match(idCenterReadMigration, /grant execute on function public\.aasa_list_id_center_members\(\) to authenticated/i);
+  assert.match(dashboardSource, /id_center: \["cards\.read","cards\.issue","cards\.revoke"\]/);
 });
