@@ -4,11 +4,10 @@ import QRCode from "qrcode";
 
 type Member = {
   id: string; member_number: string; full_name: string; email: string | null;
-  phone: string | null; membership_type: string; status: string; joined_on: string;
-  date_of_birth: string | null; gender: string | null; address: string | null;
+  phone: string | null; membership_type: string; status: string; address: string | null;
   photo_path: string | null; nationality: string | null; country_of_residence: string | null;
   state_of_residence: string | null; local_government_area: string | null; ward: string | null;
-  occupation: string | null; city_of_residence: string | null;
+  occupation: string | null;
 };
 type Card = { id: string; member_id: string; card_number: string; qr_token: string; status: string; issued_at: string; revoked_at: string | null };
 type Preview = { member: Member; card: Card; photoUrl: string; qrUrl: string };
