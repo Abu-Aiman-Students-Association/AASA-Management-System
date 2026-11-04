@@ -320,3 +320,14 @@ test("ID Centre card access has its own read permission and uses a scoped member
   assert.match(idCenterReadMigration, /grant execute on function public\.aasa_list_id_center_members\(\) to authenticated/i);
   assert.match(dashboardSource, /id_center: \["cards\.read","cards\.issue","cards\.revoke"\]/);
 });
+
+
+const idCenterMinimalFieldsMigration = await readFile(new URL("../supabase/migrations/20261104100700_reduce_id_center_member_lookup_fields.sql", import.meta.url), "utf8");
+test("ID Centre receives only member fields displayed or required on the identity card", () => {
+  for (const field of ["member_number","full_name","email","phone","membership_type","status","address","photo_path","nationality","country_of_residence","state_of_residence","local_government_area","ward","occupation"]) {
+    assert.ok(idCenterMinimalFieldsMigration.includes("m." + field), "ID Centre lookup includes " + field);
+  }
+  for (const field of ["date_of_birth","gender","joined_on","city_of_residence","emergency_contact_phone","notes"]) {
+    assert.ok(!idCenterMinimalFieldsMigration.includes("m." + field), "ID Centre lookup excludes " + field);
+  }
+});
