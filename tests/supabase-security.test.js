@@ -232,3 +232,11 @@ test("in-app notification channel and read state respect the existing delivery s
   assert.doesNotMatch(notificationConstraintFix, /delivery_status\s*=\s*'READ'/);
   assert.match(notificationConstraintFix, /aasa_announcements\.publish/);
 });
+
+const membershipSource = await readFile(new URL("../src/MembershipModule.tsx", import.meta.url), "utf8");
+test("Membership owns member records only; identity-card lifecycle is confined to ID Centre", () => {
+  assert.match(membershipSource, /from\(["']aasa_members["']\)/);
+  assert.doesNotMatch(membershipSource, /aasa_member_cards|aasa_issue_member_card|aasa_revoke_member_card|issueCard|revokeCard|cardPreview|QRCode/);
+  assert.match(idCenterSource, /aasa_issue_member_card/);
+  assert.match(idCenterSource, /aasa_revoke_member_card/);
+});
