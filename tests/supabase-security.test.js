@@ -266,3 +266,31 @@ test("permission groups follow the owning AASA workspace without changing permis
   assert.match(modulePermissionOwnershipMigration, /'documents\.manage','reports\.export','reports\.read'\) then 'documents'/);
   assert.match(modulePermissionOwnershipMigration, /'system\.audit\.read'/);
 });
+
+
+const governanceModuleSource = await readFile(new URL("../src/GovernanceModule.tsx", import.meta.url), "utf8");
+const electionsModuleSource = await readFile(new URL("../src/ElectionsModule.tsx", import.meta.url), "utf8");
+const meetingsModuleSource = await readFile(new URL("../src/MeetingsModule.tsx", import.meta.url), "utf8");
+const financeModuleSource = await readFile(new URL("../src/FinanceModule.tsx", import.meta.url), "utf8");
+const welfareModuleSource = await readFile(new URL("../src/WelfareModule.tsx", import.meta.url), "utf8");
+const complaintsModuleSource = await readFile(new URL("../src/ComplaintsModule.tsx", import.meta.url), "utf8");
+const documentsModuleSource = await readFile(new URL("../src/DocumentsModule.tsx", import.meta.url), "utf8");
+const projectsModuleSource = await readFile(new URL("../src/ProjectsModule.tsx", import.meta.url), "utf8");
+
+test("module workspaces cannot directly mutate another module's owned records", () => {
+  const mutation = (table) => new RegExp(String.raw`\\.from\\(["']${table}["']\\)\\.(insert|update|upsert|delete)\\s*\\(`);
+  assert.doesNotMatch(idCenterSource, mutation("aasa_members"));
+  assert.doesNotMatch(membershipSource, /aasa_member_cards/);
+  assert.doesNotMatch(documentsModuleSource, mutation("aasa_project_documents"));
+  assert.doesNotMatch(projectsModuleSource, mutation("aasa_documents"));
+  assert.doesNotMatch(governanceModuleSource, mutation("aasa_members"));
+  assert.doesNotMatch(governanceModuleSource, mutation("aasa_elections"));
+  assert.doesNotMatch(electionsModuleSource, mutation("aasa_leadership_appointments"));
+  assert.doesNotMatch(electionsModuleSource, mutation("aasa_positions"));
+  assert.doesNotMatch(meetingsModuleSource, mutation("aasa_members"));
+  assert.doesNotMatch(financeModuleSource, mutation("aasa_members"));
+  assert.doesNotMatch(financeModuleSource, mutation("aasa_welfare_cases"));
+  assert.doesNotMatch(welfareModuleSource, mutation("aasa_complaints"));
+  assert.doesNotMatch(welfareModuleSource, mutation("aasa_finance_entries"));
+  assert.doesNotMatch(complaintsModuleSource, mutation("aasa_welfare_cases"));
+});
