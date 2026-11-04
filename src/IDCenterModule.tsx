@@ -14,6 +14,7 @@ type Card = { id: string; member_id: string; card_number: string; qr_token: stri
 type Preview = { member: Member; card: Card; photoUrl: string; qrUrl: string };
 const capitals: Record<string,string> = { Abia:"Umuahia",Adamawa:"Yola","Akwa Ibom":"Uyo",Anambra:"Awka",Bauchi:"Bauchi",Bayelsa:"Yenagoa",Benue:"Makurdi",Borno:"Maiduguri","Cross River":"Calabar",Delta:"Asaba",Ebonyi:"Abakaliki",Edo:"Benin City",Ekiti:"Ado-Ekiti",Enugu:"Enugu","Federal Capital Territory (FCT)":"Abuja",Gombe:"Gombe",Imo:"Owerri",Jigawa:"Dutse",Kaduna:"Kaduna",Kano:"Kano",Katsina:"Katsina",Kebbi:"Birnin Kebbi",Kogi:"Lokoja",Kwara:"Ilorin",Lagos:"Ikeja",Nasarawa:"Lafia",Niger:"Minna",Ogun:"Abeokuta",Ondo:"Akure",Osun:"Osogbo",Oyo:"Ibadan",Plateau:"Jos",Rivers:"Port Harcourt",Sokoto:"Sokoto",Taraba:"Jalingo",Yobe:"Damaturu",Zamfara:"Gusau" };
 const memberFields = "id,member_number,full_name,email,phone,membership_type,status,joined_on,date_of_birth,gender,address,photo_path,nationality,country_of_residence,state_of_residence,local_government_area,ward,occupation,city_of_residence";
+const memberPhotoBucket = (path: string) => path.startsWith("members/") || path.startsWith("applications/") ? "aasa-member-photos" : "aasa-documents";
 export default function IDCenterModule({ lang, canIssue, canRevoke }: { lang: "en"|"ha"|"ar"; canIssue: boolean; canRevoke: boolean }) {
   const [members,setMembers] = useState<Member[]>([]);
   const [cards,setCards] = useState<Card[]>([]);
@@ -70,7 +71,7 @@ export default function IDCenterModule({ lang, canIssue, canRevoke }: { lang: "e
     try {
       if(!member.photo_path)throw new Error("This member has no photograph. Upload a passport photo before viewing or printing the card.");
       let photoUrl="";
-      if(member.photo_path){const {data,error:e}=await supabase.storage.from("aasa-documents").createSignedUrl(member.photo_path,300);if(e)throw e;photoUrl=data.signedUrl;}
+      if(member.photo_path){const {data,error:e}=await supabase.storage.from(memberPhotoBucket(member.photo_path)).createSignedUrl(member.photo_path,300);if(e)throw e;photoUrl=data.signedUrl;}
       const verifyUrl=new URL(import.meta.env.BASE_URL,window.location.origin);verifyUrl.searchParams.set("verify",card.qr_token);
       const qrUrl=await QRCode.toDataURL(verifyUrl.toString(),{width:512,margin:4,errorCorrectionLevel:"M"});
       setPreview({member,card,photoUrl,qrUrl});
