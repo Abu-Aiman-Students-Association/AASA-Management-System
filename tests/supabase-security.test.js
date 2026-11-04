@@ -142,7 +142,7 @@ test("public QR verification exposes only safe membership facts and never person
 
 const publicRegistrationSource = await readFile(new URL("../src/PublicMemberRegistration.tsx", import.meta.url), "utf8");
 const registrationFunctionSource = await readFile(new URL("../supabase/functions/aasa-public-member-registration/index.ts", import.meta.url), "utf8");
-const registrationPhotoMigration = await readFile(new URL("../supabase/migrations/20261031220000_require_member_registration_photo.sql", import.meta.url), "utf8");
+const registrationPhotoMigration = await readFile(new URL("../supabase/migrations/20261031220000_require_member_registration_photo.sql", import.meta.url), "utf8");\nconst memberPhotoStorageMigration = await readFile(new URL("../supabase/migrations/20261104094951_isolate_aasa_member_photo_storage.sql", import.meta.url), "utf8");
 const completeRegistrationMigration = await readFile(new URL("../supabase/migrations/20261103190000_complete_public_member_application.sql", import.meta.url), "utf8");
 test("public membership registration requires a validated passport photograph and submits through the secure upload function", () => {
   assert.match(publicRegistrationSource, /type="file"/);
@@ -154,7 +154,7 @@ test("public membership registration requires a validated passport photograph an
   assert.match(registrationFunctionSource, /SUPABASE_PUBLISHABLE_KEY/);
   assert.match(registrationFunctionSource, /createClient/);
   assert.match(registrationFunctionSource, /aasa_submit_member_application/);
-  assert.match(registrationFunctionSource, /member-applications\//);
+  assert.match(registrationFunctionSource, /applications\\//);\n  assert.match(registrationFunctionSource, /aasa-member-photos/);
   assert.match(registrationFunctionSource, /5 \* 1024 \* 1024/);
   assert.match(registrationPhotoMigration, /photo_path/);
   assert.match(registrationPhotoMigration, /revoke all on function public\.aasa_submit_member_application\(jsonb\) from public, anon, authenticated/i);
@@ -239,4 +239,17 @@ test("Membership owns member records only; identity-card lifecycle is confined t
   assert.doesNotMatch(membershipSource, /aasa_member_cards|aasa_issue_member_card|aasa_revoke_member_card|issueCard|revokeCard|cardPreview|QRCode/);
   assert.match(idCenterSource, /aasa_issue_member_card/);
   assert.match(idCenterSource, /aasa_revoke_member_card/);
+});
+
+
+test("member photographs use a dedicated private bucket with Membership-scoped access", () => {
+  assert.match(membershipSource, /aasa-member-photos/);
+  assert.doesNotMatch(membershipSource, /aasa-documents/);
+  assert.match(membershipSource, /members\//);
+  assert.match(idCenterSource, /memberPhotoBucket/);
+  assert.match(memberPhotoStorageMigration, /aasa-member-photos/);
+  assert.match(memberPhotoStorageMigration, /membership\.read/);
+  assert.match(memberPhotoStorageMigration, /membership\.create/);
+  assert.match(memberPhotoStorageMigration, /membership\.update/);
+  assert.match(memberPhotoStorageMigration, /aasa_legacy_member_photos_read/);
 });
