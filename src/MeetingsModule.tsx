@@ -4,7 +4,8 @@ type Meeting={id:string;title:string;meeting_type:string;starts_at:string;ends_a
 type Member={id:string;full_name:string;member_number:string;status:string};
 type Attendance={id:string;meeting_id:string;member_id:string;attendance_status:string;note:string|null;recorded_by:string;created_at:string;updated_at:string};
 function csv(value:unknown){return '"'+String(value??"").replace(/"/g,'""')+'"';}
-export default function MeetingsModule({userId,canManageMeetings,canManageEvents,canRecordAttendance}:{userId:string;canManageMeetings:boolean;canManageEvents:boolean;canRecordAttendance:boolean}){\n const canManageRecord=(m:Meeting)=>m.meeting_type==="event"?(canManageEvents||canManageMeetings):canManageMeetings;
+export default function MeetingsModule({userId,canManageMeetings,canManageEvents,canRecordAttendance}:{userId:string;canManageMeetings:boolean;canManageEvents:boolean;canRecordAttendance:boolean}){
+ const canManageRecord=(m:Meeting)=>m.meeting_type==="event"?(canManageEvents||canManageMeetings):canManageMeetings;
  const [rows,setRows]=useState<Meeting[]>([]),[members,setMembers]=useState<Member[]>([]),[attendance,setAttendance]=useState<Attendance[]>([]);
  const [title,setTitle]=useState(""),[kind,setKind]=useState("meeting"),[starts,setStarts]=useState(""),[ends,setEnds]=useState(""),[venue,setVenue]=useState(""),[agenda,setAgenda]=useState(""),[minutesDraft,setMinutesDraft]=useState<Record<string,string>>({});
  const [selectedMeetingId,setSelectedMeetingId]=useState(""),[attendeeId,setAttendeeId]=useState(""),[query,setQuery]=useState(""),[statusFilter,setStatusFilter]=useState("all"),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");

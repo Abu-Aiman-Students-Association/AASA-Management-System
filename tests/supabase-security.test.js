@@ -298,6 +298,21 @@ test("module workspaces cannot directly mutate another module's owned records", 
 });
 
 
+test("Finance workspace gates read, create, approval, reconciliation and audit export independently", () => {
+  assert.ok(dashboardSource.includes('FinanceModule userId={account.id} canRead='));
+  assert.ok(dashboardSource.includes('canCreate={role === "super_admin" || account.permissions.includes("finance.records.create")}'));
+  assert.ok(dashboardSource.includes('canApprove={role === "super_admin" || account.permissions.includes("finance.transactions.approve")}'));
+  assert.ok(dashboardSource.includes('canReconcile={role === "super_admin" || account.permissions.includes("finance.reconcile")}'));
+  assert.ok(dashboardSource.includes('canAudit={role === "super_admin" || account.permissions.includes("finance.audit.read")}'));
+  assert.ok(financeModuleSource.includes('{canCreate&&<section'));
+  assert.ok(financeModuleSource.includes('{canRead&&<section'));
+  assert.ok(financeModuleSource.includes('&&canApprove?'));
+  assert.ok(financeModuleSource.includes('&&canReconcile?'));
+  assert.ok(financeModuleSource.includes('{canAudit&&<button'));
+  assert.ok(financeModuleSource.includes('if(!canApprove)'));
+  assert.ok(financeModuleSource.includes('if(!canReconcile)'));
+});
+
 test("admin workspace navigation recognises each module's own granular permission keys", () => {
   const accessMapStart = dashboardSource.indexOf("const canAccessSection");
   const accessMapEnd = dashboardSource.indexOf("const visibleSections", accessMapStart);
@@ -334,12 +349,12 @@ test("ID Centre receives only member fields displayed or required on the identit
 
 
 const meetingPermissionMigration = await readFile(new URL("../supabase/migrations/20261104101200_refine_meeting_event_attendance_permissions.sql", import.meta.url), "utf8");
-const meetingsModuleSource = await readFile(new URL("../src/MeetingsModule.tsx", import.meta.url), "utf8");
 test("Meetings, Events and Attendance use their own permissions and controls", () => {
   assert.match(meetingPermissionMigration, /aasa_has_permission\('events\.manage'\)/);
   assert.match(meetingPermissionMigration, /aasa_has_permission\('attendance\.record'\)/);
   assert.match(meetingPermissionMigration, /aasa_has_permission\('meetings\.manage'\)/);
   assert.match(meetingsModuleSource, /canManageMeetings/);
+  assert.ok(!meetingsModuleSource.includes("){\\n const canManageRecord"), "Meetings source must contain a real line break, not a literal \\n sequence");
   assert.match(meetingsModuleSource, /canManageEvents/);
   assert.match(meetingsModuleSource, /canRecordAttendance/);
   assert.match(meetingsModuleSource, /rpc\("aasa_list_members_for_meeting_attendance"\)/);
