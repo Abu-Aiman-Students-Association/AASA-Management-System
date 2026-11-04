@@ -331,3 +331,18 @@ test("ID Centre receives only member fields displayed or required on the identit
     assert.ok(!idCenterMinimalFieldsMigration.includes("m." + field), "ID Centre lookup excludes " + field);
   }
 });
+
+
+const meetingPermissionMigration = await readFile(new URL("../supabase/migrations/20261104101200_refine_meeting_event_attendance_permissions.sql", import.meta.url), "utf8");
+const meetingsModuleSource = await readFile(new URL("../src/MeetingsModule.tsx", import.meta.url), "utf8");
+test("Meetings, Events and Attendance use their own permissions and controls", () => {
+  assert.match(meetingPermissionMigration, /aasa_has_permission\('events\.manage'\)/);
+  assert.match(meetingPermissionMigration, /aasa_has_permission\('attendance\.record'\)/);
+  assert.match(meetingPermissionMigration, /aasa_has_permission\('meetings\.manage'\)/);
+  assert.match(meetingsModuleSource, /canManageMeetings/);
+  assert.match(meetingsModuleSource, /canManageEvents/);
+  assert.match(meetingsModuleSource, /canRecordAttendance/);
+  assert.match(meetingsModuleSource, /rpc\("aasa_list_members_for_meeting_attendance"\)/);
+  assert.ok(dashboardSource.includes('meetings: ["meetings.manage","attendance.record","events.manage"]'));
+  assert.doesNotMatch(dashboardSource, /meetings: \["meetings\.manage","meetings\.self\.read"/);
+});
