@@ -255,3 +255,14 @@ test("member photographs use a dedicated private bucket with Membership-scoped a
   assert.match(memberPhotoStorageMigration, /membership\.update/);
   assert.match(memberPhotoStorageMigration, /aasa_legacy_member_photos_read/);
 });
+
+
+const modulePermissionOwnershipMigration = await readFile(new URL("../supabase/migrations/20261104095400_align_permissions_with_module_ownership.sql", import.meta.url), "utf8");
+test("permission groups follow the owning AASA workspace without changing permission keys", () => {
+  assert.match(modulePermissionOwnershipMigration, /'cards\.issue','cards\.revoke'\) then 'id_center'/);
+  assert.match(modulePermissionOwnershipMigration, /'committees\.manage','executives\.manage'\) then 'governance'/);
+  assert.match(modulePermissionOwnershipMigration, /'complaints\.manage','complaints\.review','complaints\.submit'\) then 'complaints'/);
+  assert.match(modulePermissionOwnershipMigration, /'projects\.approve','projects\.manage','tasks\.manage'\) then 'projects'/);
+  assert.match(modulePermissionOwnershipMigration, /'documents\.manage','reports\.export','reports\.read'\) then 'documents'/);
+  assert.match(modulePermissionOwnershipMigration, /'system\.audit\.read'/);
+});
