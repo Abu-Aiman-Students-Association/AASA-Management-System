@@ -19,6 +19,32 @@
 7. **Mobile-first and low-bandwidth.** Paginated lists, server-side search, small uploads, clear loading/empty/error states and resilient forms.
 8. **Traceable delivery.** Each module has acceptance tests, including denied-access tests, before being called complete.
 
+## 1A. Strict module ownership — mandatory rule
+
+A module owns its own screens, forms, validations, writes, lifecycle transitions, exports and audit events. No module may perform another module's business operation, expose another module's create/edit/approve/revoke controls, or write directly to another module's owned records.
+
+Cross-module interaction is limited to:
+- **Read-only reference lookup:** display the minimum fields needed to select a valid member, committee, project or document.
+- **Stable foreign-key reference:** store the ID of the related record in the current module's own table.
+- **Permission-checked hand-off:** open the owning module for the action. The action itself is completed and audited there.
+- **Overview-only aggregation:** Overview may show permission-filtered counts and links, but it cannot create or change module records.
+
+Examples:
+- Membership alone registers, reviews, approves, rejects, suspends and updates member records. It does not issue, print or revoke identity cards.
+- ID Centre alone issues, prints, verifies and revokes cards. It may read the minimum approved member identity fields, but cannot approve or edit membership.
+- Finance alone owns dues, contributions, receipts, budgets, approvals, settlements and reconciliation. Membership may show membership status but must not collect or approve money.
+- Meetings alone owns event scheduling, invitations, attendance and minutes. Projects cannot create meetings or maintain attendance.
+- Projects alone owns project proposals, teams, milestones, tasks, progress and project risks. Finance may approve project budgets through an explicitly permissioned finance decision workflow, but cannot manage project tasks.
+- Documents & Reports alone owns the document register, upload lifecycle, access classification, versioning, archive and retention. Other modules may link an authorised document ID to their own record; they may not upload, edit or archive that document as a side effect.
+- Announcements & Notifications alone owns announcements and notification delivery/inbox. Other modules may request a notification through a defined interface, but may not write announcement records.
+- Welfare Support alone owns confidential welfare cases. Membership and other modules may not view or edit case details.
+- Complaints & Appeals alone owns complaint review, decisions and appeals. Other modules may not resolve or alter complaint records.
+- Leadership & Committees alone owns office positions, appointments, committee membership and terms. Elections may reference a position but may not appoint office holders.
+- Elections alone owns nomination, candidate review, voting phases, ballots and election results. Governance may consume certified outcomes only through a controlled hand-off; it cannot alter ballots or results.
+- Administration & Security alone owns accounts, roles, permissions, security settings and platform audit administration. Other modules cannot assign roles or change permissions.
+
+A shared Supabase database does **not** mean shared business ownership. Each table, storage namespace and privileged RPC must have a named owning module. If two modules need the same business action, move that action to the owner and expose a narrow, permission-checked interface rather than duplicating the workflow.
+
 ## 2. Roles and permission boundaries
 
 | Role / capability group | Core access |
