@@ -294,3 +294,16 @@ test("module workspaces cannot directly mutate another module's owned records", 
   assert.doesNotMatch(welfareModuleSource, mutation("aasa_finance_entries"));
   assert.doesNotMatch(complaintsModuleSource, mutation("aasa_welfare_cases"));
 });
+
+
+test("admin workspace navigation recognises each module's own granular permission keys", () => {
+  const accessMapStart = dashboardSource.indexOf("const canAccessSection");
+  const accessMapEnd = dashboardSource.indexOf("const visibleSections", accessMapStart);
+  const accessMap = dashboardSource.slice(accessMapStart, accessMapEnd);
+  for (const permission of [
+    "committees.assigned.read","announcements.read","notifications.send","complaints.submit",
+    "events.manage","attendance.record","tasks.manage","finance.audit.read","finance.reconcile",
+    "welfare.cases.sensitive.read","welfare.cases.sensitive.manage","reports.read","reports.export",
+    "system.audit.read","platform.health.read","system.settings.manage"
+  ]) assert.ok(accessMap.includes(permission), "workspace access map includes " + permission);
+});
