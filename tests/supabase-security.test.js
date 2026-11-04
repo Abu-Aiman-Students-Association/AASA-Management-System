@@ -118,7 +118,7 @@ test("AASA ID Center is a dedicated dashboard section adjacent to Membership", (
 test("ID Center uses approved member-card RPCs and QR verification rather than direct card writes", () => {
   assert.ok(idCenterSource.includes("aasa_issue_member_card"));
   assert.ok(idCenterSource.includes('rpc("aasa_list_id_center_members")'));
-  assert.doesNotMatch(idCenterSource, /\\.from\\(["\']aasa_members["\']/);
+  assert.ok(!idCenterSource.includes('.from("aasa_members")'));
   assert.ok(idCenterSource.includes("aasa_revoke_member_card"));
   assert.ok(idCenterSource.includes("QRCode.toDataURL"));
   assert.ok(idCenterSource.includes("window.print()"));
