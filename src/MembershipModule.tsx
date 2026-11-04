@@ -147,13 +147,13 @@ export default function MembershipModule({ userId }: { userId: string }) {
         let newPhotoPath: string | null = null;
         if (photoFile) {
           const ext = photoFile.type === "image/png" ? "png" : "jpg";
-          newPhotoPath = userId + "/member-photo-" + editingId + "-" + crypto.randomUUID() + "." + ext;
-          const uploaded = await supabase.storage.from("aasa-documents").upload(newPhotoPath, photoFile, { contentType: photoFile.type, upsert: false });
+          newPhotoPath = "members/" + userId + "/member-photo-" + editingId + "-" + crypto.randomUUID() + "." + ext;
+          const uploaded = await supabase.storage.from("aasa-member-photos").upload(newPhotoPath, photoFile, { contentType: photoFile.type, upsert: false });
           if (uploaded.error) throw uploaded.error;
         }
         const { error } = await supabase.from("aasa_members").update({ ...memberFields, ...(newPhotoPath ? { photo_path: newPhotoPath } : {}) }).eq("id", editingId);
         if (error) {
-          if (newPhotoPath) await supabase.storage.from("aasa-documents").remove([newPhotoPath]);
+          if (newPhotoPath) await supabase.storage.from("aasa-member-photos").remove([newPhotoPath]);
           throw error;
         }
         setName(""); setEmail(""); setPhone(""); setDob(""); setGender(""); setAddress(""); setCityOfResidence(""); setOtherCityOfResidence(""); setNotes("");
@@ -169,15 +169,15 @@ export default function MembershipModule({ userId }: { userId: string }) {
         if (error) throw error;
         if (!photoFile || !inserted) throw new Error("A member photograph is required.");
         const ext = photoFile.type === "image/png" ? "png" : "jpg";
-        const path = userId + "/member-photo-" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
-        const uploaded = await supabase.storage.from("aasa-documents").upload(path, photoFile, { contentType: photoFile.type, upsert: false });
+        const path = "members/" + userId + "/member-photo-" + inserted.id + "-" + crypto.randomUUID() + "." + ext;
+        const uploaded = await supabase.storage.from("aasa-member-photos").upload(path, photoFile, { contentType: photoFile.type, upsert: false });
         if (uploaded.error) {
           await supabase.from("aasa_members").delete().eq("id", inserted.id);
           throw new Error("Photograph upload failed; the incomplete member record was not kept. " + uploaded.error.message);
         }
         const saved = await supabase.from("aasa_members").update({ photo_path: path, updated_by: userId }).eq("id", inserted.id);
         if (saved.error) {
-          await supabase.storage.from("aasa-documents").remove([path]);
+          await supabase.storage.from("aasa-member-photos").remove([path]);
           await supabase.from("aasa_members").delete().eq("id", inserted.id);
           throw new Error("Could not link the photograph to the member record; the incomplete registration was rolled back. " + saved.error.message);
         }
