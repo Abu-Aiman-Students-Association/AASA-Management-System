@@ -17,7 +17,7 @@ import ComplaintsModule from "./ComplaintsModule";
 
 type Role = string;
 type Account = { id: string; email: string; roles: Role[]; permissions: string[]; status: string };
-type Section = "overview" | "membership" | "id_center" | "governance" | "elections" | "meetings" | "projects" | "finance" | "welfare" | "complaints" | "documents" | "communications" | "administration";
+type Section = "overview" | "membership" | "id_center" | "governance" | "elections" | "meetings" | "projects" | "finance" | "welfare" | "complaints" | "documents" | "communications" | "administration" | "alumni" | "chapters" | "dues" | "assets" | "scholarships" | "volunteers" | "partnerships" | "surveys" | "assembly" | "constitution" | "strategy" | "publications" | "annual_reports";
 const moduleSections: { id: Section; icon: string; en: string; ha: string; ar: string; state: "available" | "planned" }[] = [
   { id: "overview", icon: "▦", en: "Overview", ha: "Shafin Farko", ar: "نظرة عامة", state: "available" },
   { id: "membership", icon: "♙", en: "Membership", ha: "Membobinta", ar: "العضوية", state: "available" },
@@ -31,7 +31,20 @@ const moduleSections: { id: Section; icon: string; en: string; ha: string; ar: s
   { id: "complaints", icon: "⚑", en: "Complaints & Appeals", ha: "Korafe-korafe da Ɗaukaka Ƙara", ar: "الشكاوى والاستئنافات", state: "available" },
   { id: "documents", icon: "▧", en: "Documents & Reports", ha: "Takardu da Rahotanni", ar: "الوثائق والتقارير", state: "available" },
   { id: "communications", icon: "✉", en: "Announcements & Notifications", ha: "Sanarwa da Saƙonni", ar: "الإعلانات والإشعارات", state: "available" },
-  { id: "administration", icon: "⚙", en: "Administration & Security", ha: "Gudanarwa da Tsaro", ar: "الإدارة والأمان", state: "available" }
+  { id: "administration", icon: "⚙", en: "Administration & Security", ha: "Gudanarwa da Tsaro", ar: "الإدارة والأمان", state: "available" },
+  { id: "alumni", icon: "🎓", en: "Alumni Management", ha: "Gudanar da Tsofaffin Ɗalibai", ar: "إدارة الخريجين", state: "planned" },
+  { id: "chapters", icon: "⌖", en: "Branches & Chapters", ha: "Rassa da Yankuna", ar: "الفروع والوحدات", state: "planned" },
+  { id: "dues", icon: "₦", en: "Dues & Contributions", ha: "Kuɗin Gudummawa", ar: "الاشتراكات والمساهمات", state: "planned" },
+  { id: "assets", icon: "▤", en: "Assets & Inventory", ha: "Kadarori da Kayayyaki", ar: "الأصول والمخزون", state: "planned" },
+  { id: "scholarships", icon: "✦", en: "Scholarships & Training", ha: "Tallafin Karatu da Horaswa", ar: "المنح والتدريب", state: "planned" },
+  { id: "volunteers", icon: "♡", en: "Volunteer Management", ha: "Gudanar da Masu Sa Kai", ar: "إدارة المتطوعين", state: "planned" },
+  { id: "partnerships", icon: "◇", en: "Partnerships & Sponsorships", ha: "Haɗin Gwiwa da Tallafi", ar: "الشراكات والرعاية", state: "planned" },
+  { id: "surveys", icon: "☷", en: "Surveys & Feedback", ha: "Bincike da Ra'ayoyi", ar: "الاستبيانات والتعليقات", state: "planned" },
+  { id: "assembly", icon: "▦", en: "General Assembly", ha: "Babban Taron Ƙungiya", ar: "الجمعية العمومية", state: "planned" },
+  { id: "constitution", icon: "▧", en: "Constitution & Policies", ha: "Kundin Tsarin Mulki da Dokoki", ar: "الدستور والسياسات", state: "planned" },
+  { id: "strategy", icon: "◎", en: "Strategic Planning", ha: "Tsare-tsaren Dabaru", ar: "التخطيط الاستراتيجي", state: "planned" },
+  { id: "publications", icon: "✎", en: "Publications & Media", ha: "Wallafe-wallafe da Kafofin Yaɗa Labarai", ar: "المنشورات والإعلام", state: "planned" },
+  { id: "annual_reports", icon: "▥", en: "Annual Reports", ha: "Rahotannin Shekara-shekara", ar: "التقارير السنوية", state: "planned" }
 ];
 export default function AdminDashboard() {
   const [account, setAccount] = useState<Account | null>(null);
@@ -159,7 +172,7 @@ export default function AdminDashboard() {
     if (id === "overview") return Boolean(role);
     if (id === "administration") return account?.permissions.some(p => ["platform.admins.manage","platform.health.read","platform.recovery.manage","platform.super_admin.bootstrap","system.audit.read","system.users.manage","system.roles.manage","system.settings.manage","system.settings.read"].includes(p)) ?? false;
     const required: Record<Exclude<Section,"overview"|"administration">, string[]> = {
-      membership: ["membership.read"], id_center: ["cards.read","cards.issue","cards.revoke"], governance: ["executives.manage","committees.manage","committees.assigned.read"], communications: ["announcements.publish","announcements.read","notifications.manage","notifications.send","notifications.self.read"], complaints: ["complaints.review","complaints.manage","complaints.submit"], elections: ["elections.manage","elections.results.review","elections.vote"], meetings: ["meetings.manage","attendance.record","events.manage"], projects: ["projects.manage","projects.approve","tasks.manage"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve","finance.audit.read","finance.reconcile"], welfare: ["welfare.cases.read","welfare.cases.manage","welfare.cases.sensitive.read","welfare.cases.sensitive.manage"], documents: ["documents.manage","reports.read","reports.export"]
+      membership: ["membership.read"], id_center: ["cards.read","cards.issue","cards.revoke"], governance: ["executives.manage","committees.manage","committees.assigned.read"], communications: ["announcements.publish","announcements.read","notifications.manage","notifications.send","notifications.self.read"], complaints: ["complaints.review","complaints.manage","complaints.submit"], elections: ["elections.manage","elections.results.review","elections.vote"], meetings: ["meetings.manage","attendance.record","events.manage"], projects: ["projects.manage","projects.approve","tasks.manage"], finance: ["finance.records.read","finance.records.create","finance.transactions.approve","finance.audit.read","finance.reconcile"], welfare: ["welfare.cases.read","welfare.cases.manage","welfare.cases.sensitive.read","welfare.cases.sensitive.manage"], documents: ["documents.manage","reports.read","reports.export"], alumni: ["alumni.read","alumni.manage"], chapters: ["chapters.read","chapters.manage"], dues: ["dues.read","dues.manage"], assets: ["assets.read","assets.manage"], scholarships: ["scholarships.read","scholarships.manage"], volunteers: ["volunteers.read","volunteers.manage"], partnerships: ["partnerships.read","partnerships.manage"], surveys: ["surveys.read","surveys.manage"], assembly: ["assembly.read","assembly.manage"], constitution: ["constitution.read","constitution.manage"], strategy: ["strategy.read","strategy.manage"], publications: ["publications.read","publications.manage"], annual_reports: ["annual_reports.read","annual_reports.manage"]
     };
     return account?.permissions.some(p => required[id as Exclude<Section,"overview"|"administration">]?.includes(p)) ?? false;
   };
