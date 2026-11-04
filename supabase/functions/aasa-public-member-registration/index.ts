@@ -58,8 +58,8 @@ Deno.serve(async (req: Request) => {
       return response({ error: "The uploaded file content does not match its image type." }, 400);
     }
 
-    uploadedPath = `member-applications/${crypto.randomUUID()}.${ext}`;
-    const { error: uploadError } = await db.storage.from("aasa-documents").upload(uploadedPath, bytes, {
+    uploadedPath = `applications/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await db.storage.from("aasa-member-photos").upload(uploadedPath, bytes, {
       contentType: photo.type,
       cacheControl: "3600",
       upsert: false,
@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
     if (!result?.member_number) throw new Error("The membership application could not be confirmed.");
     return response({ member_number: result.member_number, status: result.status || "pending" });
   } catch (error) {
-    if (uploadedPath) await db.storage.from("aasa-documents").remove([uploadedPath]);
+    if (uploadedPath) await db.storage.from("aasa-member-photos").remove([uploadedPath]);
     const message = error instanceof Error ? error.message : "Unable to submit the membership application.";
     return response({ error: message }, 400);
   }
