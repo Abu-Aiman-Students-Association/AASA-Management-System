@@ -354,6 +354,7 @@ test("Meetings, Events and Attendance use their own permissions and controls", (
   assert.match(meetingPermissionMigration, /aasa_has_permission\('attendance\.record'\)/);
   assert.match(meetingPermissionMigration, /aasa_has_permission\('meetings\.manage'\)/);
   assert.match(meetingsModuleSource, /canManageMeetings/);
+  assert.ok(!meetingsModuleSource.includes("){\\n const canManageRecord"), "Meetings source must contain a real line break, not a literal \\n sequence");
   assert.match(meetingsModuleSource, /canManageEvents/);
   assert.match(meetingsModuleSource, /canRecordAttendance/);
   assert.match(meetingsModuleSource, /rpc\("aasa_list_members_for_meeting_attendance"\)/);
