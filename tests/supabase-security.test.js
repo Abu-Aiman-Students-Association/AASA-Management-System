@@ -298,6 +298,22 @@ test("module workspaces cannot directly mutate another module's owned records", 
 });
 
 
+
+test("Finance workspace gates read, create, approval, reconciliation and audit export independently", () => {
+  assert.ok(dashboardSource.includes('FinanceModule userId={account.id} canRead='));
+  assert.ok(dashboardSource.includes('canCreate={role === "super_admin" || account.permissions.includes("finance.records.create")}'));
+  assert.ok(dashboardSource.includes('canApprove={role === "super_admin" || account.permissions.includes("finance.transactions.approve")}'));
+  assert.ok(dashboardSource.includes('canReconcile={role === "super_admin" || account.permissions.includes("finance.reconcile")}'));
+  assert.ok(dashboardSource.includes('canAudit={role === "super_admin" || account.permissions.includes("finance.audit.read")}'));
+  assert.ok(financeModuleSource.includes('{canCreate&&<section'));
+  assert.ok(financeModuleSource.includes('{canRead&&<section'));
+  assert.ok(financeModuleSource.includes('&&canApprove?'));
+  assert.ok(financeModuleSource.includes('&&canReconcile?'));
+  assert.ok(financeModuleSource.includes('{canAudit&&<button'));
+  assert.ok(financeModuleSource.includes('if(!canApprove)'));
+  assert.ok(financeModuleSource.includes('if(!canReconcile)'));
+});
+
 test("admin workspace navigation recognises each module's own granular permission keys", () => {
   const accessMapStart = dashboardSource.indexOf("const canAccessSection");
   const accessMapEnd = dashboardSource.indexOf("const visibleSections", accessMapStart);
