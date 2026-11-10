@@ -27,7 +27,7 @@ const messages = {
     title: "Tabbatar da zama memba", intro: "Hanya amintacciya don tabbatar da sahihanci da matsayin katin memba na AASA a halin yanzu.",
     live: "RAJISTAR KAI TSAYE", qr: "TANTANCEWAR QR", stateChecking: "BINCIKEN BAYANAI CIKIN TSARO", checkingTitle: "Ana tantance wannan kati", checkingBody: "Ana aika buƙata cikin tsaro zuwa rajistar membobin AASA ta hukuma.",
     active: "SAHIHI · ACTIVE", successTitle: "An tabbatar da zama memba", successBody: "Lambar katin da ke ƙasa ta dace da sahihin bayanin memba mai aiki a ƙungiyar Abu-Aiman.",
-    identity: "BAYANAN MEMBA DA AKA TANTANCE", record: "BAYANAN RAJISTAR HUKUMA", name: "Cikakken suna", category: "Nau’in zama memba", cardNo: "Lambar kati", issued: "Ranar bayarwa", source: "Hukumar tantancewa", sourceValue: "Rajistar membobin AASA ta hukuma kai tsaye",
+    identity: "BAYANAN MEMBA DA AKA TANTANCE", record: "BAYANAN RAJISTAR HUKUMA", name: "Cikakken suna", memberNo: "Lambar memba", memberState: "MAI AIKI", category: "Nau’in zama memba", cardNo: "Lambar kati", issued: "Ranar bayarwa", source: "Hukumar tantancewa", sourceValue: "Rajistar membobin AASA ta hukuma kai tsaye",
     actions: "MATAN TANTANCEWA", print: "Buga bayanan tantancewa", retry: "Sake tantancewa",
     checked: "An kammala tantancewa", privacy: "Kare sirri tun daga tushe", privacyText: "Wannan shafi yana nuna bayanan da ake buƙata kawai domin tabbatar da kati. Bayanan tuntuɓa, ranar haihuwa, adireshin gida, hoto da bayanan gaggawa suna nan a ɓoye.",
     encrypted: "Haɗin yanar gizo mai tsaro", liveLookup: "Duba rajista kai tsaye", minimum: "Ƙarancin bayanan jama'a", qrBound: "Tantancewa da lambar QR",
@@ -43,7 +43,7 @@ const messages = {
     title: "التحقق من العضوية", intro: "طريقة موثوقة للتأكد من صحة بطاقة عضوية جمعية أبو أيمن وحالتها الحالية.",
     live: "السجل المباشر", qr: "مصادقة رمز QR", stateChecking: "فحص السجل الآمن", checkingTitle: "جارٍ التحقق من البطاقة", checkingBody: "يتم إرسال طلب آمن إلى سجل أعضاء الجمعية الرسمي.",
     active: "صحيحة · نشطة", successTitle: "تم التحقق من العضوية بنجاح", successBody: "يتطابق مرجع البطاقة أدناه مع سجل عضوية نشط لدى جمعية طلاب أبو أيمن.",
-    identity: "هوية العضو التي تم التحقق منها", record: "سجل رسمي", name: "الاسم الكامل", category: "فئة العضوية", cardNo: "مرجع البطاقة", issued: "تاريخ الإصدار", source: "جهة التحقق", sourceValue: "سجل أعضاء الجمعية الرسمي المباشر",
+    identity: "هوية العضو التي تم التحقق منها", record: "سجل رسمي", name: "الاسم الكامل", memberNo: "رقم العضوية", memberState: "نشط", category: "فئة العضوية", cardNo: "مرجع البطاقة", issued: "تاريخ الإصدار", source: "جهة التحقق", sourceValue: "سجل أعضاء الجمعية الرسمي المباشر",
     actions: "إجراءات التحقق", print: "طباعة سجل التحقق", retry: "إعادة التحقق",
     checked: "اكتمل التحقق", privacy: "الخصوصية منذ التصميم", privacyText: "تعرض هذه الصفحة الحد الأدنى من المعلومات اللازمة لتأكيد البطاقة فقط. وتظل بيانات الاتصال وتاريخ الميلاد وعنوان السكن والصور وجهات اتصال الطوارئ خاصة.",
     encrypted: "اتصال مشفر", liveLookup: "فحص مباشر للسجل", minimum: "الحد الأدنى من البيانات العامة", qrBound: "تحقق مرتبط برمز QR",
@@ -127,7 +127,7 @@ export default function VerifyMemberCard({ token }: { token: string }) {
         {loading ? <div className="aasa-v2-loading-state"><div className="aasa-v2-loader"><span/></div><small className="aasa-v2-overline">{t.stateChecking}</small><h2>{t.checkingTitle}</h2><p>{t.checkingBody}</p><div className="aasa-v2-loading-track"><span/></div></div> : record ? <>
           <div className="aasa-v2-status-banner"><div className="aasa-v2-status-symbol">✓</div><div className="aasa-v2-status-copy"><span>{t.active}</span><h2>{t.successTitle}</h2><p>{t.successBody}</p></div><div className="aasa-v2-auth-seal"><img src={import.meta.env.BASE_URL + "aasa-logo.svg"} alt=""/><b>AUTHENTIC</b></div></div>
           <div className="aasa-v2-section-heading"><div><small>01 / {t.record}</small><h3>{t.identity}</h3></div><span className="aasa-v2-official-tag">✓ OFFICIAL</span></div>
-          <div className="aasa-v2-member-panel"><div className="aasa-v2-member-monogram" aria-hidden="true">{record.member.full_name?.trim()?.charAt(0)?.toUpperCase() || "A"}</div><div className="aasa-v2-member-details"><small>{t.name}</small><h2>{record.member.full_name}</h2><span>{record.member.member_number}</span></div><div className="aasa-v2-member-state"><i/> ACTIVE</div></div>
+          <div className="aasa-v2-member-panel"><div className="aasa-v2-member-monogram" aria-hidden="true">{record.member.full_name?.trim()?.charAt(0)?.toUpperCase() || "A"}</div><div className="aasa-v2-member-details"><small>{t.name}</small><h2>{record.member.full_name}</h2><span>{t.memberNo}: {record.member.member_number}</span></div><div className="aasa-v2-member-state"><i/> {t.memberState}</div></div>
           <div className="aasa-v2-data-grid">
             <div className="aasa-v2-data-item"><small>{t.category}</small><strong>{categoryLabel(record.member.membership_type, language)}</strong></div>
             <div className="aasa-v2-data-item"><small>{t.cardNo}</small><strong className="aasa-v2-mono">{record.card_number || "—"}</strong></div>
