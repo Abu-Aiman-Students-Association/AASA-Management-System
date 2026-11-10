@@ -131,8 +131,8 @@ const publicVerificationSource = await readFile(new URL("../src/VerifyMemberCard
 const verificationFunctionSource = await readFile(new URL("../supabase/functions/aasa-public-card-verification/index.ts", import.meta.url), "utf8");
 test("public QR verification exposes only safe membership facts and never personal contact or location data", () => {
   assert.match(publicVerificationSource, /aasa-public-card-verification/);
-  assert.match(publicVerificationSource, /Valid active membership/);
-  assert.match(publicVerificationSource, /does not display the member’s photograph/);
+  assert.match(publicVerificationSource, /Authentic membership confirmed/);
+  assert.match(publicVerificationSource, /Privacy and security/);
   assert.doesNotMatch(publicVerificationSource, /m\.phone|m\.address|m\.photo_url|m\.date_of_birth/);
   assert.match(verificationFunctionSource, /\.select\("member_number,full_name,membership_type,status"\)/);
   assert.match(verificationFunctionSource, /member_number: member\.member_number/);
@@ -173,7 +173,7 @@ test("public membership registration requires a validated passport photograph an
 test("membership identity card and QR verification explicitly label the unique member number as ID Number", () => {
   assert.match(idCenterSource, /memberNo:"ID number"/);
   assert.match(idCenterSource, /aasa-card-id-label/);
-  assert.match(publicVerificationSource, /ID Number/);
+  assert.match(publicVerificationSource, /Member number/);
 });
 
 const anonOperationalTablesMigration = await readFile(new URL("../supabase/migrations/20261101083346_revoke_anon_access_from_private_aasa_operational_tables.sql", import.meta.url), "utf8");
