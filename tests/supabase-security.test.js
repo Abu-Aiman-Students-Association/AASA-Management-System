@@ -131,8 +131,10 @@ const publicVerificationSource = await readFile(new URL("../src/VerifyMemberCard
 const verificationFunctionSource = await readFile(new URL("../supabase/functions/aasa-public-card-verification/index.ts", import.meta.url), "utf8");
 test("public QR verification exposes only safe membership facts and never personal contact or location data", () => {
   assert.match(publicVerificationSource, /aasa-public-card-verification/);
-  assert.match(publicVerificationSource, /Authentic membership confirmed/);
-  assert.match(publicVerificationSource, /Privacy and security/);
+  assert.match(publicVerificationSource, /aasa-logo\.svg/);
+  assert.doesNotMatch(publicVerificationSource, /aasa-school-logo\.jpg/);
+  assert.match(publicVerificationSource, /Membership successfully verified/);
+  assert.match(publicVerificationSource, /Privacy by design/);
   assert.doesNotMatch(publicVerificationSource, /m\.phone|m\.address|m\.photo_url|m\.date_of_birth/);
   assert.match(verificationFunctionSource, /\.select\("member_number,full_name,membership_type,status"\)/);
   assert.match(verificationFunctionSource, /member_number: member\.member_number/);
