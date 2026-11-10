@@ -65,7 +65,7 @@ export default function MemberDashboard() {
   const rtl = lang === "ar";
   return <main className="aasa-member" dir={rtl ? "rtl" : "ltr"}>
     <header className="aasa-member-header">
-      <div className="aasa-member-brand"><img src={import.meta.env.BASE_URL + "aasa-school-logo.jpg"} alt="AASA crest" /><div><b>AASA</b><small>ABU-AIMAN STUDENTS' ASSOCIATION</small></div></div>
+      <div className="aasa-member-brand"><img src={import.meta.env.BASE_URL + "aasa-logo.svg"} alt="AASA crest" /><div><b>AASA</b><small>ABU-AIMAN STUDENTS' ASSOCIATION</small></div></div>
       <div className="aasa-member-actions"><nav>{(["en","ha","ar"] as const).map(x => <button key={x} className={lang===x?"selected":""} onClick={() => setLang(x)}>{x==="ar"?"عربي":x.toUpperCase()}</button>)}</nav><button onClick={() => void logout()}>{t.logout}</button></div>
     </header>
     <section className="aasa-member-content">
