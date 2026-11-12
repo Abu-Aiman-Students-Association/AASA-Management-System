@@ -53,11 +53,27 @@ Deno.serve(async (req: Request) => {
     if (existingUser) {
       if (existingUser.email_confirmed_at) return reply(409, { error: "A confirmed account already uses this email. Use verified-account linking." });
       const { error } = await admin.auth.resend({ type: "signup", email });
-      if (error) return reply(502, { error: "Invitation resend failed. Check Auth email/SMTP configuration.", detail: error.message });
+      if (error) {
+        const authError = error as { message: string; status?: number };
+        const rateLimited = authError.status === 429 || /rate.?limit|too many requests/i.test(authError.message);
+        return reply(rateLimited ? 429 : 502, {
+          error: rateLimited ? "The email provider is temporarily rate-limiting invitation requests." : "The invitation provider rejected the resend request.",
+          code: rateLimited ? "auth_rate_limited" : "auth_email_delivery_failed",
+          detail: authError.message,
+        });
+      }
       result = "resent";
     } else {
       const { error } = await admin.auth.admin.inviteUserByEmail(email);
-      if (error) return reply(502, { error: "Invitation email could not be sent. Check Auth email/SMTP configuration.", detail: error.message });
+      if (error) {
+        const authError = error as { message: string; status?: number };
+        const rateLimited = authError.status === 429 || /rate.?limit|too many requests/i.test(authError.message);
+        return reply(rateLimited ? 429 : 502, {
+          error: rateLimited ? "The email provider is temporarily rate-limiting invitation requests." : "The invitation provider rejected the invitation request.",
+          code: rateLimited ? "auth_rate_limited" : "auth_email_delivery_failed",
+          detail: authError.message,
+        });
+      }
     }
     await admin.from("aasa_audit_log").insert({
       actor_user_id: user.id,
