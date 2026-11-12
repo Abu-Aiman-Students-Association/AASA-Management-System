@@ -200,7 +200,14 @@ export default function MembershipModule({ userId }: { userId: string }) {
       body: JSON.stringify({ member_id: m.id })
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || "Invitation could not be sent. Check Auth email settings.");
+    if (!response.ok) {
+      const parts = [result.error || "Invitation could not be sent."];
+      if (result.detail) parts.push("Details: " + String(result.detail));
+      if (result.code === "auth_rate_limited" || response.status === 429) {
+        parts.push("Please wait before trying again; repeated requests may extend the email-provider limit.");
+      }
+      throw new Error(parts.join(" "));
+    }
     return result as { status: string; email: string; member_number: string };
   }
   async function setStatus(m: Member, status: string) {
@@ -210,9 +217,14 @@ export default function MembershipModule({ userId }: { userId: string }) {
       const { error } = await supabase.from("aasa_members").update({ status, updated_by: userId }).eq("id", m.id);
       if (error) throw error;
       if (status === "active" && m.status !== "active" && m.email && !m.auth_user_id) {
-        const invitation = await sendMemberInvitation(m);
         await load();
-        setNotice("Membership approved and invitation " + (invitation.status === "resent" ? "resent" : "sent") + " to " + invitation.email + ".");
+        try {
+          const invitation = await sendMemberInvitation(m);
+          setNotice("Membership approved and invitation " + (invitation.status === "resent" ? "resent" : "sent") + " to " + invitation.email + ".");
+        } catch (inviteError) {
+          setNotice("Membership approved successfully. The member remains active; invitation delivery is a separate step.");
+          setError("Invitation was not sent. " + (inviteError instanceof Error ? inviteError.message : "Please check the Auth email provider and try again later."));
+        }
       } else {
         await load(); setNotice("Membership status updated.");
       }
