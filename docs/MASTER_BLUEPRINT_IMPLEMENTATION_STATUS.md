@@ -16,6 +16,10 @@ This is a living engineering status note for the independent AASA Management Sys
 - **Administration and security:** account search/filter, account status controls, protected Super Admin/self controls, platform-admin assignment/revocation through database RPCs, and recent security audit event review/export.
 - **Database security foundation:** RLS policies, permission checks, audit triggers, RPCs for privileged workflows, private document storage, and schema migrations for meeting attendance/member lookup. No demo association records were inserted by these changes.
 
+## In progress
+
+- **Alumni Management:** the first dedicated workspace is connected to `aasa_alumni_records`, with EN/HA/AR labels, member-record linkage, search, engagement status, record updates and CSV export. It does not create or edit Membership records. The implementation is staged in PR #26; CI build and frontend security checks pass. Live browser verification with a Super Admin and a restricted alumni role remains outstanding. The other 12 newly listed planned modules remain Planned until their individual workflows and tests are delivered.
+
 ## Release blockers / remaining work
 
 - **Latest verification:** GitHub Actions build, frontend security regression tests, artifact upload, and GitHub Pages deployment passed for the ballot-privacy hardening commit. Database privilege checks confirmed that `anon` and `authenticated` cannot directly read or insert secret ballot rows, `anon` cannot call the closed-results RPC, and authenticated callers can execute the RPC (the function itself enforces `elections.results.review`).
