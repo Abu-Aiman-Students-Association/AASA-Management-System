@@ -362,3 +362,17 @@ test("Alumni Management uses its own table, permission gates and verified Member
   assert.match(alumniModuleSource, /exportCsv/);
   assert.doesNotMatch(alumniModuleSource, /\.from\(["']aasa_members["']\)\.(insert|update|upsert|delete)\s*\(/);
 });
+
+
+const alumniPermissionIntegrityMigration = await readFile(new URL("../supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql", import.meta.url), "utf8");
+test("Alumni permissions are granted only to association administrators and protected by database integrity", () => {
+  assert.match(alumniPermissionIntegrityMigration, /'alumni\\.read', 'alumni\\.manage'/);
+  assert.match(alumniPermissionIntegrityMigration, /where r\\.role_key = 'association_admin'/);
+  assert.match(alumniPermissionIntegrityMigration, /on conflict \\(role_id, permission_id\\) do nothing/i);
+  assert.match(alumniPermissionIntegrityMigration, /create unique index if not exists aasa_alumni_records_member_id_unique/i);
+  assert.match(alumniPermissionIntegrityMigration, /before update on public\\.aasa_alumni_records/i);
+  assert.match(alumniPermissionIntegrityMigration, /new\\.updated_at := now\\(\\)/i);
+  assert.match(alumniModuleSource, /updated_by: userId/);
+  assert.match(alumniModuleSource, /created_by: userId/);
+  assert.doesNotMatch(alumniModuleSource, /from\\(["']aasa_members["']\\)\\.(insert|update|upsert|delete)\\s*\\(/);
+});
