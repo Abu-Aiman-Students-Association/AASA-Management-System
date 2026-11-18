@@ -18,7 +18,7 @@ This is a living engineering status note for the independent AASA Management Sys
 
 ## In progress
 
-- **Alumni Management:** the first dedicated workspace is connected to `aasa_alumni_records`, with EN/HA/AR labels, member-record linkage, search, engagement status, record updates and CSV export. It does not create or edit Membership records. The implementation is staged in PR #26; CI build and frontend security checks pass. Live browser verification with a Super Admin and a restricted alumni role remains outstanding. The other 12 newly listed planned modules remain Planned until their individual workflows and tests are delivered.
+- **Alumni Management:** the dedicated EN/HA/AR workspace is connected to `aasa_alumni_records`, with verified member linkage, search, engagement status, record updates and CSV export. It never creates or edits Membership identities. PR #26 now includes a follow-up migration that grants `alumni.read` and `alumni.manage` to Association Administrators, enforces one alumni profile per member, and maintains `updated_at`; the migration is staged only and has not been applied to production. Database inspection confirms RLS and four permission policies are present, but live browser verification with Super Admin and restricted accounts, migration validation, and a fresh CI run remain outstanding. The other 12 planned modules remain Planned until their individual workflows and tests are delivered.
 
 ## Release blockers / remaining work
 
