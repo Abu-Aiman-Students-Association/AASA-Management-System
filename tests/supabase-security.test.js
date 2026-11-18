@@ -360,7 +360,7 @@ test("Alumni Management uses its own table, permission gates and verified Member
   assert.match(alumniModuleSource, /canManage/);
   assert.match(alumniModuleSource, /canLookupMembers/);
   assert.match(alumniModuleSource, /exportCsv/);
-  assert.doesNotMatch(alumniModuleSource, /\.from\(["']aasa_members["']\)\.(insert|update|upsert|delete)\s*\(/);
+  assert.doesNotMatch(alumniModuleSource, /\\.from\\(["']aasa_members["']\\)\\.(insert|update|upsert|delete)\\s*\\(/);
 });
 
 
@@ -374,5 +374,5 @@ test("Alumni permissions are granted only to association administrators and prot
   assert.match(alumniPermissionIntegrityMigration, /new\.updated_at := now\(\)/i);
   assert.match(alumniModuleSource, /updated_by: userId/);
   assert.match(alumniModuleSource, /created_by: userId/);
-  assert.doesNotMatch(alumniModuleSource, /from\\(["']aasa_members["']\\)\\.(insert|update|upsert|delete)\\s*\\(/);
+  assert.doesNotMatch(alumniModuleSource, /\\.from\\(["']aasa_members["']\\)\\.(insert|update|upsert|delete)\\s*\\(/);
 });
