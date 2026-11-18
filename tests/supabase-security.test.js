@@ -348,3 +348,17 @@ test("Meetings, Events and Attendance use their own permissions and controls", (
   assert.ok(dashboardSource.includes('meetings: ["meetings.manage","attendance.record","events.manage"]'));
   assert.doesNotMatch(dashboardSource, /meetings: \["meetings\.manage","meetings\.self\.read"/);
 });
+
+
+const alumniModuleSource = await readFile(new URL("../src/AlumniModule.tsx", import.meta.url), "utf8");
+test("Alumni Management uses its own table, permission gates and verified Membership references", () => {
+  assert.match(dashboardSource, /import AlumniModule from "\.\/AlumniModule"/);
+  assert.match(dashboardSource, /alumni: \["alumni\.read","alumni\.manage"\]/);
+  assert.match(dashboardSource, /section === "alumni"/);
+  assert.match(alumniModuleSource, /from\("aasa_alumni_records"\)/);
+  assert.match(alumniModuleSource, /member_id/);
+  assert.match(alumniModuleSource, /canManage/);
+  assert.match(alumniModuleSource, /canLookupMembers/);
+  assert.match(alumniModuleSource, /exportCsv/);
+  assert.doesNotMatch(alumniModuleSource, /\.from\(["']aasa_members["']\)\.(insert|update|upsert|delete)\s*\(/);
+});
