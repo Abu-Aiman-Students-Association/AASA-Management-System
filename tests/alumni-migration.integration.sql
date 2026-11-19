@@ -121,7 +121,7 @@ begin
   foreach v_table in array array[
     'aasa_alumni_education_history','aasa_alumni_employment_history','aasa_alumni_events',
     'aasa_alumni_event_registrations','aasa_alumni_chapters','aasa_alumni_chapter_members',
-    'aasa_alumni_mentorships','aasa_alumni_engagement_activities','aasa_alumni_activity_log'
+    'aasa_alumni_mentorships','aasa_alumni_mentorship_sessions','aasa_alumni_engagement_activities','aasa_alumni_activity_log'
   ] loop
     if to_regclass('public.' || v_table) is null then raise exception 'Missing Alumni operations table: %', v_table; end if;
     if not (select relrowsecurity from pg_class where oid=to_regclass('public.' || v_table)) then
@@ -258,6 +258,7 @@ declare
   v_chapter_id uuid;
   v_audit_count integer;
   v_education_id uuid;
+  v_mentorship_id uuid;
 begin
   select id into v_alumni_id from public.aasa_alumni_records
   where member_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -338,6 +339,12 @@ begin
     raise exception 'Inactive mentee was unexpectedly accepted';
   exception when check_violation then null;
   end;
+
+  insert into public.aasa_alumni_mentorships(mentor_alumni_id,mentee_member_id,topic,status,created_by)
+  values (v_alumni_id,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Career guidance','active','11111111-1111-4111-8111-111111111111')
+  returning id into v_mentorship_id;
+  insert into public.aasa_alumni_mentorship_sessions(mentorship_id,session_at,topic,duration_minutes,recorded_by)
+  values (v_mentorship_id,now(),'CV and interview preparation',45,'11111111-1111-4111-8111-111111111111');
 
   select count(*) into v_audit_count from public.aasa_alumni_activity_log
   where entity_type in ('aasa_alumni_records','aasa_alumni_chapters','aasa_alumni_chapter_members');
