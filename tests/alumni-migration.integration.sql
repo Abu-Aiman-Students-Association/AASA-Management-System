@@ -400,6 +400,15 @@ begin
   exception when check_violation then null;
   end;
 
+  update public.aasa_alumni_career_opportunities set status='closed' where id=v_opportunity_id;
+  begin
+    insert into public.aasa_alumni_opportunity_applications(opportunity_id,alumni_id,recorded_by)
+    select v_opportunity_id,id,'11111111-1111-4111-8111-111111111111'
+    from public.aasa_alumni_records where member_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    raise exception 'Application to a closed opportunity was unexpectedly accepted';
+  exception when check_violation then null;
+  end;
+
   update public.aasa_alumni_opportunity_applications
   set application_status='applied'
   where opportunity_id=v_opportunity_id and alumni_id=v_alumni_id;
