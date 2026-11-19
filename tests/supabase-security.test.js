@@ -7,6 +7,7 @@ const dashboardSource = await readFile(new URL("../src/AdminDashboard.tsx", impo
 const accountsSource = await readFile(new URL("../src/AdminAccountsPanel.tsx", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
 const adminPortalSelectionSource = await readFile(new URL("../src/AdminPortalSelection.tsx", import.meta.url), "utf8");
+const memberLoginSource = await readFile(new URL("../src/MemberLogin.tsx", import.meta.url), "utf8");
 
 test("browser Supabase client uses publishable configuration, not a service-role secret", () => {
   assert.match(supabaseSource, /VITE_SUPABASE_PUBLISHABLE_KEY/);
@@ -29,6 +30,10 @@ test("Super Admin and Association Admin have separate role-bound login portals",
   assert.match(dashboardSource, /portalMismatch/);
   assert.match(adminPortalSelectionSource, /href="\?portal=super-admin"/);
   assert.match(adminPortalSelectionSource, /href="\?portal=association-admin"/);
+  assert.match(adminPortalSelectionSource, /href="\?portal=member"/);
+  assert.match(appSource, /route === "member_login"/);
+  assert.match(memberLoginSource, /aasa_link_own_member_account/);
+  assert.match(memberLoginSource, /from\("aasa_members"\)/);
 });
 
 test("administrator account changes use database RPCs rather than direct client table writes", () => {
