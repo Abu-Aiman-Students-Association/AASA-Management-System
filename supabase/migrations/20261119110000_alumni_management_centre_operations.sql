@@ -146,6 +146,46 @@ create table if not exists public.aasa_alumni_engagement_activities (
 create index if not exists aasa_alumni_engagement_profile_idx on public.aasa_alumni_engagement_activities(alumni_id, occurred_on desc);
 create index if not exists aasa_alumni_engagement_type_idx on public.aasa_alumni_engagement_activities(activity_type, occurred_on desc);
 
+-- Operational participation is limited to alumni whose graduation has been verified.
+create or replace function public.aasa_require_verified_alumni()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_alumni_id uuid;
+  v_status text;
+begin
+  if tg_argv[0] = 'mentor_alumni_id' then
+    v_alumni_id := new.mentor_alumni_id;
+  else
+    v_alumni_id := new.alumni_id;
+  end if;
+  select graduation_verification_status into v_status
+  from public.aasa_alumni_records where id = v_alumni_id;
+  if v_status is distinct from 'verified' then
+    raise exception 'Only verified alumni may be added to chapters, events, mentorship or engagement records'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.aasa_require_verified_alumni() from public, anon, authenticated;
+
+drop trigger if exists aasa_alumni_event_registration_verified on public.aasa_alumni_event_registrations;
+create trigger aasa_alumni_event_registration_verified before insert or update of alumni_id on public.aasa_alumni_event_registrations
+for each row execute function public.aasa_require_verified_alumni('alumni_id');
+drop trigger if exists aasa_alumni_chapter_member_verified on public.aasa_alumni_chapter_members;
+create trigger aasa_alumni_chapter_member_verified before insert or update of alumni_id on public.aasa_alumni_chapter_members
+for each row execute function public.aasa_require_verified_alumni('alumni_id');
+drop trigger if exists aasa_alumni_mentorship_verified on public.aasa_alumni_mentorships;
+create trigger aasa_alumni_mentorship_verified before insert or update of mentor_alumni_id on public.aasa_alumni_mentorships
+for each row execute function public.aasa_require_verified_alumni('mentor_alumni_id');
+drop trigger if exists aasa_alumni_engagement_verified on public.aasa_alumni_engagement_activities;
+create trigger aasa_alumni_engagement_verified before insert or update of alumni_id on public.aasa_alumni_engagement_activities
+for each row execute function public.aasa_require_verified_alumni('alumni_id');
+
 -- Small, privacy-conscious audit trail: never copies contact details or free-text notes.
 create table if not exists public.aasa_alumni_activity_log (
   id uuid primary key default gen_random_uuid(),
