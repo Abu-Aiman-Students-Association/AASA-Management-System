@@ -400,3 +400,15 @@ test("Alumni operational records enforce RLS, verified-alumni linkage and privac
   assert.match(alumniOperationsSource, /aasa_alumni_mentorships/);
   assert.match(alumniOperationsSource, /aasa_alumni_engagement_activities/);
 });
+
+const alumniCommunicationsMigration = await readFile(new URL("../supabase/migrations/20261119120000_alumni_targeted_communications.sql", import.meta.url), "utf8");
+
+test("Alumni communications target verified active members and use governed in-app delivery", () => {
+  assert.match(alumniCommunicationsMigration, /graduation_verification_status='verified'/);
+  assert.match(alumniCommunicationsMigration, /m\.status='active'/);
+  assert.match(alumniCommunicationsMigration, /coalesce\(m\.is_test_record,false\)=false/);
+  assert.match(alumniCommunicationsMigration, /'IN_APP'/);
+  assert.match(alumniCommunicationsMigration, /aasa_archive_alumni_announcement/);
+  assert.match(alumniCommunicationsMigration, /security definer/i);
+  assert.match(alumniOperationsSource, /aasa_alumni_mentorship_sessions/);
+});
