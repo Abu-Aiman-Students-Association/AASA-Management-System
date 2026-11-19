@@ -398,6 +398,13 @@ begin
     and recipient_user_id='11111111-1111-4111-8111-111111111111'
     and channel='IN_APP' and delivery_status='DELIVERED';
   if v_count <> 1 then raise exception 'Targeted alumni announcement was not delivered in-app'; end if;
+  if not public.aasa_archive_alumni_announcement((v_result->>'announcement_id')::uuid) then
+    raise exception 'Alumni announcement could not be archived';
+  end if;
+  if not exists (select 1 from public.aasa_alumni_announcements
+    where id=(v_result->>'announcement_id')::uuid and status='archived') then
+    raise exception 'Archived alumni announcement status was not persisted';
+  end if;
 end;
 $alumni_comms_test$;
 
