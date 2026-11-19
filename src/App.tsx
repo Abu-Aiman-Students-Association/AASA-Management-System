@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import AdminDashboard from "./AdminDashboard";
 import AdminPortalSelection from "./AdminPortalSelection";
+import MemberLogin from "./MemberLogin";
 import MemberDashboard from "./MemberDashboard";
 import VerifyMemberCard from "./VerifyMemberCard";
 import PublicMemberRegistration from "./PublicMemberRegistration";
 import { supabase } from "./lib/supabase";
 import "./admin.css";
 
-type Route = "loading" | "choose" | "admin" | "member";
+type Route = "loading" | "choose" | "admin" | "member_login" | "member";
 type AdminAccessMode = "super_admin" | "association_admin";
 
 export default function App() {
@@ -24,7 +25,8 @@ export default function App() {
     async function resolveAccount(session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) {
       if (!alive) return;
       if (!session?.user) {
-        if (params.has("portal")) {
+        if (requestedPortal === "member") { setRoute("member_login"); }
+        else if (params.has("portal")) {
           setAdminMode(params.get("portal") === "super-admin" ? "super_admin" : "association_admin");
           setRoute("admin");
         } else {
@@ -63,7 +65,7 @@ export default function App() {
       }
       if (alive) {
         setAdminMode(initialMode);
-        setRoute(params.has("portal") ? "admin" : "choose");
+        setRoute(requestedPortal === "member" ? "member_login" : params.has("portal") ? "admin" : "choose");
       }
     }
 
@@ -71,7 +73,7 @@ export default function App() {
       window.setTimeout(() => { void resolveAccount(session); }, 0);
     });
     supabase.auth.getSession().then(({ data, error }) => {
-      if (error) { if (alive) setRoute(params.has("portal") ? "admin" : "choose"); return; }
+      if (error) { if (alive) setRoute(requestedPortal === "member" ? "member_login" : params.has("portal") ? "admin" : "choose"); return; }
       void resolveAccount(data.session);
     });
     return () => { alive = false; subscription.unsubscribe(); };
@@ -80,5 +82,6 @@ export default function App() {
   if (params.has("verify")) return <VerifyMemberCard token={params.get("verify") || ""} />;
   if (route === "loading") return <main className="aasa-admin"><section className="aasa-content"><p className="aasa-kicker">AASA · SECURE ACCESS</p><h1>Checking your account…</h1></section></main>;
   if (route === "choose") return <AdminPortalSelection />;
+  if (route === "member_login") return <MemberLogin />;
   return route === "member" ? <MemberDashboard /> : <AdminDashboard accessMode={adminMode} />;
 }
