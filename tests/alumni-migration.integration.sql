@@ -175,6 +175,27 @@ begin
 end;
 $$;
 
+-- Rejection must remain possible when evidence is incomplete, with a recorded rationale.
+update public.aasa_alumni_records
+set graduation_verification_status = 'rejected',
+    graduation_review_notes = 'Evidence reference missing; request a valid certificate record.'
+where member_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+do $
+begin
+  if not exists (
+    select 1 from public.aasa_alumni_records
+    where member_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+      and graduation_verification_status = 'rejected'
+      and graduation_review_notes is not null
+      and graduation_verified_at is null
+      and graduation_verified_by is null
+  ) then
+    raise exception 'Incomplete evidence could not be rejected with a review rationale';
+  end if;
+end;
+$;
+
 -- A second profile for the same member must be rejected by the unique index.
 do $$
 declare
