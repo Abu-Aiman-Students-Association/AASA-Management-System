@@ -412,3 +412,14 @@ test("Alumni communications target verified active members and use governed in-a
   assert.match(alumniCommunicationsMigration, /security definer/i);
   assert.match(alumniOperationsSource, /aasa_alumni_mentorship_sessions/);
 });
+
+const alumniCareerMigration = await readFile(new URL("../supabase/migrations/20261119130000_alumni_career_opportunities.sql", import.meta.url), "utf8");
+
+test("Alumni career opportunities are RLS protected and restricted to verified alumni", () => {
+  assert.match(alumniCareerMigration, /enable row level security/i);
+  assert.match(alumniCareerMigration, /aasa_require_verified_alumni/);
+  assert.match(alumniCareerMigration, /aasa_validate_alumni_opportunity_application/);
+  assert.match(alumniCareerMigration, /closing date/i);
+  assert.match(alumniOperationsSource, /aasa_alumni_career_opportunities/);
+  assert.match(alumniOperationsSource, /aasa_alumni_opportunity_applications/);
+});
