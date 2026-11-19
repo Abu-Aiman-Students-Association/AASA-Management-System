@@ -333,6 +333,18 @@ begin
   exception when check_violation then null;
   end;
 
+  update public.aasa_alumni_events set status='completed' where id=v_chapter_id;
+  update public.aasa_alumni_event_registrations
+  set registration_status='attended'
+  where event_id=v_chapter_id and alumni_id=v_alumni_id;
+  begin
+    insert into public.aasa_alumni_event_registrations(event_id,alumni_id,registered_by)
+    select v_chapter_id,id,'11111111-1111-4111-8111-111111111111'
+    from public.aasa_alumni_records where member_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    raise exception 'Late registration after event completion was unexpectedly accepted';
+  exception when check_violation then null;
+  end;
+
   begin
     insert into public.aasa_alumni_mentorships(mentor_alumni_id,mentee_member_id,topic,created_by)
     values (v_alumni_id,'cccccccc-cccc-4ccc-8ccc-cccccccccccc','Career guidance','11111111-1111-4111-8111-111111111111');
