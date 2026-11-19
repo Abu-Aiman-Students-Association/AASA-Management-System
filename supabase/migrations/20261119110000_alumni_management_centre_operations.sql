@@ -186,6 +186,78 @@ drop trigger if exists aasa_alumni_engagement_verified on public.aasa_alumni_eng
 create trigger aasa_alumni_engagement_verified before insert or update of alumni_id on public.aasa_alumni_engagement_activities
 for each row execute function public.aasa_require_verified_alumni('alumni_id');
 
+-- Enforce active, non-test mentees and active chapters/events at the database boundary.
+create or replace function public.aasa_validate_alumni_chapter_membership()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $chapter_guard$
+begin
+  if not exists (select 1 from public.aasa_alumni_chapters c where c.id=new.chapter_id and c.status='active') then
+    raise exception 'Alumni can only join an active chapter' using errcode='23514';
+  end if;
+  return new;
+end;
+$chapter_guard$;
+revoke all on function public.aasa_validate_alumni_chapter_membership() from public,anon,authenticated;
+drop trigger if exists aasa_alumni_chapter_active_guard on public.aasa_alumni_chapter_members;
+create trigger aasa_alumni_chapter_active_guard before insert or update of chapter_id on public.aasa_alumni_chapter_members
+for each row execute function public.aasa_validate_alumni_chapter_membership();
+
+create or replace function public.aasa_validate_alumni_mentee()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $mentee_guard$
+begin
+  if not exists (
+    select 1 from public.aasa_members m
+    where m.id=new.mentee_member_id and m.status='active' and coalesce(m.is_test_record,false)=false
+  ) then
+    raise exception 'Mentorship mentees must be active, non-test AASA members' using errcode='23514';
+  end if;
+  return new;
+end;
+$mentee_guard$;
+revoke all on function public.aasa_validate_alumni_mentee() from public,anon,authenticated;
+drop trigger if exists aasa_alumni_mentee_active_guard on public.aasa_alumni_mentorships;
+create trigger aasa_alumni_mentee_active_guard before insert or update of mentee_member_id on public.aasa_alumni_mentorships
+for each row execute function public.aasa_validate_alumni_mentee();
+
+create or replace function public.aasa_validate_alumni_event_registration()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $event_guard$
+declare
+  v_status text;
+  v_capacity integer;
+  v_registered integer;
+begin
+  select status,capacity into v_status,v_capacity
+  from public.aasa_alumni_events where id=new.event_id for update;
+  if v_status is distinct from 'scheduled' then
+    raise exception 'Alumni registration is available only for scheduled events' using errcode='23514';
+  end if;
+  if new.registration_status <> 'cancelled' and v_capacity is not null then
+    select count(*) into v_registered from public.aasa_alumni_event_registrations
+    where event_id=new.event_id and registration_status <> 'cancelled'
+      and (tg_op='INSERT' or id<>new.id);
+    if v_registered >= v_capacity then
+      raise exception 'Alumni event capacity has been reached' using errcode='23514';
+    end if;
+  end if;
+  return new;
+end;
+$event_guard$;
+revoke all on function public.aasa_validate_alumni_event_registration() from public,anon,authenticated;
+drop trigger if exists aasa_alumni_event_capacity_guard on public.aasa_alumni_event_registrations;
+create trigger aasa_alumni_event_capacity_guard before insert or update of event_id,registration_status on public.aasa_alumni_event_registrations
+for each row execute function public.aasa_validate_alumni_event_registration();
+
 -- Small, privacy-conscious audit trail: never copies contact details or free-text notes.
 create table if not exists public.aasa_alumni_activity_log (
   id uuid primary key default gen_random_uuid(),
