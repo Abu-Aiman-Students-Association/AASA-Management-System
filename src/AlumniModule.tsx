@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { supabase } from "./lib/supabase";
+import AlumniOperationsModule from "./AlumniOperationsModule";
 
 type AlumniRecord = {
   id: string;
@@ -22,8 +23,6 @@ type AlumniRecord = {
   graduation_review_notes: string | null;
 };
 type MemberOption = { id: string; member_number: string; full_name: string; status: string };
-import AlumniOperationsModule from "./AlumniOperationsModule";
-
 type FormState = {
   member_id: string;
   graduation_year: string;
