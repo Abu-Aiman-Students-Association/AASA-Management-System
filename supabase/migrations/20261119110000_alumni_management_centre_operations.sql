@@ -60,6 +60,33 @@ create table if not exists public.aasa_alumni_employment_history (
   check (not is_current or end_date is null)
 );
 create index if not exists aasa_alumni_employment_profile_idx on public.aasa_alumni_employment_history(alumni_id, start_date desc);
+create or replace function public.aasa_set_alumni_education_verifier()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $education_verifier$
+begin
+  if new.verification_status='verified' then
+    if new.evidence_reference is null or length(btrim(new.evidence_reference))=0 then
+      raise exception 'Verified education history requires an evidence reference' using errcode='23514';
+    end if;
+    if auth.uid() is not null then
+      new.verified_by := auth.uid();
+      new.verified_at := coalesce(new.verified_at,now());
+    end if;
+  else
+    new.verified_by := null;
+    new.verified_at := null;
+  end if;
+  return new;
+end;
+$education_verifier$;
+revoke all on function public.aasa_set_alumni_education_verifier() from public,anon,authenticated;
+drop trigger if exists aasa_alumni_education_verifier on public.aasa_alumni_education_history;
+create trigger aasa_alumni_education_verifier before insert or update of verification_status,evidence_reference on public.aasa_alumni_education_history
+for each row execute function public.aasa_set_alumni_education_verifier();
+
 
 create table if not exists public.aasa_alumni_events (
   id uuid primary key default gen_random_uuid(),
