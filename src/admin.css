@@ -319,3 +319,16 @@
  .aasa-register-filters select{width:100%}
 }
 @media(max-width:420px){.aasa-alumni-profile-grid{grid-template-columns:1fr}.aasa-alumni-year-row{grid-template-columns:48px minmax(0,1fr) 22px;gap:8px}}
+
+/* Alumni Management Centre operations workspaces */
+.aasa-alumni-ops-tabs{display:flex;gap:7px;flex-wrap:wrap;padding:8px;border:1px solid #e3ebe5;border-radius:12px;background:#fff}
+.aasa-alumni-ops-tabs button{border:1px solid transparent;border-radius:8px;background:transparent;color:#607368;padding:10px 13px;font-size:10px;font-weight:800;cursor:pointer}
+.aasa-alumni-ops-tabs button.selected{background:#eaf4ed;border-color:#d3e5d8;color:#1c5a3d}
+.aasa-alumni-operations .aasa-panel h3{margin:18px 0 10px;color:#234b35}
+.aasa-alumni-operations .aasa-panel h3:first-child{margin-top:0}
+.aasa-alumni-operations .aasa-checkbox-line{display:flex!important;align-items:center;gap:9px;min-height:42px}
+.aasa-alumni-operations .aasa-checkbox-line input{width:17px;min-height:17px;accent-color:#1b6245}
+.aasa-alumni-operations .aasa-table select{max-width:150px}
+.aasa-alumni-operations .aasa-table .aasa-link{white-space:nowrap}
+.aasa-alumni-operations .aasa-member-form .aasa-full-span{grid-column:1/-1}
+@media(max-width:620px){.aasa-alumni-ops-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.aasa-alumni-ops-tabs button{padding:11px 7px}.aasa-alumni-operations .aasa-member-form .aasa-full-span{grid-column:auto}}
