@@ -139,6 +139,74 @@ $alumni_announcement$;
 revoke all on function public.aasa_publish_alumni_announcement(text,text,text,uuid,text,integer) from public,anon;
 grant execute on function public.aasa_publish_alumni_announcement(text,text,text,uuid,text,integer) to authenticated;
 
+alter table public.aasa_notifications
+  add column if not exists alumni_event_id uuid references public.aasa_alumni_events(id) on delete set null;
+create unique index if not exists aasa_notifications_alumni_event_recipient_uidx
+  on public.aasa_notifications(alumni_event_id,recipient_user_id)
+  where alumni_event_id is not null;
+
+create or replace function public.aasa_invite_alumni_to_event(p_event_id uuid,p_alumni_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $alumni_event_invite$
+declare
+  v_user uuid := auth.uid();
+  v_recipient uuid;
+  v_event_title text;
+  v_event_start timestamptz;
+  v_venue text;
+  v_registration_id uuid;
+  v_notified boolean := false;
+begin
+  if v_user is null or not public.aasa_has_permission('alumni.manage') then
+    raise exception 'Alumni management permission required to invite alumni to events';
+  end if;
+  select title,starts_at,venue into v_event_title,v_event_start,v_venue
+  from public.aasa_alumni_events where id=p_event_id and status='scheduled';
+  if not found then raise exception 'Scheduled alumni event not found'; end if;
+
+  select m.auth_user_id into v_recipient
+  from public.aasa_alumni_records ar
+  join public.aasa_members m on m.id=ar.member_id
+  where ar.id=p_alumni_id
+    and ar.graduation_verification_status='verified'
+    and ar.engagement_status='active'
+    and m.status='active'
+    and coalesce(m.is_test_record,false)=false;
+  if not found then raise exception 'Only active, linked and verified alumni can be invited'; end if;
+
+  insert into public.aasa_alumni_event_registrations(event_id,alumni_id,registration_status,registered_by)
+  values (p_event_id,p_alumni_id,'invited',v_user)
+  returning id into v_registration_id;
+
+  if v_recipient is not null then
+    insert into public.aasa_notifications(
+      recipient_user_id,channel,title,message,delivery_status,alumni_event_id
+    ) values (
+      v_recipient,
+      'IN_APP',
+      'Alumni event invitation',
+      v_event_title || ' · ' || to_char(v_event_start,'YYYY-MM-DD HH24:MI') || coalesce(' · ' || v_venue,''),
+      'DELIVERED',
+      p_event_id
+    )
+    on conflict (alumni_event_id,recipient_user_id)
+      where alumni_event_id is not null do nothing;
+    v_notified := true;
+  end if;
+
+  return pg_catalog.jsonb_build_object(
+    'registration_id',v_registration_id,
+    'notified',v_notified,
+    'channel',case when v_notified then 'IN_APP' else 'record_only' end
+  );
+end;
+$alumni_event_invite$;
+revoke all on function public.aasa_invite_alumni_to_event(uuid,uuid) from public,anon;
+grant execute on function public.aasa_invite_alumni_to_event(uuid,uuid) to authenticated;
+
 create or replace function public.aasa_archive_alumni_announcement(p_announcement_id uuid)
 returns boolean
 language plpgsql
