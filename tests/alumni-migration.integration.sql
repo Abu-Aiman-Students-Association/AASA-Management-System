@@ -77,11 +77,13 @@ insert into public.roles (role_key) values ('association_admin');
 \i supabase/migrations/20261119090914_alumni_graduation_verification_and_active_member_link.sql
 \i supabase/migrations/20261119110000_alumni_management_centre_operations.sql
 \i supabase/migrations/20261119120000_alumni_targeted_communications.sql
+\i supabase/migrations/20261119130000_alumni_career_opportunities.sql
 -- Reapplying both migrations proves idempotency.
 \i supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql
 \i supabase/migrations/20261119090914_alumni_graduation_verification_and_active_member_link.sql
 \i supabase/migrations/20261119110000_alumni_management_centre_operations.sql
 \i supabase/migrations/20261119120000_alumni_targeted_communications.sql
+\i supabase/migrations/20261119130000_alumni_career_opportunities.sql
 
 do $$
 declare
@@ -121,7 +123,7 @@ begin
   foreach v_table in array array[
     'aasa_alumni_education_history','aasa_alumni_employment_history','aasa_alumni_events',
     'aasa_alumni_event_registrations','aasa_alumni_chapters','aasa_alumni_chapter_members',
-    'aasa_alumni_mentorships','aasa_alumni_mentorship_sessions','aasa_alumni_engagement_activities','aasa_alumni_activity_log'
+    'aasa_alumni_mentorships','aasa_alumni_mentorship_sessions','aasa_alumni_engagement_activities','aasa_alumni_career_opportunities','aasa_alumni_opportunity_applications','aasa_alumni_activity_log'
   ] loop
     if to_regclass('public.' || v_table) is null then raise exception 'Missing Alumni operations table: %', v_table; end if;
     if not (select relrowsecurity from pg_class where oid=to_regclass('public.' || v_table)) then
@@ -369,6 +371,43 @@ begin
   end if;
 end;
 $alumni_operations_test$;
+
+-- Career opportunities accept interest from verified alumni only.
+do $alumni_career_test$
+declare
+  v_opportunity_id uuid;
+  v_alumni_id uuid;
+  v_pending_alumni_id uuid;
+  v_application_count integer;
+begin
+  select id into v_alumni_id from public.aasa_alumni_records
+  where member_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  insert into public.aasa_members(id,status,is_test_record)
+  values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','active',false);
+  insert into public.aasa_alumni_records(member_id) values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+  returning id into v_pending_alumni_id;
+
+  insert into public.aasa_alumni_career_opportunities(title,company,employment_type,created_by)
+  values ('Graduate programme','AASA Partner','internship','11111111-1111-4111-8111-111111111111')
+  returning id into v_opportunity_id;
+  insert into public.aasa_alumni_opportunity_applications(opportunity_id,alumni_id,recorded_by)
+  values (v_opportunity_id,v_alumni_id,'11111111-1111-4111-8111-111111111111');
+
+  begin
+    insert into public.aasa_alumni_opportunity_applications(opportunity_id,alumni_id,recorded_by)
+    values (v_opportunity_id,v_pending_alumni_id,'11111111-1111-4111-8111-111111111111');
+    raise exception 'Unverified alumnus was unexpectedly accepted for an opportunity';
+  exception when check_violation then null;
+  end;
+
+  update public.aasa_alumni_opportunity_applications
+  set application_status='applied'
+  where opportunity_id=v_opportunity_id and alumni_id=v_alumni_id;
+  select count(*) into v_application_count from public.aasa_alumni_opportunity_applications
+  where opportunity_id=v_opportunity_id and alumni_id=v_alumni_id and application_status='applied';
+  if v_application_count <> 1 then raise exception 'Opportunity application status was not persisted'; end if;
+end;
+$alumni_career_test$;
 
 -- Targeted Alumni announcements reach only active, verified and non-test alumni accounts.
 do $alumni_comms_test$
