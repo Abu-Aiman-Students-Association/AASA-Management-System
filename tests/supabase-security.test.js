@@ -25,7 +25,8 @@ test("Super Admin and Association Admin have separate role-bound login portals",
   assert.match(appSource, /requestedPortal === "super-admin"/);
   assert.match(appSource, /AdminPortalSelection/);
   assert.match(appSource, /AdminDashboard accessMode=\{adminMode\}/);
-  assert.match(dashboardSource, /accessMode === "super_admin" \? account\.roles\.includes\("super_admin"\)/);
+  assert.match(dashboardSource, /account\.roles\.includes\("super_admin"\)/);
+  assert.match(dashboardSource, /account\.roles\.includes\("platform_admin"\)/);
   assert.match(dashboardSource, /account\.roles\.includes\("association_admin"\)/);
   assert.match(dashboardSource, /portalMismatch/);
   assert.match(adminPortalSelectionSource, /href="\?portal=super-admin"/);
