@@ -348,3 +348,34 @@ test("Meetings, Events and Attendance use their own permissions and controls", (
   assert.ok(dashboardSource.includes('meetings: ["meetings.manage","attendance.record","events.manage"]'));
   assert.doesNotMatch(dashboardSource, /meetings: \["meetings\.manage","meetings\.self\.read"/);
 });
+
+
+const alumniModuleSource = await readFile(new URL("../src/AlumniModule.tsx", import.meta.url), "utf8");
+test("Alumni Management uses its own table, permission gates and verified Membership references", () => {
+  assert.match(dashboardSource, /import AlumniModule from "\.\/AlumniModule"/);
+  assert.match(dashboardSource, /alumni: \["alumni\.read","alumni\.manage"\]/);
+  assert.match(dashboardSource, /section === "alumni"/);
+  assert.match(alumniModuleSource, /from\("aasa_alumni_records"\)/);
+  assert.match(alumniModuleSource, /member_id/);
+  assert.match(alumniModuleSource, /canManage/);
+  assert.match(alumniModuleSource, /canLookupMembers/);
+  assert.match(alumniModuleSource, /exportCsv/);
+  assert.doesNotMatch(alumniModuleSource, /\.from\(["']aasa_members["']\)\.(insert|update|upsert|delete)\s*\(/);
+});
+
+
+const alumniPermissionIntegrityMigration = await readFile(new URL("../supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql", import.meta.url), "utf8");
+test("Alumni permissions are granted only to association administrators and protected by database integrity", () => {
+  assert.match(alumniPermissionIntegrityMigration, /'alumni\.read', 'alumni\.manage'/);
+  assert.match(alumniPermissionIntegrityMigration, /where r\.role_key = 'association_admin'/);
+  assert.match(alumniPermissionIntegrityMigration, /on conflict \(role_id, permission_id\) do nothing/i);
+  assert.match(alumniPermissionIntegrityMigration, /create unique index if not exists aasa_alumni_records_member_id_unique/i);
+  assert.ok(alumniPermissionIntegrityMigration.includes("before insert or update on public.aasa_alumni_records"));
+  assert.ok(alumniPermissionIntegrityMigration.includes("new.updated_at := now()"));
+  assert.ok(alumniPermissionIntegrityMigration.includes("new.created_by := old.created_by"));
+  assert.ok(alumniPermissionIntegrityMigration.includes("new.updated_by := auth.uid()"));
+  assert.ok(alumniPermissionIntegrityMigration.includes("if auth.uid() is not null then"));
+  assert.match(alumniModuleSource, /updated_by: userId/);
+  assert.match(alumniModuleSource, /created_by: userId/);
+  assert.doesNotMatch(alumniModuleSource, /\.from\(["']aasa_members["']\)\.(insert|update|upsert|delete)\s*\(/);
+});

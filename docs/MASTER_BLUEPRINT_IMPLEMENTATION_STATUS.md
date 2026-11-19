@@ -16,6 +16,10 @@ This is a living engineering status note for the independent AASA Management Sys
 - **Administration and security:** account search/filter, account status controls, protected Super Admin/self controls, platform-admin assignment/revocation through database RPCs, and recent security audit event review/export.
 - **Database security foundation:** RLS policies, permission checks, audit triggers, RPCs for privileged workflows, private document storage, and schema migrations for meeting attendance/member lookup. No demo association records were inserted by these changes.
 
+## In progress
+
+- **Alumni Management:** the dedicated EN/HA/AR workspace is connected to `aasa_alumni_records`, with verified member linkage, search, engagement status, record updates and CSV export. It never creates or edits Membership identities. PR #26 now includes a follow-up migration that grants `alumni.read` and `alumni.manage` to Association Administrators, enforces one alumni profile per member, preserves `created_by`, derives `updated_by` from `auth.uid()` for authenticated writes, and maintains `updated_at`; the migration is staged only and has not been applied to production. Database inspection confirms RLS and four permission policies are present. The latest PR CI run passes (29 security tests and production build); isolated migration validation and live browser verification with Super Admin, Association Administrator and restricted accounts remain outstanding. The other 12 planned modules remain Planned until their individual workflows and tests are delivered.
+
 ## Release blockers / remaining work
 
 - **Latest verification:** GitHub Actions build, frontend security regression tests, artifact upload, and GitHub Pages deployment passed for the ballot-privacy hardening commit. Database privilege checks confirmed that `anon` and `authenticated` cannot directly read or insert secret ballot rows, `anon` cannot call the closed-results RPC, and authenticated callers can execute the RPC (the function itself enforces `elections.results.review`).
