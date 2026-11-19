@@ -185,6 +185,7 @@ create table if not exists public.aasa_alumni_mentorship_sessions (
   notes text,
   recorded_by uuid not null references auth.users(id),
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   check (outcome is null or char_length(outcome) <= 3000),
   check (notes is null or char_length(notes) <= 5000)
 );
