@@ -191,6 +191,27 @@ create table if not exists public.aasa_alumni_mentorship_sessions (
 );
 create index if not exists aasa_alumni_mentorship_sessions_parent_idx on public.aasa_alumni_mentorship_sessions(mentorship_id,session_at desc);
 
+create or replace function public.aasa_require_active_alumni_mentorship_session()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $mentorship_session_guard$
+begin
+  if not exists (
+    select 1 from public.aasa_alumni_mentorships m
+    where m.id=new.mentorship_id and m.status='active'
+  ) then
+    raise exception 'Mentorship sessions can only be recorded for active mentorship programmes' using errcode='23514';
+  end if;
+  return new;
+end;
+$mentorship_session_guard$;
+revoke all on function public.aasa_require_active_alumni_mentorship_session() from public,anon,authenticated;
+drop trigger if exists aasa_alumni_mentorship_session_active_guard on public.aasa_alumni_mentorship_sessions;
+create trigger aasa_alumni_mentorship_session_active_guard before insert or update of mentorship_id on public.aasa_alumni_mentorship_sessions
+for each row execute function public.aasa_require_active_alumni_mentorship_session();
+
 -- Engagement activities are non-financial. Monetary donations and dues remain in AASA Finance/Payments.
 create table if not exists public.aasa_alumni_engagement_activities (
   id uuid primary key default gen_random_uuid(),
