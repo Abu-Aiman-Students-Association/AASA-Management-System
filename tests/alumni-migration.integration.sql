@@ -147,7 +147,7 @@ end;
 $$;
 
 -- Pending and test members cannot be linked, even if a client bypasses the UI.
-do $
+do $$
 begin
   begin
     insert into public.aasa_alumni_records (member_id) values ('cccccccc-cccc-4ccc-8ccc-cccccccccccc');
@@ -160,10 +160,10 @@ begin
   exception when check_violation then null;
   end;
 end;
-$;
+$$;
 
 -- Verified graduation cannot be set without evidence and reviewer audit fields.
-do $
+do $$
 begin
   begin
     update public.aasa_alumni_records
@@ -173,10 +173,10 @@ begin
   exception when check_violation then null;
   end;
 end;
-$;
+$$;
 
 -- A second profile for the same member must be rejected by the unique index.
-do $
+do $$
 declare
   v_member_id uuid := 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 begin
