@@ -302,8 +302,11 @@ declare
 begin
   select status,capacity into v_status,v_capacity
   from public.aasa_alumni_events where id=new.event_id for update;
-  if v_status is distinct from 'scheduled' then
-    raise exception 'Alumni registration is available only for scheduled events' using errcode='23514';
+  if tg_op='INSERT' and v_status is distinct from 'scheduled' then
+    raise exception 'New alumni registrations are available only for scheduled events' using errcode='23514';
+  end if;
+  if v_status='cancelled' and new.registration_status <> 'cancelled' then
+    raise exception 'Registrations cannot be reactivated for a cancelled event' using errcode='23514';
   end if;
   if new.registration_status <> 'cancelled' and v_capacity is not null then
     select count(*) into v_registered from public.aasa_alumni_event_registrations
