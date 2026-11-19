@@ -152,7 +152,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $verify$
 declare
   v_alumni_id uuid;
   v_status text;
@@ -170,7 +170,7 @@ begin
   end if;
   return new;
 end;
-$;
+$verify$;
 revoke all on function public.aasa_require_verified_alumni() from public, anon, authenticated;
 
 drop trigger if exists aasa_alumni_event_registration_verified on public.aasa_alumni_event_registrations;
