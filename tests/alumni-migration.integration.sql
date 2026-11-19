@@ -251,27 +251,6 @@ begin
 end;
 $$;
 
--- Targeted Alumni announcements reach only active, verified and non-test alumni accounts.
-do $alumni_comms_test$
-declare
-  v_result jsonb;
-  v_count integer;
-begin
-  update public.aasa_members
-  set auth_user_id='11111111-1111-4111-8111-111111111111'
-  where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-
-  v_result := public.aasa_publish_alumni_announcement(
-    'Alumni test announcement','Test message for verified alumni','all_verified',null,null,null
-  );
-  select count(*) into v_count from public.aasa_notifications
-  where alumni_announcement_id=(v_result->>'announcement_id')::uuid
-    and recipient_user_id='11111111-1111-4111-8111-111111111111'
-    and channel='IN_APP' and delivery_status='DELIVERED';
-  if v_count <> 1 then raise exception 'Targeted alumni announcement was not delivered in-app'; end if;
-end;
-$alumni_comms_test$;
-
 -- Verified-alumni operational linkage and append-only audit behaviour.
 do $alumni_operations_test$
 declare
@@ -317,5 +296,28 @@ begin
   end if;
 end;
 $alumni_operations_test$;
+
+-- Targeted Alumni announcements reach only active, verified and non-test alumni accounts.
+do $alumni_comms_test$
+declare
+  v_result jsonb;
+  v_count integer;
+begin
+  update public.aasa_members
+  set auth_user_id='11111111-1111-4111-8111-111111111111'
+  where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+  v_result := public.aasa_publish_alumni_announcement(
+    'Alumni test announcement','Test message for verified alumni','all_verified',null,null,null
+  );
+  select count(*) into v_count from public.aasa_notifications
+  where alumni_announcement_id=(v_result->>'announcement_id')::uuid
+    and recipient_user_id='11111111-1111-4111-8111-111111111111'
+    and channel='IN_APP' and delivery_status='DELIVERED';
+  if v_count <> 1 then raise exception 'Targeted alumni announcement was not delivered in-app'; end if;
+end;
+$alumni_comms_test$;
+
+
 
 \echo Alumni migration integration checks passed.
