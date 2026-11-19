@@ -22,6 +22,25 @@ create table if not exists public.aasa_alumni_education_history (
   check (review_notes is null or char_length(review_notes) <= 1000)
 );
 create index if not exists aasa_alumni_education_profile_idx on public.aasa_alumni_education_history(alumni_id, end_year desc);
+alter table public.aasa_alumni_education_history
+  add column if not exists verified_at timestamptz,
+  add column if not exists verified_by uuid references auth.users(id);
+do $education_verify$
+begin
+  if not exists (select 1 from pg_constraint where conrelid='public.aasa_alumni_education_history'::regclass and conname='aasa_alumni_education_verified_evidence_check') then
+    alter table public.aasa_alumni_education_history
+      add constraint aasa_alumni_education_verified_evidence_check
+      check (
+        verification_status <> 'verified'
+        or (
+          evidence_reference is not null and length(btrim(evidence_reference)) > 0
+          and verified_at is not null and verified_by is not null
+        )
+      );
+  end if;
+end;
+$education_verify$;
+
 
 create table if not exists public.aasa_alumni_employment_history (
   id uuid primary key default gen_random_uuid(),
