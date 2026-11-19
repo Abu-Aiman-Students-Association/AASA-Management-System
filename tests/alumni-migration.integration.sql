@@ -257,6 +257,7 @@ declare
   v_alumni_id uuid;
   v_chapter_id uuid;
   v_audit_count integer;
+  v_education_id uuid;
 begin
   select id into v_alumni_id from public.aasa_alumni_records
   where member_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -284,6 +285,20 @@ begin
 
   insert into public.aasa_alumni_chapter_members(chapter_id,alumni_id,added_by)
   values (v_chapter_id,v_alumni_id,'11111111-1111-4111-8111-111111111111');
+
+  insert into public.aasa_alumni_education_history(alumni_id,institution,qualification,evidence_reference,created_by)
+  values (v_alumni_id,'Verified university','BSc','EDU-CERT-01','11111111-1111-4111-8111-111111111111')
+  returning id into v_education_id;
+  update public.aasa_alumni_education_history
+  set verification_status='verified',verified_at=now(),verified_by='11111111-1111-4111-8111-111111111111'
+  where id=v_education_id;
+
+  begin
+    insert into public.aasa_alumni_education_history(alumni_id,institution,qualification,verification_status,created_by)
+    values (v_alumni_id,'Another university','Diploma','verified','11111111-1111-4111-8111-111111111111');
+    raise exception 'Education record without evidence was unexpectedly verified';
+  exception when check_violation then null;
+  end;
 
   update public.aasa_alumni_records
   set graduation_year=2019,
