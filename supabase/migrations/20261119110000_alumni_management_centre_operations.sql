@@ -84,7 +84,7 @@ end;
 $education_verifier$;
 revoke all on function public.aasa_set_alumni_education_verifier() from public,anon,authenticated;
 drop trigger if exists aasa_alumni_education_verifier on public.aasa_alumni_education_history;
-create trigger aasa_alumni_education_verifier before insert or update of verification_status,evidence_reference on public.aasa_alumni_education_history
+create trigger aasa_alumni_education_verifier before insert or update of verification_status,evidence_reference,verified_at,verified_by on public.aasa_alumni_education_history
 for each row execute function public.aasa_set_alumni_education_verifier();
 
 
