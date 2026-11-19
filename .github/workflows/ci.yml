@@ -13,6 +13,18 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,6 +34,16 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Validate Alumni migration in disposable PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f tests/alumni-migration.integration.sql
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
       - name: Check server API JavaScript syntax
         run: node --check functions/aasa-api/src/main.js
       # Legacy Appwrite API tests are retained for reference but are not a deployment gate:
