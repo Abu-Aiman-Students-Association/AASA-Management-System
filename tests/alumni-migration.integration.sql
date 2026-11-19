@@ -338,6 +338,16 @@ begin
   set auth_user_id='11111111-1111-4111-8111-111111111111'
   where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
+  select count(*) into v_count
+  from public.aasa_alumni_records ar
+  join public.aasa_members m on m.id=ar.member_id
+  where ar.graduation_verification_status='verified'
+    and ar.engagement_status='active'
+    and m.status='active'
+    and coalesce(m.is_test_record,false)=false
+    and m.auth_user_id is not null;
+  if v_count < 1 then raise exception 'Integration fixture did not create an eligible verified alumni recipient'; end if;
+
   v_result := public.aasa_publish_alumni_announcement(
     'Alumni test announcement','Test message for verified alumni','all_verified',null,null,null
   );
