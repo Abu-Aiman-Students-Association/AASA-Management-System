@@ -15,6 +15,11 @@ type AlumniRecord = {
   engagement_status: "active" | "inactive" | "deceased";
   notes: string | null;
   created_at: string;
+  graduation_evidence_reference: string | null;
+  graduation_verification_status: "pending" | "verified" | "rejected";
+  graduation_verified_at: string | null;
+  graduation_verified_by: string | null;
+  graduation_review_notes: string | null;
 };
 type MemberOption = { id: string; member_number: string; full_name: string; status: string };
 type FormState = {
@@ -29,11 +34,13 @@ type FormState = {
   location: string;
   engagement_status: "active" | "inactive" | "deceased";
   notes: string;
+  graduation_evidence_reference: string;
+  graduation_review_notes: string;
 };
 const emptyForm: FormState = {
   member_id: "", graduation_year: "", qualification: "", institution: "",
   current_occupation: "", employer: "", contact_email: "", contact_phone: "",
-  location: "", engagement_status: "active", notes: ""
+  location: "", engagement_status: "active", notes: "", graduation_evidence_reference: "", graduation_review_notes: ""
 };
 const copy = {
   en: {
@@ -52,7 +59,7 @@ const copy = {
     readOnly: "Read-only access", export: "Export CSV", saved: "Alumni record saved.",
     required: "Select an existing AASA member and enter a valid graduation year.",
     loadError: "Could not load alumni records.", saveError: "Could not save the alumni record.",
-    linked: "Linked to membership", noLink: "Membership record unavailable"
+    linked: "Linked to membership", noLink: "Membership record unavailable", evidence: "Graduation evidence reference", reviewNotes: "Verification review notes", verification: "Graduation verification", pending: "Pending verification", verified: "Verified", rejected: "Rejected", verify: "Approve graduation", reject: "Reject evidence", requiredEvidence: "Qualification, institution and evidence reference are required before approval.",
   },
   ha: {
     eyebrow: "ALAƘAR TSOFFIN MEMBOBI · HAƊIN BAYANAI", title: "Rajistar tsofaffin membobi",
@@ -70,7 +77,7 @@ const copy = {
     readOnly: "Izinin karantawa kawai", export: "Fitar da CSV", saved: "An ajiye bayanin tsohon memba.",
     required: "Zaɓi memba na AASA sannan ka shigar da shekarar kammala karatu da ta dace.",
     loadError: "An kasa loda bayanan tsofaffin membobi.", saveError: "An kasa ajiye bayanin.",
-    linked: "An haɗa da Membership", noLink: "Ba a samu bayanan memba ba"
+    linked: "An haɗa da Membership", noLink: "Ba a samu bayanan memba ba", evidence: "Shaidar kammala karatu (lamba/mahada)", reviewNotes: "Bayanan tantancewa", verification: "Tabbacin kammala karatu", pending: "Ana jiran tantancewa", verified: "An tantance", rejected: "An ƙi shaida", verify: "Amince da kammala karatu", reject: "Ƙi shaidar", requiredEvidence: "Dole a cika takardar karatu, makaranta da bayanin shaida kafin amincewa.",
   },
   ar: {
     eyebrow: "علاقات الخريجين · ربط العضوية الموثقة", title: "سجل الخريجين",
@@ -88,7 +95,7 @@ const copy = {
     readOnly: "صلاحية القراءة فقط", export: "تصدير CSV", saved: "تم حفظ سجل الخريج.",
     required: "اختر عضواً موجوداً في AASA وأدخل سنة تخرج صحيحة.",
     loadError: "تعذر تحميل سجلات الخريجين.", saveError: "تعذر حفظ سجل الخريج.",
-    linked: "مرتبط بسجل العضوية", noLink: "سجل العضو غير متاح"
+    linked: "مرتبط بسجل العضوية", noLink: "سجل العضو غير متاح", evidence: "مرجع إثبات التخرج", reviewNotes: "ملاحظات المراجعة", verification: "التحقق من التخرج", pending: "بانتظار التحقق", verified: "تم التحقق", rejected: "مرفوض", verify: "اعتماد التخرج", reject: "رفض الإثبات", requiredEvidence: "المؤهل والمؤسسة ومرجع الإثبات مطلوبة قبل الاعتماد.",
   }
 };
 const csvCell = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
@@ -112,7 +119,7 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
     setError("");
     const { data, error: readError } = await supabase
       .from("aasa_alumni_records")
-      .select("id,member_id,graduation_year,qualification,institution,current_occupation,employer,contact_email,contact_phone,location,engagement_status,notes,created_at")
+      .select("id,member_id,graduation_year,qualification,institution,current_occupation,employer,contact_email,contact_phone,location,engagement_status,notes,created_at,graduation_evidence_reference,graduation_verification_status,graduation_verified_at,graduation_verified_by,graduation_review_notes")
       .order("graduation_year", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
     if (readError) {
@@ -127,6 +134,7 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
         .from("aasa_members")
         .select("id,member_number,full_name,status")
         .eq("is_test_record", false)
+        .eq("status", "active")
         .order("full_name", { ascending: true });
       if (!memberError) setMembers((memberRows ?? []) as MemberOption[]);
     }
@@ -161,7 +169,9 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
       contact_phone: record.contact_phone ?? "",
       location: record.location ?? "",
       engagement_status: record.engagement_status,
-      notes: record.notes ?? ""
+      notes: record.notes ?? "",
+      graduation_evidence_reference: record.graduation_evidence_reference ?? "",
+      graduation_review_notes: record.graduation_review_notes ?? ""
     });
     setNotice("");
     setError("");
@@ -172,6 +182,21 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
     setNotice("");
     setError("");
   }
+  async function reviewGraduation(record: AlumniRecord, decision: "verified" | "rejected") {
+    if (!canManage || !record.graduation_year || !record.qualification?.trim() || !record.institution?.trim() || !record.graduation_evidence_reference?.trim()) {
+      setError(t.requiredEvidence);
+      return;
+    }
+    const { error: reviewError } = await supabase.from("aasa_alumni_records").update({
+      graduation_verification_status: decision,
+      graduation_verified_at: decision === "verified" ? new Date().toISOString() : null,
+      graduation_verified_by: decision === "verified" ? userId : null,
+      updated_by: userId
+    }).eq("id", record.id);
+    if (reviewError) setError(reviewError.message || t.saveError);
+    else { setNotice(decision === "verified" ? t.verified : t.rejected); await load(); }
+  }
+
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!canManage || saving) return;
@@ -196,11 +221,13 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
       location: form.location.trim() || null,
       engagement_status: form.engagement_status,
       notes: form.notes.trim() || null,
+      graduation_evidence_reference: form.graduation_evidence_reference.trim() || null,
+      graduation_review_notes: form.graduation_review_notes.trim() || null,
       updated_by: userId
     };
     const result = editingId
       ? await supabase.from("aasa_alumni_records").update(payload).eq("id", editingId)
-      : await supabase.from("aasa_alumni_records").insert({ ...payload, created_by: userId });
+      : await supabase.from("aasa_alumni_records").insert({ ...payload, graduation_verification_status: "pending", created_by: userId });
     if (result.error) {
       setError(result.error.message || t.saveError);
     } else {
@@ -213,7 +240,7 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
 
   function exportCsv() {
     const rows = [
-      ["Member number", "Full name", "Graduation year", "Qualification", "Institution", "Occupation", "Employer", "Email", "Phone", "Location", "Engagement status", "Notes"],
+      ["Member number", "Full name", "Graduation year", "Qualification", "Institution", "Evidence reference", "Graduation verification", "Occupation", "Employer", "Email", "Phone", "Location", "Engagement status", "Notes"],
       ...filtered.map(record => {
         const member = record.member_id ? memberById.get(record.member_id) : undefined;
         return [member?.member_number ?? "", member?.full_name ?? record.member_id ?? "", record.graduation_year ?? "", record.qualification, record.institution, record.current_occupation, record.employer, record.contact_email, record.contact_phone, record.location, record.engagement_status, record.notes];
@@ -255,8 +282,10 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
           {members.map(member => <option key={member.id} value={member.id}>{member.full_name} · {member.member_number} · {member.status}</option>)}
         </select></label>
         <label>{t.year}<input type="number" min="1900" max={new Date().getFullYear()} required value={form.graduation_year} onChange={event => setForm(previous => ({ ...previous, graduation_year: event.target.value }))} /></label>
-        <label>{t.qualification}<input value={form.qualification} onChange={event => setForm(previous => ({ ...previous, qualification: event.target.value }))} maxLength={160} /></label>
-        <label>{t.institution}<input value={form.institution} onChange={event => setForm(previous => ({ ...previous, institution: event.target.value }))} maxLength={200} /></label>
+        <label>{t.qualification}<input required value={form.qualification} onChange={event => setForm(previous => ({ ...previous, qualification: event.target.value }))} maxLength={160} /></label>
+        <label>{t.institution}<input required value={form.institution} onChange={event => setForm(previous => ({ ...previous, institution: event.target.value }))} maxLength={200} /></label>
+        <label className="aasa-full-span">{t.evidence}<input required value={form.graduation_evidence_reference} onChange={event => setForm(previous => ({ ...previous, graduation_evidence_reference: event.target.value }))} placeholder="Certificate number or secure document reference" maxLength={500} /></label>
+        <label className="aasa-full-span">{t.reviewNotes}<textarea rows={2} value={form.graduation_review_notes} onChange={event => setForm(previous => ({ ...previous, graduation_review_notes: event.target.value }))} maxLength={1000} /></label>
         <label>{t.occupation}<input value={form.current_occupation} onChange={event => setForm(previous => ({ ...previous, current_occupation: event.target.value }))} maxLength={160} /></label>
         <label>{t.employer}<input value={form.employer} onChange={event => setForm(previous => ({ ...previous, employer: event.target.value }))} maxLength={160} /></label>
         <label>{t.email}<input type="email" value={form.contact_email} onChange={event => setForm(previous => ({ ...previous, contact_email: event.target.value }))} maxLength={254} /></label>
@@ -273,14 +302,15 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
         </div>
       </form>}
       <div className="aasa-table-wrap"><table className="aasa-table">
-        <thead><tr><th>{t.memberName}</th><th>{t.yearLabel}</th><th>{t.qualification}</th><th>{t.institution}</th><th>{t.occupation}</th><th>{t.status}</th>{canManage && <th>{t.actions}</th>}</tr></thead>
+        <thead><tr><th>{t.memberName}</th><th>{t.yearLabel}</th><th>{t.qualification}</th><th>{t.institution}</th><th>{t.verification}</th><th>{t.status}</th>{canManage && <th>{t.actions}</th>}</tr></thead>
         <tbody>{filtered.map(record => {
           const member = record.member_id ? memberById.get(record.member_id) : undefined;
           return <tr key={record.id}>
             <td><strong>{member?.full_name ?? (record.member_id ? record.member_id.slice(0, 8) + "…" : t.noLink)}</strong><br/><small>{member?.member_number ?? t.noLink}</small></td>
-            <td>{record.graduation_year ?? "—"}</td><td>{record.qualification ?? "—"}</td><td>{record.institution ?? "—"}</td><td>{record.current_occupation ?? "—"}</td>
+            <td>{record.graduation_year ?? "—"}</td><td>{record.qualification ?? "—"}</td><td>{record.institution ?? "—"}</td>
+            <td><span className={"aasa-pill " + (record.graduation_verification_status === "verified" ? "active" : "")}>{record.graduation_verification_status === "verified" ? t.verified : record.graduation_verification_status === "rejected" ? t.rejected : t.pending}</span></td>
             <td><span className="aasa-pill">{record.engagement_status}</span></td>
-            {canManage && <td><button className="aasa-secondary" type="button" onClick={() => startEdit(record)}>{t.edit}</button></td>}
+            {canManage && <td><div className="aasa-case-actions"><button className="aasa-secondary" type="button" onClick={() => startEdit(record)}>{t.edit}</button>{record.graduation_verification_status !== "verified" && record.graduation_year && record.qualification && record.institution && record.graduation_evidence_reference && <button className="aasa-primary" type="button" onClick={() => void reviewGraduation(record, "verified")}>{t.verify}</button>}{record.graduation_verification_status !== "rejected" && <button className="aasa-secondary" type="button" onClick={() => void reviewGraduation(record, "rejected")}>{t.reject}</button>}</div></td>}
           </tr>;
         })}</tbody>
       </table></div>
