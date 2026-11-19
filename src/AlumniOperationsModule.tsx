@@ -55,7 +55,7 @@ const words = {
 
 const csvCell = (v: unknown) => {
  const value=String(v??"");
- const safe=/^\\s*[=+@-]/.test(value)?"'"+value:value;
+ const safe=/^\s*[=+@-]/.test(value)?"'"+value:value;
  return '"'+safe.replace(/"/g,'""')+'"';
 };
 
