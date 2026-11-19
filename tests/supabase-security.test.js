@@ -370,7 +370,11 @@ test("Alumni permissions are granted only to association administrators and prot
   assert.match(alumniPermissionIntegrityMigration, /where r\.role_key = 'association_admin'/);
   assert.match(alumniPermissionIntegrityMigration, /on conflict \(role_id, permission_id\) do nothing/i);
   assert.match(alumniPermissionIntegrityMigration, /create unique index if not exists aasa_alumni_records_member_id_unique/i);
-  assert.match(alumniPermissionIntegrityMigration, /before update on public\.aasa_alumni_records/i);
+  assert.match(alumniPermissionIntegrityMigration, /before insert or update on public\\.aasa_alumni_records/i);
+  assert.match(alumniPermissionIntegrityMigration, /new\\.updated_at := now\\(\\)/i);
+  assert.match(alumniPermissionIntegrityMigration, /new\\.created_by := old\\.created_by/i);
+  assert.match(alumniPermissionIntegrityMigration, /new\\.updated_by := auth\\.uid\\(\\)/i);
+  assert.match(alumniPermissionIntegrityMigration, /if auth\\.uid\\(\\) is not null then/i);
   assert.match(alumniPermissionIntegrityMigration, /new\.updated_at := now\(\)/i);
   assert.match(alumniModuleSource, /updated_by: userId/);
   assert.match(alumniModuleSource, /created_by: userId/);
