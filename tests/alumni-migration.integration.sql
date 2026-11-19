@@ -293,6 +293,14 @@ begin
   set verification_status='verified',verified_at=now(),verified_by='11111111-1111-4111-8111-111111111111'
   where id=v_education_id;
 
+  update public.aasa_alumni_education_history
+  set verified_by='22222222-2222-4222-8222-222222222222'
+  where id=v_education_id;
+  if not exists (select 1 from public.aasa_alumni_education_history
+    where id=v_education_id and verified_by='11111111-1111-4111-8111-111111111111') then
+    raise exception 'Education verification reviewer identity could be spoofed';
+  end if;
+
   begin
     insert into public.aasa_alumni_education_history(alumni_id,institution,qualification,verification_status,created_by)
     values (v_alumni_id,'Another university','Diploma','verified','11111111-1111-4111-8111-111111111111');
