@@ -261,8 +261,8 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
     if (result.error) {
       setError(result.error.message || t.saveError);
     } else {
-      setNotice(t.saved);
       resetForm();
+      setNotice(t.saved);
       await load();
     }
     setSaving(false);
@@ -304,7 +304,7 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
       <button type="button" className={activeView === "verification" ? "aasa-primary" : "aasa-secondary"} onClick={() => setActiveView("verification")}>{t.verificationQueue} · {pendingCount}</button>
     </div>
     {activeView === "overview" && <section className="aasa-panel">
-      <div className="aasa-section-heading"><div><p className="aasa-kicker">ALUMNI INTELLIGENCE</p><h3>{t.overview}</h3></div><button type="button" className="aasa-primary" onClick={() => { setActiveView("directory"); setFormOpen(true); setEditingId(null); setForm(emptyForm); }}>{t.addProfile}</button></div>
+      <div className="aasa-section-heading"><div><p className="aasa-kicker">ALUMNI INTELLIGENCE</p><h3>{t.overview}</h3></div>{canManage && <button type="button" className="aasa-primary" onClick={() => { setActiveView("directory"); setFormOpen(true); setEditingId(null); setForm(emptyForm); }}>{t.addProfile}</button>}</div>
       <div className="aasa-overview-cards"><article><small>{t.active}</small><strong>{records.filter(record => record.engagement_status === "active").length}</strong></article><article><small>{t.inactiveStatus}</small><strong>{records.filter(record => record.engagement_status === "inactive").length}</strong></article><article><small>{t.deceased}</small><strong>{records.filter(record => record.engagement_status === "deceased").length}</strong></article></div>
       <h4>{t.yearBreakdown}</h4>
       {yearBreakdown.length ? <div className="aasa-alumni-year-list">{yearBreakdown.map(([year, count]) => <div key={year} className="aasa-alumni-year-row"><span>{year}</span><div className="aasa-alumni-year-track"><i style={{ width: String(Math.max(6, count / Math.max(...yearBreakdown.map(item => item[1])) * 100)) + "%" }} /></div><strong>{count}</strong></div>)}</div> : <p className="aasa-muted">{t.noRecords}</p>}
