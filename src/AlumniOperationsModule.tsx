@@ -104,13 +104,10 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
    setChapters((ch.data??[]) as Chapter[]); setChapterMembers((cm.data??[]) as ChapterMember[]);
    setMentorships((me.data??[]) as Mentorship[]); setActivities((ac.data??[]) as Engagement[]); setAudit((au.data??[]) as Audit[]);
    if(canLookupMembers) {
-    const ids=[...new Set([...nextAlumni.map(x=>x.member_id).filter((x):x is string=>!!x),...((me.data??[]) as Mentorship[]).map(x=>x.mentee_member_id)])];
-    if(ids.length) {
-     const mr=await supabase.from("aasa_members").select("id,full_name,member_number,status").in("id",ids);
-     if(mr.error) throw mr.error;
-     const map=new Map((mr.data??[]).map((x:Member)=>[x.id,x]));
-     setMemberNames(map); setMembers((mr.data??[]).filter((x:Member)=>x.status==="active") as Member[]);
-    } else { setMemberNames(new Map()); setMembers([]); }
+    const mr=await supabase.from("aasa_members").select("id,full_name,member_number,status").eq("is_test_record",false).order("full_name");
+    if(mr.error) throw mr.error;
+    const map=new Map<string,Member>((mr.data??[]).map((x:Member)=>[x.id,x] as const));
+    setMemberNames(map); setMembers((mr.data??[]).filter((x:Member)=>x.status==="active") as Member[]);
    }
   } catch(e) { setError(e instanceof Error?e.message:t.error); }
   finally { setLoading(false); }
