@@ -34,7 +34,7 @@ create table public.role_permissions (
   primary key (role_id, permission_id)
 );
 
-create function public.aasa_has_permission(text) returns boolean language sql stable as $ select true $;
+create function public.aasa_has_permission(text) returns boolean language sql stable as $perm$ select true $perm$;
 create table public.aasa_projects (id uuid primary key default gen_random_uuid());
 create table public.aasa_alumni_records (
   id uuid primary key default gen_random_uuid(),
@@ -63,9 +63,11 @@ insert into public.roles (role_key) values ('association_admin');
 
 \i supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql
 \i supabase/migrations/20261119090914_alumni_graduation_verification_and_active_member_link.sql
+\i supabase/migrations/20261119110000_alumni_management_centre_operations.sql
 -- Reapplying both migrations proves idempotency.
 \i supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql
 \i supabase/migrations/20261119090914_alumni_graduation_verification_and_active_member_link.sql
+\i supabase/migrations/20261119110000_alumni_management_centre_operations.sql
 
 do $$
 declare
