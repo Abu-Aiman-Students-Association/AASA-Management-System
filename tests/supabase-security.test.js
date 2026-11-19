@@ -5,6 +5,8 @@ import { readFile } from "node:fs/promises";
 const supabaseSource = await readFile(new URL("../src/lib/supabase.ts", import.meta.url), "utf8");
 const dashboardSource = await readFile(new URL("../src/AdminDashboard.tsx", import.meta.url), "utf8");
 const accountsSource = await readFile(new URL("../src/AdminAccountsPanel.tsx", import.meta.url), "utf8");
+const appSource = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
+const adminPortalSelectionSource = await readFile(new URL("../src/AdminPortalSelection.tsx", import.meta.url), "utf8");
 
 test("browser Supabase client uses publishable configuration, not a service-role secret", () => {
   assert.match(supabaseSource, /VITE_SUPABASE_PUBLISHABLE_KEY/);
@@ -16,6 +18,17 @@ test("administrator access is gated by database-confirmed roles", () => {
   assert.match(dashboardSource, /claim_initial_super_admin/);
   assert.match(dashboardSource, /account_status/);
   assert.match(dashboardSource, /SUPER_ADMIN_EMAIL/);
+});
+
+test("Super Admin and Association Admin have separate role-bound login portals", () => {
+  assert.match(appSource, /params\.get\("portal"\).*super-admin/);
+  assert.match(appSource, /AdminPortalSelection/);
+  assert.match(appSource, /AdminDashboard accessMode=\{adminMode\}/);
+  assert.match(dashboardSource, /accessMode === "super_admin" \? account\.roles\.includes\("super_admin"\)/);
+  assert.match(dashboardSource, /account\.roles\.includes\("association_admin"\)/);
+  assert.match(dashboardSource, /portalMismatch/);
+  assert.match(adminPortalSelectionSource, /href="\?portal=super-admin"/);
+  assert.match(adminPortalSelectionSource, /href="\?portal=association-admin"/);
 });
 
 test("administrator account changes use database RPCs rather than direct client table writes", () => {
