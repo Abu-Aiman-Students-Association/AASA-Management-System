@@ -332,3 +332,20 @@
 .aasa-alumni-operations .aasa-table .aasa-link{white-space:nowrap}
 .aasa-alumni-operations .aasa-member-form .aasa-full-span{grid-column:1/-1}
 @media(max-width:620px){.aasa-alumni-ops-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.aasa-alumni-ops-tabs button{padding:11px 7px}.aasa-alumni-operations .aasa-member-form .aasa-full-span{grid-column:auto}}
+
+
+/* Separate AASA administrator entry portals */
+.aasa-portal-select .aasa-content{width:min(900px,100%);padding-top:clamp(34px,7vh,76px)}
+.aasa-portal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:30px 0 22px}
+.aasa-portal-card{display:flex;min-width:0;min-height:270px;flex-direction:column;align-items:flex-start;padding:clamp(20px,3vw,30px);border:1px solid #dce8df;border-radius:18px;background:linear-gradient(150deg,#fff,#f7faf7);color:#20352a;text-decoration:none;box-shadow:0 12px 34px #153d2a0a;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.aasa-portal-card:hover,.aasa-portal-card:focus-visible{transform:translateY(-3px);border-color:#86ae94;box-shadow:0 18px 42px #153d2a16;outline:none}
+.aasa-portal-card .aasa-portal-icon{display:grid;width:48px;height:48px;place-items:center;margin-bottom:22px;border-radius:14px;background:#e8f2eb;color:#1c6845;font-size:25px}
+.aasa-portal-card>small{color:#6d927b;font-size:9px;font-weight:850;letter-spacing:.13em}
+.aasa-portal-card h2{margin:9px 0 8px;color:#183e2c;font:800 clamp(20px,3vw,25px) Manrope,sans-serif}
+.aasa-portal-card p{margin:0 0 24px;color:#728278;font-size:12px;line-height:1.8}
+.aasa-portal-card>strong{display:flex;align-items:center;gap:8px;margin-top:auto;color:#1c6845;font-size:11px}
+.aasa-portal-association .aasa-portal-icon{background:#edf1f8;color:#345c89}
+.aasa-portal-association>strong{color:#345c89}
+.aasa-portal-denied .aasa-secondary{margin-top:12px}
+.aasa-portal-denied .aasa-link{display:inline-block;margin:8px 0}
+@media(max-width:650px){.aasa-portal-grid{grid-template-columns:1fr;gap:13px;margin-top:22px}.aasa-portal-card{min-height:220px}.aasa-portal-card .aasa-portal-icon{margin-bottom:15px}}
