@@ -22,6 +22,8 @@ type AlumniRecord = {
   graduation_review_notes: string | null;
 };
 type MemberOption = { id: string; member_number: string; full_name: string; status: string };
+import AlumniOperationsModule from "./AlumniOperationsModule";
+
 type FormState = {
   member_id: string;
   graduation_year: string;
@@ -113,7 +115,7 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [activeView, setActiveView] = useState<"overview" | "directory" | "verification">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "directory" | "verification" | "operations">("overview");
   const [formOpen, setFormOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<AlumniRecord | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "deceased">("all");
@@ -302,6 +304,7 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
       <button type="button" className={activeView === "overview" ? "aasa-primary" : "aasa-secondary"} onClick={() => setActiveView("overview")}>{t.overview}</button>
       <button type="button" className={activeView === "directory" ? "aasa-primary" : "aasa-secondary"} onClick={() => setActiveView("directory")}>{t.directory}</button>
       <button type="button" className={activeView === "verification" ? "aasa-primary" : "aasa-secondary"} onClick={() => setActiveView("verification")}>{t.verificationQueue} · {pendingCount}</button>
+      <button type="button" className={activeView === "operations" ? "aasa-primary" : "aasa-secondary"} onClick={() => setActiveView("operations")}>{lang === "ha" ? "Cikakken gudanarwa" : lang === "ar" ? "إدارة الخريجين المتكاملة" : "Operations centre"}</button>
     </div>
     {activeView === "overview" && <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">ALUMNI INTELLIGENCE</p><h3>{t.overview}</h3></div>{canManage && <button type="button" className="aasa-primary" onClick={() => { setActiveView("directory"); setFormOpen(true); setEditingId(null); setForm(emptyForm); }}>{t.addProfile}</button>}</div>
@@ -360,6 +363,7 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
       {!filtered.length && !loading && <p className="aasa-muted">{t.noRecords}</p>}
       {loading && <p className="aasa-muted">Loading…</p>}
     </section>}
+    {activeView === "operations" && <AlumniOperationsModule userId={userId} canManage={canManage} canLookupMembers={canLookupMembers} lang={lang} />}
     {activeView === "verification" && <section className="aasa-panel">
       <div className="aasa-section-heading"><div><p className="aasa-kicker">GRADUATION EVIDENCE · REVIEW WORKFLOW</p><h3>{t.verificationQueue}</h3></div><button type="button" className="aasa-secondary" onClick={() => void load()} disabled={loading}>{t.refresh}</button></div>
       {records.filter(record => record.graduation_verification_status !== "verified").map(record => {
