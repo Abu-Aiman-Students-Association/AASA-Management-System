@@ -77,3 +77,29 @@ for each row execute function public.aasa_alumni_touch_and_audit();
 drop trigger if exists aasa_alumni_opportunity_verified_guard on public.aasa_alumni_opportunity_applications;
 create trigger aasa_alumni_opportunity_verified_guard before insert or update of alumni_id on public.aasa_alumni_opportunity_applications
 for each row execute function public.aasa_require_verified_alumni('alumni_id');
+
+create or replace function public.aasa_validate_alumni_opportunity_application()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $opportunity_guard$
+declare
+  v_status text;
+  v_closing_date date;
+begin
+  select status,closing_date into v_status,v_closing_date
+  from public.aasa_alumni_career_opportunities
+  where id=new.opportunity_id for update;
+  if tg_op='INSERT' or new.opportunity_id is distinct from old.opportunity_id then
+    if v_status is distinct from 'open' or (v_closing_date is not null and v_closing_date < current_date) then
+      raise exception 'Alumni interest can only be recorded for open opportunities before their closing date' using errcode='23514';
+    end if;
+  end if;
+  return new;
+end;
+$opportunity_guard$;
+revoke all on function public.aasa_validate_alumni_opportunity_application() from public,anon,authenticated;
+drop trigger if exists aasa_alumni_opportunity_open_guard on public.aasa_alumni_opportunity_applications;
+create trigger aasa_alumni_opportunity_open_guard before insert or update of opportunity_id on public.aasa_alumni_opportunity_applications
+for each row execute function public.aasa_validate_alumni_opportunity_application();
