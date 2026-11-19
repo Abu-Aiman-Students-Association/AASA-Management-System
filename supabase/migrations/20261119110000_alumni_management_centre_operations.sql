@@ -101,6 +101,7 @@ create table if not exists public.aasa_alumni_chapter_members (
   left_at date,
   added_by uuid not null references auth.users(id),
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   check (left_at is null or left_at >= joined_at)
 );
 create unique index if not exists aasa_alumni_chapter_active_member_uidx on public.aasa_alumni_chapter_members(chapter_id, alumni_id) where left_at is null;
@@ -139,6 +140,7 @@ create table if not exists public.aasa_alumni_engagement_activities (
   related_project_id uuid references public.aasa_projects(id) on delete set null,
   recorded_by uuid not null references auth.users(id),
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   check (description is null or char_length(description) <= 4000)
 );
 create index if not exists aasa_alumni_engagement_profile_idx on public.aasa_alumni_engagement_activities(alumni_id, occurred_on desc);
@@ -171,12 +173,18 @@ begin
       new.created_by := old.created_by;
       new.updated_by := v_actor;
     end if;
+    if to_jsonb(new) ? 'registered_by' and v_actor is not null then new.registered_by := v_actor; end if;
+    if to_jsonb(new) ? 'added_by' and v_actor is not null then new.added_by := v_actor; end if;
+    if to_jsonb(new) ? 'recorded_by' and v_actor is not null then new.recorded_by := v_actor; end if;
     v_id := new.id;
   elsif tg_op = 'INSERT' then
     if to_jsonb(new) ? 'created_by' and v_actor is not null then
       new.created_by := v_actor;
       new.updated_by := v_actor;
     end if;
+    if to_jsonb(new) ? 'registered_by' and v_actor is not null then new.registered_by := v_actor; end if;
+    if to_jsonb(new) ? 'added_by' and v_actor is not null then new.added_by := v_actor; end if;
+    if to_jsonb(new) ? 'recorded_by' and v_actor is not null then new.recorded_by := v_actor; end if;
     v_id := new.id;
   else
     v_id := old.id;
