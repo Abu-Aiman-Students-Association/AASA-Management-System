@@ -36,12 +36,23 @@ create table public.role_permissions (
 
 create function public.aasa_has_permission(text) returns boolean language sql stable as $perm$ select true $perm$;
 create table public.aasa_projects (id uuid primary key default gen_random_uuid());
+create table public.aasa_notifications (
+  id uuid primary key default gen_random_uuid(),
+  recipient_user_id uuid not null references auth.users(id),
+  channel text not null,
+  title text not null,
+  message text not null,
+  delivery_status text not null,
+  announcement_id uuid
+);
 create table public.aasa_alumni_records (
   id uuid primary key default gen_random_uuid(),
   member_id uuid,
   graduation_year integer,
   qualification text,
   institution text,
+  location text,
+  engagement_status text not null default 'active',
   created_by uuid,
   updated_by uuid,
   updated_at timestamptz not null default now()
@@ -50,7 +61,8 @@ create table public.aasa_alumni_records (
 create table public.aasa_members (
   id uuid primary key,
   status text not null,
-  is_test_record boolean not null default false
+  is_test_record boolean not null default false,
+  auth_user_id uuid references auth.users(id)
 );
 insert into public.aasa_members (id,status,is_test_record) values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','active',false),
@@ -64,10 +76,12 @@ insert into public.roles (role_key) values ('association_admin');
 \i supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql
 \i supabase/migrations/20261119090914_alumni_graduation_verification_and_active_member_link.sql
 \i supabase/migrations/20261119110000_alumni_management_centre_operations.sql
+\i supabase/migrations/20261119120000_alumni_targeted_communications.sql
 -- Reapplying both migrations proves idempotency.
 \i supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql
 \i supabase/migrations/20261119090914_alumni_graduation_verification_and_active_member_link.sql
 \i supabase/migrations/20261119110000_alumni_management_centre_operations.sql
+\i supabase/migrations/20261119120000_alumni_targeted_communications.sql
 
 do $$
 declare
@@ -236,6 +250,27 @@ begin
   end;
 end;
 $$;
+
+-- Targeted Alumni announcements reach only active, verified and non-test alumni accounts.
+do $alumni_comms_test$
+declare
+  v_result jsonb;
+  v_count integer;
+begin
+  update public.aasa_members
+  set auth_user_id='11111111-1111-4111-8111-111111111111'
+  where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+  v_result := public.aasa_publish_alumni_announcement(
+    'Alumni test announcement','Test message for verified alumni','all_verified',null,null,null
+  );
+  select count(*) into v_count from public.aasa_notifications
+  where alumni_announcement_id=(v_result->>'announcement_id')::uuid
+    and recipient_user_id='11111111-1111-4111-8111-111111111111'
+    and channel='IN_APP' and delivery_status='DELIVERED';
+  if v_count <> 1 then raise exception 'Targeted alumni announcement was not delivered in-app'; end if;
+end;
+$alumni_comms_test$;
 
 -- Verified-alumni operational linkage and append-only audit behaviour.
 do $alumni_operations_test$
