@@ -102,9 +102,9 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
   const portalTitle = accessMode === "super_admin" ? portalCopy.superTitle : portalCopy.associationTitle;
   const portalIntro = accessMode === "super_admin" ? portalCopy.superIntro : portalCopy.associationIntro;
   const hasPortalRole = Boolean(account && account.status === "active" &&
-    (accessMode === "super_admin" ? account.roles.includes("super_admin") : account.roles.includes("association_admin")));
+    (accessMode === "super_admin" ? (account.roles.includes("super_admin") || account.roles.includes("platform_admin")) : account.roles.includes("association_admin")));
   const portalMismatch = Boolean(account && account.status === "active" &&
-    account.roles.some(roleKey => roleKey === "super_admin" || roleKey === "association_admin") && !hasPortalRole);
+    account.roles.some(roleKey => roleKey === "super_admin" || roleKey === "platform_admin" || roleKey === "association_admin") && !hasPortalRole);
 
   async function refresh(user: { id: string; email?: string }) {
     const p = await supabase.from("profiles").select("account_status").eq("user_id", user.id).maybeSingle();
@@ -207,7 +207,7 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
     }).catch(() => { if (live) setMetricsLoading(false); });
     return () => { live = false; };
   }, [account?.id, account?.status]);
-  const role = hasPortalRole ? accessMode : "";
+  const role = !hasPortalRole ? "" : accessMode === "association_admin" ? "association_admin" : account?.roles.includes("super_admin") ? "super_admin" : "platform_admin";
   const rtl = lang === "ar";
   const canAccessSection = (id: Section) => {
     if (role === "super_admin") return true;
@@ -219,7 +219,7 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
     return account?.permissions.some(p => required[id as Exclude<Section,"overview"|"administration">]?.includes(p)) ?? false;
   };
   const visibleSections = moduleSections.filter(item => canAccessSection(item.id));
-  const roleLabel = role === "super_admin" ? copy.super : role === "association_admin" ? portalCopy.associationRole : role.replace(/_/g, " ");
+  const roleLabel = role === "super_admin" ? copy.super : role === "platform_admin" ? copy.platform : role === "association_admin" ? portalCopy.associationRole : role.replace(/_/g, " ");
   const label = (item: typeof moduleSections[number]) => lang === "ha" ? item.ha : lang === "ar" ? item.ar : item.en;
   return <main className={`aasa-admin ${rtl ? "rtl" : ""}`} dir={rtl ? "rtl" : "ltr"}>
     <header><div className="aasa-brand"><img className="aasa-brand-logo" src={import.meta.env.BASE_URL + "aasa-logo.svg"} alt="AASA crest" /><div><b>AASA</b><small>ABU-AIMAN STUDENTS' ASSOCIATION</small></div></div><div className="aasa-actions"><nav>{(["en", "ha", "ar"] as const).map(x => <button type="button" key={x} className={lang === x ? "on" : ""} onClick={() => setLang(x)}>{x === "ar" ? "عربي" : x.toUpperCase()}</button>)}</nav>{account && <button type="button" onClick={() => void logout()}>{copy.logout}</button>}</div></header>
