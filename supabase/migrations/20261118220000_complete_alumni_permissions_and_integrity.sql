@@ -28,7 +28,10 @@ create unique index if not exists aasa_alumni_records_member_id_unique
   on public.aasa_alumni_records (member_id)
   where member_id is not null;
 
--- Keep updated_at accurate for every permitted edit.
+-- Keep audit identity and updated_at accurate for every permitted edit.
+-- Authenticated browser writes cannot spoof updated_by or rewrite created_by.
+-- Trusted service-role jobs may retain an explicitly supplied updated_by when
+-- auth.uid() is null; the service role is not exposed to browser clients.
 create or replace function public.aasa_set_alumni_updated_at()
 returns trigger
 language plpgsql
@@ -36,6 +39,15 @@ set search_path = ''
 as $$
 begin
   new.updated_at := now();
+
+  if tg_op = 'UPDATE' then
+    new.created_by := old.created_by;
+  end if;
+
+  if auth.uid() is not null then
+    new.updated_by := auth.uid();
+  end if;
+
   return new;
 end;
 $$;
@@ -44,7 +56,7 @@ drop trigger if exists aasa_alumni_records_set_updated_at
   on public.aasa_alumni_records;
 
 create trigger aasa_alumni_records_set_updated_at
-before update on public.aasa_alumni_records
+before insert or update on public.aasa_alumni_records
 for each row execute function public.aasa_set_alumni_updated_at();
 
 revoke all on function public.aasa_set_alumni_updated_at() from public, anon, authenticated;
