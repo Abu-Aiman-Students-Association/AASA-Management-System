@@ -59,7 +59,7 @@ const copy = {
     readOnly: "Read-only access", export: "Export CSV", saved: "Alumni record saved.",
     required: "Select an existing AASA member and enter a valid graduation year.",
     loadError: "Could not load alumni records.", saveError: "Could not save the alumni record.",
-    linked: "Linked to membership", noLink: "Membership record unavailable", evidence: "Graduation evidence reference", reviewNotes: "Verification review notes", verification: "Graduation verification", pending: "Pending verification", verified: "Verified", rejected: "Rejected", verify: "Approve graduation", reject: "Reject evidence", requiredEvidence: "Qualification, institution and evidence reference are required before approval.",
+    linked: "Linked to membership", noLink: "Membership record unavailable", evidence: "Graduation evidence reference", reviewNotes: "Verification review notes", verification: "Graduation verification", pending: "Pending verification", verified: "Verified", rejected: "Rejected", verify: "Approve graduation", reject: "Reject evidence", requiredEvidence: "Qualification, institution and evidence reference are required before approval.", rejectReason: "Add a review note explaining why this evidence is rejected before submitting the decision.",
   },
   ha: {
     eyebrow: "ALAƘAR TSOFFIN MEMBOBI · HAƊIN BAYANAI", title: "Rajistar tsofaffin membobi",
@@ -77,7 +77,7 @@ const copy = {
     readOnly: "Izinin karantawa kawai", export: "Fitar da CSV", saved: "An ajiye bayanin tsohon memba.",
     required: "Zaɓi memba na AASA sannan ka shigar da shekarar kammala karatu da ta dace.",
     loadError: "An kasa loda bayanan tsofaffin membobi.", saveError: "An kasa ajiye bayanin.",
-    linked: "An haɗa da Membership", noLink: "Ba a samu bayanan memba ba", evidence: "Shaidar kammala karatu (lamba/mahada)", reviewNotes: "Bayanan tantancewa", verification: "Tabbacin kammala karatu", pending: "Ana jiran tantancewa", verified: "An tantance", rejected: "An ƙi shaida", verify: "Amince da kammala karatu", reject: "Ƙi shaidar", requiredEvidence: "Dole a cika takardar karatu, makaranta da bayanin shaida kafin amincewa.",
+    linked: "An haɗa da Membership", noLink: "Ba a samu bayanan memba ba", evidence: "Shaidar kammala karatu (lamba/mahada)", reviewNotes: "Bayanan tantancewa", verification: "Tabbacin kammala karatu", pending: "Ana jiran tantancewa", verified: "An tantance", rejected: "An ƙi shaida", verify: "Amince da kammala karatu", reject: "Ƙi shaidar", requiredEvidence: "Dole a cika takardar karatu, makaranta da bayanin shaida kafin amincewa.", rejectReason: "A rubuta dalilin ƙin shaidar a bayanan tantancewa kafin aika hukuncin.",
   },
   ar: {
     eyebrow: "علاقات الخريجين · ربط العضوية الموثقة", title: "سجل الخريجين",
@@ -95,7 +95,7 @@ const copy = {
     readOnly: "صلاحية القراءة فقط", export: "تصدير CSV", saved: "تم حفظ سجل الخريج.",
     required: "اختر عضواً موجوداً في AASA وأدخل سنة تخرج صحيحة.",
     loadError: "تعذر تحميل سجلات الخريجين.", saveError: "تعذر حفظ سجل الخريج.",
-    linked: "مرتبط بسجل العضوية", noLink: "سجل العضو غير متاح", evidence: "مرجع إثبات التخرج", reviewNotes: "ملاحظات المراجعة", verification: "التحقق من التخرج", pending: "بانتظار التحقق", verified: "تم التحقق", rejected: "مرفوض", verify: "اعتماد التخرج", reject: "رفض الإثبات", requiredEvidence: "المؤهل والمؤسسة ومرجع الإثبات مطلوبة قبل الاعتماد.",
+    linked: "مرتبط بسجل العضوية", noLink: "سجل العضو غير متاح", evidence: "مرجع إثبات التخرج", reviewNotes: "ملاحظات المراجعة", verification: "التحقق من التخرج", pending: "بانتظار التحقق", verified: "تم التحقق", rejected: "مرفوض", verify: "اعتماد التخرج", reject: "رفض الإثبات", requiredEvidence: "المؤهل والمؤسسة ومرجع الإثبات مطلوبة قبل الاعتماد.", rejectReason: "يرجى كتابة سبب رفض الإثبات في ملاحظات المراجعة قبل اعتماد القرار.",
   }
 };
 const csvCell = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
@@ -183,14 +183,21 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
     setError("");
   }
   async function reviewGraduation(record: AlumniRecord, decision: "verified" | "rejected") {
-    if (!canManage || !record.graduation_year || !record.qualification?.trim() || !record.institution?.trim() || !record.graduation_evidence_reference?.trim()) {
+    if (!canManage) return;
+    if (decision === "verified" && (!record.graduation_year || !record.qualification?.trim() || !record.institution?.trim() || !record.graduation_evidence_reference?.trim())) {
       setError(t.requiredEvidence);
+      return;
+    }
+    if (decision === "rejected" && !record.graduation_review_notes?.trim()) {
+      setError(t.rejectReason);
+      startEdit(record);
       return;
     }
     const { error: reviewError } = await supabase.from("aasa_alumni_records").update({
       graduation_verification_status: decision,
       graduation_verified_at: decision === "verified" ? new Date().toISOString() : null,
       graduation_verified_by: decision === "verified" ? userId : null,
+      graduation_review_notes: record.graduation_review_notes?.trim() || null,
       updated_by: userId
     }).eq("id", record.id);
     if (reviewError) setError(reviewError.message || t.saveError);
