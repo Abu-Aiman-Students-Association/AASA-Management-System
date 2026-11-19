@@ -91,8 +91,8 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
   setLoading(true); setError("");
   try {
    const [a,e,j,ev,er,ch,cm,me,ac,au,an] = await Promise.all([
-    supabase.from("aasa_alumni_records").select("id,member_id,graduation_verification_status,verified_at,verified_by").order("created_at",{ascending:false}),
-    supabase.from("aasa_alumni_education_history").select("id,alumni_id,institution,qualification,field_of_study,start_year,end_year,evidence_reference,verification_status").order("created_at",{ascending:false}),
+    supabase.from("aasa_alumni_records").select("id,member_id,graduation_verification_status").order("created_at",{ascending:false}),
+    supabase.from("aasa_alumni_education_history").select("id,alumni_id,institution,qualification,field_of_study,start_year,end_year,evidence_reference,verification_status,verified_at,verified_by").order("created_at",{ascending:false}),
     supabase.from("aasa_alumni_employment_history").select("id,alumni_id,employer,job_title,industry,location,start_date,end_date,is_current").order("start_date",{ascending:false,nullsFirst:false}),
     supabase.from("aasa_alumni_events").select("id,title,description,starts_at,ends_at,venue,capacity,status").order("starts_at",{ascending:false}),
     supabase.from("aasa_alumni_event_registrations").select("id,event_id,alumni_id,registration_status,note").order("created_at",{ascending:false}),
