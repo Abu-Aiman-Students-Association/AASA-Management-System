@@ -290,6 +290,11 @@ drop policy if exists aasa_alumni_activity_log_read on public.aasa_alumni_activi
 create policy aasa_alumni_activity_log_read on public.aasa_alumni_activity_log
 for select to authenticated using (public.aasa_has_permission('alumni.read') or public.aasa_has_permission('alumni.manage'));
 
+drop trigger if exists aasa_alumni_records_activity_audit on public.aasa_alumni_records;
+create trigger aasa_alumni_records_activity_audit
+before insert or update or delete on public.aasa_alumni_records
+for each row execute function public.aasa_alumni_touch_and_audit();
+
 -- The audit log is written only by the security-definer trigger above.
 revoke insert,update,delete on public.aasa_alumni_activity_log from authenticated;
 
