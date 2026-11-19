@@ -57,10 +57,10 @@ insert into public.aasa_members (id,status,is_test_record) values
 insert into public.roles (role_key) values ('association_admin');
 
 \i supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql
-\i supabase/migrations/20261119070000_alumni_graduation_verification_and_active_member_link.sql
+\i supabase/migrations/20261119090914_alumni_graduation_verification_and_active_member_link.sql
 -- Reapplying both migrations proves idempotency.
 \i supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql
-\i supabase/migrations/20261119070000_alumni_graduation_verification_and_active_member_link.sql
+\i supabase/migrations/20261119090914_alumni_graduation_verification_and_active_member_link.sql
 
 do $$
 declare
