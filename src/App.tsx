@@ -45,11 +45,11 @@ export default function App() {
         const activeRoleKeys = (roleRows ?? []).filter((row: any) => !row.expires_at || Date.parse(row.expires_at) > now)
           .map((row: any) => row.roles?.role_key).filter((key: unknown): key is string => typeof key === "string");
         const hasAdminPortalRole = profile?.account_status === "active" &&
-          activeRoleKeys.some((key: string) => key === "super_admin" || key === "association_admin");
+          activeRoleKeys.some((key: string) => key === "super_admin" || key === "platform_admin" || key === "association_admin");
         if (hasAdminPortalRole) {
           const mode: AdminAccessMode = requestedPortal === "super-admin" ? "super_admin"
             : requestedPortal === "association-admin" ? "association_admin"
-            : activeRoleKeys.includes("super_admin") ? "super_admin" : "association_admin";
+            : activeRoleKeys.includes("super_admin") || activeRoleKeys.includes("platform_admin") ? "super_admin" : "association_admin";
           if (alive) { setAdminMode(mode); setRoute("admin"); }
           return;
         }
