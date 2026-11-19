@@ -84,7 +84,8 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
  const [chapter,setChapter] = useState({name:"",region:"",location:"",description:""});
  const [chapterLink,setChapterLink] = useState({chapter_id:"",alumni_id:"",chapter_role:"member"});
  const [mentorship,setMentorship] = useState({mentor_alumni_id:"",mentee_member_id:"",topic:"",goals:"",starts_on:"",ends_on:""});
- const [activity,setActivity] = useState({alumni_id:"",activity_type:"volunteering",title:"",description:"",occurred_on:new Date().toISOString().slice(0,10),hours:""});\n const [announcement,setAnnouncement]=useState({title:"",body:"",audience_type:"all_verified",chapter_id:"",location:"",graduation_year:""});
+ const [activity,setActivity] = useState({alumni_id:"",activity_type:"volunteering",title:"",description:"",occurred_on:new Date().toISOString().slice(0,10),hours:""});
+ const [announcement,setAnnouncement]=useState({title:"",body:"",audience_type:"all_verified",chapter_id:"",location:"",graduation_year:""});
 
  const load = useCallback(async () => {
   setLoading(true); setError("");
