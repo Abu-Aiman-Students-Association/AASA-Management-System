@@ -12,6 +12,7 @@ type EventRegistration = { id: string; event_id: string; alumni_id: string; regi
 type Chapter = { id: string; name: string; region: string | null; location: string | null; description: string | null; status: string };
 type ChapterMember = { id: string; chapter_id: string; alumni_id: string; chapter_role: string; joined_at: string; left_at: string | null };
 type Mentorship = { id: string; mentor_alumni_id: string; mentee_member_id: string; topic: string; goals: string | null; status: string; starts_on: string | null; ends_on: string | null; notes: string | null };
+type MentorshipSession = { id: string; mentorship_id: string; session_at: string; topic: string; duration_minutes: number | null; outcome: string | null; notes: string | null };
 type Engagement = { id: string; alumni_id: string; activity_type: string; title: string; description: string | null; occurred_on: string; hours: number | null };
 type Audit = { id: string; actor_user_id: string | null; action_key: string; entity_type: string; entity_id: string | null; created_at: string };
 type AlumniAnnouncement = { id: string; title: string; body: string; audience_type: string; audience_location: string | null; audience_graduation_year: number | null; published_at: string; status: string };
@@ -19,7 +20,7 @@ type AlumniAnnouncement = { id: string; title: string; body: string; audience_ty
 const words = {
  en: {
   title:"Alumni operations", intro:"Career history, alumni reunions, regional chapters, mentoring and non-financial service.",
-  verifyEducation:"Verify education evidence", evidenceNeeded:"Add an evidence reference before verifying this education record.", pending:"Pending", verified:"Verified", history:"Education & career", events:"Reunions & events", chapters:"Chapters", mentorship:"Mentorship", engagement:"Engagement", communications:"Alumni communications", audit:"Activity & audit",
+  verifyEducation:"Verify education evidence", evidenceNeeded:"Add an evidence reference before verifying this education record.", pending:"Pending", verified:"Verified", history:"Education & career", session:"Mentorship sessions", sessionDate:"Session date and time", duration:"Duration (minutes)", outcome:"Outcome", addSession:"Record mentoring session", events:"Reunions & events", chapters:"Chapters", mentorship:"Mentorship", engagement:"Engagement", communications:"Alumni communications", audit:"Activity & audit",
   verified:"Verified alumni", upcoming:"Upcoming events", chaptersCount:"Active chapters", mentorshipCount:"Active mentorships", activityCount:"Activities recorded",
   education:"Education history", employment:"Employment history", institution:"Institution", qualification:"Qualification", field:"Field of study", startYear:"Start year", endYear:"End year", evidence:"Evidence reference", addEducation:"Add education", employer:"Employer", job:"Job title", industry:"Industry", location:"Location", startDate:"Start date", endDate:"End date", current:"Current role", addEmployment:"Add employment",
   eventTitle:"Event title", description:"Description", starts:"Starts at", ends:"Ends at", venue:"Venue", capacity:"Capacity", addEvent:"Create alumni event", register:"Invite / register alumni", event:"Event", alumni:"Verified alumni", status:"Status", save:"Save", refresh:"Refresh", noRows:"No records yet. Only genuine records are shown.", eventStatus:"Event status", registrationStatus:"Registration status",
@@ -30,7 +31,7 @@ const words = {
  },
  ha: {
   title:"Ayyukan tsofaffin membobi", intro:"Tarihin karatu da aiki, tarukan alumni, rassa, jagoranci da ayyukan hidimar sa-kai.",
-  verifyEducation:"Tantance shaidar karatu", evidenceNeeded:"A saka lambar shaida kafin tantance wannan karatun.", pending:"Ana jiran tantancewa", verified:"An tantance", history:"Karatu da aiki", events:"Taruka da haɗuwa", chapters:"Rassa", mentorship:"Jagoranci", engagement:"Gudummawar aiki", communications:"Saƙonnin alumni", audit:"Tarihi da binciken aiki",
+  verifyEducation:"Tantance shaidar karatu", evidenceNeeded:"A saka lambar shaida kafin tantance wannan karatun.", pending:"Ana jiran tantancewa", verified:"An tantance", history:"Karatu da aiki", session:"Zaman jagoranci", sessionDate:"Rana da lokacin zama", duration:"Tsawon lokaci (minti)", outcome:"Sakamako", addSession:"Rubuta zaman jagoranci", events:"Taruka da haɗuwa", chapters:"Rassa", mentorship:"Jagoranci", engagement:"Gudummawar aiki", communications:"Saƙonnin alumni", audit:"Tarihi da binciken aiki",
   verified:"Tsofaffin membobi da aka tantance", upcoming:"Tarukan da ke tafe", chaptersCount:"Rassa masu aiki", mentorshipCount:"Shirye-shiryen jagoranci", activityCount:"Ayyukan da aka rubuta",
   education:"Tarihin karatu", employment:"Tarihin aiki", institution:"Makaranta", qualification:"Takardar karatu", field:"Fannin karatu", startYear:"Shekarar farawa", endYear:"Shekarar kammalawa", evidence:"Lambar shaida", addEducation:"Ƙara karatu", employer:"Ma'aikaci", job:"Matsayin aiki", industry:"Sana'a", location:"Wuri", startDate:"Ranar farawa", endDate:"Ranar ƙarewa", current:"Aikin yanzu", addEmployment:"Ƙara aikin yi",
   eventTitle:"Sunan taro", description:"Bayani", starts:"Lokacin farawa", ends:"Lokacin ƙarewa", venue:"Wurin taro", capacity:"Yawan mahalarta", addEvent:"Ƙirƙiri taron alumni", register:"Gayyata / rajistar alumni", event:"Taro", alumni:"Tsohon memba da aka tantance", status:"Matsayi", save:"Ajiye", refresh:"Sabunta", noRows:"Babu bayanai tukuna. Ana nuna bayanan gaskiya kawai.", eventStatus:"Matsayin taro", registrationStatus:"Matsayin rajista",
@@ -41,7 +42,7 @@ const words = {
  },
  ar: {
   title:"عمليات الخريجين", intro:"السجل التعليمي والمهني والملتقيات والفروع والإرشاد والخدمة التطوعية غير المالية.",
-  verifyEducation:"التحقق من إثبات التعليم", evidenceNeeded:"أضف مرجع الإثبات قبل اعتماد هذا السجل التعليمي.", pending:"بانتظار التحقق", verified:"تم التحقق", history:"التعليم والعمل", events:"الملتقيات والفعاليات", chapters:"الفروع", mentorship:"الإرشاد", engagement:"المشاركة", communications:"تواصل الخريجين", audit:"النشاط والتدقيق",
+  verifyEducation:"التحقق من إثبات التعليم", evidenceNeeded:"أضف مرجع الإثبات قبل اعتماد هذا السجل التعليمي.", pending:"بانتظار التحقق", verified:"تم التحقق", history:"التعليم والعمل", session:"جلسات الإرشاد", sessionDate:"تاريخ ووقت الجلسة", duration:"المدة (دقيقة)", outcome:"النتيجة", addSession:"تسجيل جلسة إرشاد", events:"الملتقيات والفعاليات", chapters:"الفروع", mentorship:"الإرشاد", engagement:"المشاركة", communications:"تواصل الخريجين", audit:"النشاط والتدقيق",
   verified:"خريجون موثقون", upcoming:"فعاليات قادمة", chaptersCount:"فروع نشطة", mentorshipCount:"برامج إرشاد نشطة", activityCount:"أنشطة مسجلة",
   education:"السجل التعليمي", employment:"السجل الوظيفي", institution:"المؤسسة التعليمية", qualification:"المؤهل", field:"مجال الدراسة", startYear:"سنة البداية", endYear:"سنة التخرج", evidence:"مرجع الإثبات", addEducation:"إضافة تعليم", employer:"جهة العمل", job:"المسمى الوظيفي", industry:"القطاع", location:"الموقع", startDate:"تاريخ البداية", endDate:"تاريخ النهاية", current:"الوظيفة الحالية", addEmployment:"إضافة وظيفة",
   eventTitle:"عنوان الفعالية", description:"الوصف", starts:"وقت البداية", ends:"وقت النهاية", venue:"المكان", capacity:"السعة", addEvent:"إنشاء فعالية للخريجين", register:"دعوة / تسجيل خريج", event:"الفعالية", alumni:"خريج موثق", status:"الحالة", save:"حفظ", refresh:"تحديث", noRows:"لا توجد سجلات بعد. يتم عرض السجلات الحقيقية فقط.", eventStatus:"حالة الفعالية", registrationStatus:"حالة التسجيل",
@@ -71,6 +72,7 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
  const [chapters,setChapters] = useState<Chapter[]>([]);
  const [chapterMembers,setChapterMembers] = useState<ChapterMember[]>([]);
  const [mentorships,setMentorships] = useState<Mentorship[]>([]);
+ const [mentorshipSessions,setMentorshipSessions] = useState<MentorshipSession[]>([]);
  const [activities,setActivities] = useState<Engagement[]>([]);
  const [audit,setAudit] = useState<Audit[]>([]);
  const [announcements,setAnnouncements] = useState<AlumniAnnouncement[]>([]);
@@ -85,13 +87,14 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
  const [chapter,setChapter] = useState({name:"",region:"",location:"",description:""});
  const [chapterLink,setChapterLink] = useState({chapter_id:"",alumni_id:"",chapter_role:"member"});
  const [mentorship,setMentorship] = useState({mentor_alumni_id:"",mentee_member_id:"",topic:"",goals:"",starts_on:"",ends_on:""});
+ const [session,setSession] = useState({mentorship_id:"",session_at:"",topic:"",duration_minutes:"",outcome:"",notes:""});
  const [activity,setActivity] = useState({alumni_id:"",activity_type:"volunteering",title:"",description:"",occurred_on:new Date().toISOString().slice(0,10),hours:""});
  const [announcement,setAnnouncement]=useState({title:"",body:"",audience_type:"all_verified",chapter_id:"",location:"",graduation_year:""});
 
  const load = useCallback(async () => {
   setLoading(true); setError("");
   try {
-   const [a,e,j,ev,er,ch,cm,me,ac,au,an] = await Promise.all([
+   const [a,e,j,ev,er,ch,cm,me,ms,ac,au,an] = await Promise.all([
     supabase.from("aasa_alumni_records").select("id,member_id,graduation_verification_status").order("created_at",{ascending:false}),
     supabase.from("aasa_alumni_education_history").select("id,alumni_id,institution,qualification,field_of_study,start_year,end_year,evidence_reference,verification_status,verified_at,verified_by").order("created_at",{ascending:false}),
     supabase.from("aasa_alumni_employment_history").select("id,alumni_id,employer,job_title,industry,location,start_date,end_date,is_current").order("start_date",{ascending:false,nullsFirst:false}),
@@ -100,17 +103,18 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
     supabase.from("aasa_alumni_chapters").select("id,name,region,location,description,status").order("name"),
     supabase.from("aasa_alumni_chapter_members").select("id,chapter_id,alumni_id,chapter_role,joined_at,left_at").order("joined_at",{ascending:false}),
     supabase.from("aasa_alumni_mentorships").select("id,mentor_alumni_id,mentee_member_id,topic,goals,status,starts_on,ends_on,notes").order("created_at",{ascending:false}),
+    supabase.from("aasa_alumni_mentorship_sessions").select("id,mentorship_id,session_at,topic,duration_minutes,outcome,notes").order("session_at",{ascending:false}),
     supabase.from("aasa_alumni_engagement_activities").select("id,alumni_id,activity_type,title,description,occurred_on,hours").order("occurred_on",{ascending:false}),
     supabase.from("aasa_alumni_activity_log").select("id,actor_user_id,action_key,entity_type,entity_id,created_at").order("created_at",{ascending:false}).limit(100),
     supabase.from("aasa_alumni_announcements").select("id,title,body,audience_type,audience_location,audience_graduation_year,published_at,status").order("published_at",{ascending:false}).limit(100)
    ]);
-   const firstError=[a,e,j,ev,er,ch,cm,me,ac,au,an].find(x=>x.error)?.error;
+   const firstError=[a,e,j,ev,er,ch,cm,me,ms,ac,au,an].find(x=>x.error)?.error;
    if(firstError) throw firstError;
    const nextAlumni=(a.data??[]) as Alumni[];
    setAlumni(nextAlumni); setEducation((e.data??[]) as Education[]); setEmployment((j.data??[]) as Employment[]);
    setEvents((ev.data??[]) as AlumniEvent[]); setRegistrations((er.data??[]) as EventRegistration[]);
    setChapters((ch.data??[]) as Chapter[]); setChapterMembers((cm.data??[]) as ChapterMember[]);
-   setMentorships((me.data??[]) as Mentorship[]); setActivities((ac.data??[]) as Engagement[]); setAudit((au.data??[]) as Audit[]); setAnnouncements((an.data??[]) as AlumniAnnouncement[]);
+   setMentorships((me.data??[]) as Mentorship[]); setMentorshipSessions((ms.data??[]) as MentorshipSession[]); setActivities((ac.data??[]) as Engagement[]); setAudit((au.data??[]) as Audit[]); setAnnouncements((an.data??[]) as AlumniAnnouncement[]);
    if(canLookupMembers) {
     const mr=await supabase.from("aasa_members").select("id,full_name,member_number,status").eq("is_test_record",false).order("full_name");
     if(mr.error) throw mr.error;
@@ -137,6 +141,7 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
  const addChapter=async(e:FormEvent)=>{e.preventDefault();if(!canManage)return;await run(async()=>{await insert("aasa_alumni_chapters",{...chapter,region:chapter.region||null,location:chapter.location||null,description:chapter.description||null,created_by:userId});setChapter({name:"",region:"",location:"",description:""})},t.created)};
  const addChapterMember=async(e:FormEvent)=>{e.preventDefault();if(!canManage)return;await run(async()=>{await insert("aasa_alumni_chapter_members",{...chapterLink,added_by:userId});setChapterLink({chapter_id:"",alumni_id:"",chapter_role:"member"})},t.saved)};
  const addMentorship=async(e:FormEvent)=>{e.preventDefault();if(!canManage)return;await run(async()=>{await insert("aasa_alumni_mentorships",{...mentorship,goals:mentorship.goals||null,starts_on:mentorship.starts_on||null,ends_on:mentorship.ends_on||null,created_by:userId});setMentorship({mentor_alumni_id:"",mentee_member_id:"",topic:"",goals:"",starts_on:"",ends_on:""})},t.created)};
+ const addMentorshipSession=async(e:FormEvent)=>{e.preventDefault();if(!canManage)return;const date=new Date(session.session_at);if(Number.isNaN(date.getTime())){setError("Enter a valid session date and time.");return}await run(async()=>{await insert("aasa_alumni_mentorship_sessions",{mentorship_id:session.mentorship_id,session_at:date.toISOString(),topic:session.topic.trim(),duration_minutes:session.duration_minutes?Number(session.duration_minutes):null,outcome:session.outcome.trim()||null,notes:session.notes.trim()||null,recorded_by:userId});setSession({mentorship_id:"",session_at:"",topic:"",duration_minutes:"",outcome:"",notes:""})},t.saved)};
  const publishAnnouncement=async(e:FormEvent)=>{e.preventDefault();if(!canManage)return;const audience=announcement.audience_type;const payload={p_title:announcement.title.trim(),p_body:announcement.body.trim(),p_audience_type:audience,p_chapter_id:audience==="chapter"?announcement.chapter_id:null,p_location:audience==="location"?announcement.location.trim():null,p_graduation_year:audience==="graduation_year"?Number(announcement.graduation_year):null};let recipientCount=0;const success=await run(async()=>{const {data,error}=await supabase.rpc("aasa_publish_alumni_announcement",payload);if(error)throw error;const result=data as {recipient_count?:number};recipientCount=result.recipient_count??0;setAnnouncement({title:"",body:"",audience_type:"all_verified",chapter_id:"",location:"",graduation_year:""});},t.published);if(success)setNotice(t.published+" · "+t.recipients+": "+recipientCount)};
  const addActivity=async(e:FormEvent)=>{e.preventDefault();if(!canManage)return;await run(async()=>{await insert("aasa_alumni_engagement_activities",{...activity,hours:activity.hours?Number(activity.hours):null,description:activity.description||null,recorded_by:userId});setActivity({alumni_id:"",activity_type:"volunteering",title:"",description:"",occurred_on:new Date().toISOString().slice(0,10),hours:""})},t.saved)};
  const downloadCsv=(filename:string,headers:string[],rows:unknown[][])=>{const blob=new Blob(["\uFEFF"+[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url)};
