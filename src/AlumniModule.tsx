@@ -225,8 +225,15 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
       graduation_review_notes: form.graduation_review_notes.trim() || null,
       updated_by: userId
     };
+    const existing = editingId ? records.find(record => record.id === editingId) : undefined;
+    const graduationChanged = !!existing && (
+      existing.graduation_year !== year ||
+      (existing.qualification ?? "") !== (payload.qualification ?? "") ||
+      (existing.institution ?? "") !== (payload.institution ?? "") ||
+      (existing.graduation_evidence_reference ?? "") !== (payload.graduation_evidence_reference ?? "")
+    );
     const result = editingId
-      ? await supabase.from("aasa_alumni_records").update(payload).eq("id", editingId)
+      ? await supabase.from("aasa_alumni_records").update({ ...payload, ...(graduationChanged ? { graduation_verification_status: "pending", graduation_verified_at: null, graduation_verified_by: null } : {}) }).eq("id", editingId)
       : await supabase.from("aasa_alumni_records").insert({ ...payload, graduation_verification_status: "pending", created_by: userId });
     if (result.error) {
       setError(result.error.message || t.saveError);
@@ -243,7 +250,7 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
       ["Member number", "Full name", "Graduation year", "Qualification", "Institution", "Evidence reference", "Graduation verification", "Occupation", "Employer", "Email", "Phone", "Location", "Engagement status", "Notes"],
       ...filtered.map(record => {
         const member = record.member_id ? memberById.get(record.member_id) : undefined;
-        return [member?.member_number ?? "", member?.full_name ?? record.member_id ?? "", record.graduation_year ?? "", record.qualification, record.institution, record.current_occupation, record.employer, record.contact_email, record.contact_phone, record.location, record.engagement_status, record.notes];
+        return [member?.member_number ?? "", member?.full_name ?? record.member_id ?? "", record.graduation_year ?? "", record.qualification, record.institution, record.graduation_evidence_reference, record.graduation_verification_status, record.current_occupation, record.employer, record.contact_email, record.contact_phone, record.location, record.engagement_status, record.notes];
       })
     ];
     const blob = new Blob(["\uFEFF" + rows.map(row => row.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
