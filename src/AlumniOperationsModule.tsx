@@ -239,6 +239,17 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
     </form>}
     <div className="aasa-table-wrap"><table className="aasa-table"><thead><tr><th>{t.mentor}</th><th>{t.mentee}</th><th>{t.topic}</th><th>{t.status}</th>{canManage&&<th/>}</tr></thead><tbody>{mentorships.map(x=><tr key={x.id}><td>{nameOf(x.mentor_alumni_id)}</td><td>{memberOf(x.mentee_member_id)}</td><td>{x.topic}</td><td>{x.status}</td>{canManage&&<td><select aria-label={t.status} value={x.status} disabled={busy} onChange={e=>void run(()=>update("aasa_alumni_mentorships",x.id,{status:e.target.value}),t.updated)}>{["proposed","active","completed","declined","cancelled"].map(s=><option key={s}>{s}</option>)}</select></td>}</tr>)}</tbody></table></div>
     {!mentorships.length&&<p className="aasa-muted">{t.noRows}</p>}
+    {canManage&&<><h3>{t.addSession}</h3><form className="aasa-member-form" onSubmit={addMentorshipSession}>
+     <label>{t.mentorship}<select required value={session.mentorship_id} onChange={e=>setSession(p=>({...p,mentorship_id:e.target.value}))}><option value="">{t.mentorship}</option>{mentorships.filter(x=>x.status==="active").map(x=><option key={x.id} value={x.id}>{nameOf(x.mentor_alumni_id)} · {memberOf(x.mentee_member_id)} · {x.topic}</option>)}</select></label>
+     <label>{t.sessionDate}<input required type="datetime-local" value={session.session_at} onChange={e=>setSession(p=>({...p,session_at:e.target.value}))}/></label>
+     <label>{t.topic}<input required minLength={3} maxLength={180} value={session.topic} onChange={e=>setSession(p=>({...p,topic:e.target.value}))}/></label>
+     <label>{t.duration}<input type="number" min="1" max="600" value={session.duration_minutes} onChange={e=>setSession(p=>({...p,duration_minutes:e.target.value}))}/></label>
+     <label className="aasa-full-span">{t.outcome}<textarea rows={2} maxLength={3000} value={session.outcome} onChange={e=>setSession(p=>({...p,outcome:e.target.value}))}/></label>
+     <label className="aasa-full-span">{t.notes}<textarea rows={2} maxLength={5000} value={session.notes} onChange={e=>setSession(p=>({...p,notes:e.target.value}))}/></label>
+     <button className="aasa-primary" disabled={busy||!mentorships.some(x=>x.status==="active")}>{t.addSession}</button>
+    </form></>}
+    <h3>{t.session}</h3><div className="aasa-table-wrap"><table className="aasa-table"><thead><tr><th>{t.mentorship}</th><th>{t.sessionDate}</th><th>{t.topic}</th><th>{t.duration}</th><th>{t.outcome}</th></tr></thead><tbody>{mentorshipSessions.map(x=>{const m=mentorships.find(y=>y.id===x.mentorship_id);return <tr key={x.id}><td>{m?nameOf(m.mentor_alumni_id)+" → "+memberOf(m.mentee_member_id):"—"}</td><td>{new Date(x.session_at).toLocaleString()}</td><td>{x.topic}</td><td>{x.duration_minutes??"—"}</td><td>{x.outcome||"—"}</td></tr>})}</tbody></table></div>
+    {!mentorshipSessions.length&&<p className="aasa-muted">{t.noRows}</p>}
    </section>}
    {tab==="engagement"&&<section className="aasa-panel">
     <p className="aasa-muted">{t.financeNote}</p>
