@@ -101,7 +101,7 @@ end;
 $$;
 
 -- Operational tables exist, have RLS enabled, and start empty.
-do $
+do $alumni_test$
 declare v_count integer; v_table text;
 begin
   foreach v_table in array array[
@@ -117,7 +117,7 @@ begin
   select count(*) into v_count from public.aasa_alumni_events;
   if v_count <> 0 then raise exception 'Migration must not create sample alumni events'; end if;
 end;
-$;
+$alumni_test$;
 
 -- A simulated authenticated user cannot spoof audit identity on insert or update.
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', false);
