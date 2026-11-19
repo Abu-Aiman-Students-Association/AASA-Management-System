@@ -293,3 +293,42 @@
  .aasa-sidebar nav button{min-height:48px;padding:9px 8px;font-size:10px;gap:7px}
  .aasa-nav-icon{width:17px;flex:0 0 17px}
 }
+
+/* Alumni Management Centre – phase 1 dashboard, directory and verification workspace. */
+.aasa-alumni-year-list{display:grid;gap:12px;margin:14px 0 4px}
+.aasa-alumni-year-row{display:grid;grid-template-columns:58px minmax(0,1fr) 28px;align-items:center;gap:12px;color:#365244;font-size:12px}
+.aasa-alumni-year-row>span{font-weight:800}
+.aasa-alumni-year-row>strong{text-align:right;color:#244b35}
+.aasa-alumni-year-track{height:10px;overflow:hidden;border-radius:99px;background:#edf3ee}
+.aasa-alumni-year-track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#276b48,#78ad83)}
+.aasa-alumni-review-card{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:16px 0;border-bottom:1px solid #e8eee9}
+.aasa-alumni-review-card>div:first-child{min-width:0}
+.aasa-alumni-review-card strong,.aasa-alumni-review-card small{display:block}
+.aasa-alumni-review-card small{margin-top:5px;color:#718176;font-size:11px}
+.aasa-alumni-review-card p{margin:8px 0;color:#52665a;font-size:12px;overflow-wrap:anywhere}
+.aasa-alumni-profile{position:relative;margin-top:18px;border:1px solid #bdd5c3;box-shadow:0 14px 32px #163c2812}
+.aasa-alumni-profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.aasa-alumni-profile-grid>div{display:grid;gap:6px;min-width:0;padding:12px;border:1px solid #e7eee8;border-radius:10px;background:#fbfdfb}
+.aasa-alumni-profile-grid small{color:#75867a;font-size:10px;font-weight:700}
+.aasa-alumni-profile-grid strong{color:#244b35;font-size:12px;overflow-wrap:anywhere}
+.aasa-register-filters select{min-width:150px;padding:11px;border:1px solid #dce7de;border-radius:10px;background:#fff;color:#284936}
+.aasa-alumni-profile .aasa-section-heading{align-items:center}
+@media(max-width:700px){
+ .aasa-alumni-review-card{align-items:flex-start;flex-direction:column}
+ .aasa-alumni-profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .aasa-register-filters select{width:100%}
+}
+@media(max-width:420px){.aasa-alumni-profile-grid{grid-template-columns:1fr}.aasa-alumni-year-row{grid-template-columns:48px minmax(0,1fr) 22px;gap:8px}}
+
+/* Alumni Management Centre operations workspaces */
+.aasa-alumni-ops-tabs{display:flex;gap:7px;flex-wrap:wrap;padding:8px;border:1px solid #e3ebe5;border-radius:12px;background:#fff}
+.aasa-alumni-ops-tabs button{border:1px solid transparent;border-radius:8px;background:transparent;color:#607368;padding:10px 13px;font-size:10px;font-weight:800;cursor:pointer}
+.aasa-alumni-ops-tabs button.selected{background:#eaf4ed;border-color:#d3e5d8;color:#1c5a3d}
+.aasa-alumni-operations .aasa-panel h3{margin:18px 0 10px;color:#234b35}
+.aasa-alumni-operations .aasa-panel h3:first-child{margin-top:0}
+.aasa-alumni-operations .aasa-checkbox-line{display:flex!important;align-items:center;gap:9px;min-height:42px}
+.aasa-alumni-operations .aasa-checkbox-line input{width:17px;min-height:17px;accent-color:#1b6245}
+.aasa-alumni-operations .aasa-table select{max-width:150px}
+.aasa-alumni-operations .aasa-table .aasa-link{white-space:nowrap}
+.aasa-alumni-operations .aasa-member-form .aasa-full-span{grid-column:1/-1}
+@media(max-width:620px){.aasa-alumni-ops-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.aasa-alumni-ops-tabs button{padding:11px 7px}.aasa-alumni-operations .aasa-member-form .aasa-full-span{grid-column:auto}}
