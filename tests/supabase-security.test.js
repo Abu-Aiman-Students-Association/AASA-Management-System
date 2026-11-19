@@ -21,7 +21,7 @@ test("administrator access is gated by database-confirmed roles", () => {
 });
 
 test("Super Admin and Association Admin have separate role-bound login portals", () => {
-  assert.match(appSource, /params\.get\("portal"\).*super-admin/);
+  assert.match(appSource, /requestedPortal === "super-admin"/);
   assert.match(appSource, /AdminPortalSelection/);
   assert.match(appSource, /AdminDashboard accessMode=\{adminMode\}/);
   assert.match(dashboardSource, /accessMode === "super_admin" \? account\.roles\.includes\("super_admin"\)/);
