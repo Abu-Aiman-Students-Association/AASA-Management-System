@@ -325,8 +325,16 @@ begin
   insert into public.aasa_alumni_events(title,starts_at,capacity,created_by)
   values ('Test reunion',now()+interval '10 days',1,'11111111-1111-4111-8111-111111111111')
   returning id into v_chapter_id;
-  insert into public.aasa_alumni_event_registrations(event_id,alumni_id,registered_by)
-  values (v_chapter_id,v_alumni_id,'11111111-1111-4111-8111-111111111111');
+  update public.aasa_members
+  set auth_user_id='11111111-1111-4111-8111-111111111111'
+  where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  perform public.aasa_invite_alumni_to_event(v_chapter_id,v_alumni_id);
+  if not exists (select 1 from public.aasa_notifications
+    where alumni_event_id=v_chapter_id
+      and recipient_user_id='11111111-1111-4111-8111-111111111111'
+      and channel='IN_APP' and delivery_status='DELIVERED') then
+    raise exception 'Alumni event invitation notification was not delivered';
+  end if;
   begin
     insert into public.aasa_alumni_event_registrations(event_id,alumni_id,registered_by)
     select v_chapter_id,id,'11111111-1111-4111-8111-111111111111'
