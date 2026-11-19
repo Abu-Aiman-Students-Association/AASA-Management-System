@@ -408,7 +408,7 @@ test("Alumni communications target verified active members and use governed in-a
   assert.match(alumniCommunicationsMigration, /m\.status='active'/);
   assert.match(alumniCommunicationsMigration, /coalesce\(m\.is_test_record,false\)=false/);
   assert.match(alumniCommunicationsMigration, /'IN_APP'/);
-  assert.match(alumniCommunicationsMigration, /aasa_archive_alumni_announcement/);
+  assert.match(alumniCommunicationsMigration, /aasa_archive_alumni_announcement/);\n  assert.match(alumniCommunicationsMigration, /aasa_invite_alumni_to_event/);
   assert.match(alumniCommunicationsMigration, /security definer/i);
   assert.match(alumniOperationsSource, /aasa_alumni_mentorship_sessions/);
 });
