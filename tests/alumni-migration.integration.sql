@@ -3,8 +3,10 @@
 
 create role anon;
 create role authenticated;
+create role service_role;
 
 create schema auth;
+create table auth.users (id uuid primary key);
 create function auth.uid()
 returns uuid
 language sql
@@ -32,6 +34,8 @@ create table public.role_permissions (
   primary key (role_id, permission_id)
 );
 
+create function public.aasa_has_permission(text) returns boolean language sql stable as $ select true $;
+create table public.aasa_projects (id uuid primary key default gen_random_uuid());
 create table public.aasa_alumni_records (
   id uuid primary key default gen_random_uuid(),
   member_id uuid,
@@ -54,6 +58,7 @@ insert into public.aasa_members (id,status,is_test_record) values
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','pending',false),
   ('dddddddd-dddd-4ddd-8ddd-dddddddddddd','active',true);
 
+insert into auth.users(id) values ('11111111-1111-4111-8111-111111111111');
 insert into public.roles (role_key) values ('association_admin');
 
 \i supabase/migrations/20261118220000_complete_alumni_permissions_and_integrity.sql
@@ -92,6 +97,25 @@ begin
   end if;
 end;
 $$;
+
+-- Operational tables exist, have RLS enabled, and start empty.
+do $
+declare v_count integer; v_table text;
+begin
+  foreach v_table in array array[
+    'aasa_alumni_education_history','aasa_alumni_employment_history','aasa_alumni_events',
+    'aasa_alumni_event_registrations','aasa_alumni_chapters','aasa_alumni_chapter_members',
+    'aasa_alumni_mentorships','aasa_alumni_engagement_activities','aasa_alumni_activity_log'
+  ] loop
+    if to_regclass('public.' || v_table) is null then raise exception 'Missing Alumni operations table: %', v_table; end if;
+    if not (select relrowsecurity from pg_class where oid=to_regclass('public.' || v_table)) then
+      raise exception 'RLS is not enabled for %', v_table;
+    end if;
+  end loop;
+  select count(*) into v_count from public.aasa_alumni_events;
+  if v_count <> 0 then raise exception 'Migration must not create sample alumni events'; end if;
+end;
+$;
 
 -- A simulated authenticated user cannot spoof audit identity on insert or update.
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', false);
