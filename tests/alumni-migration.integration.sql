@@ -35,6 +35,9 @@ create table public.role_permissions (
 create table public.aasa_alumni_records (
   id uuid primary key default gen_random_uuid(),
   member_id uuid,
+  graduation_year integer,
+  qualification text,
+  institution text,
   created_by uuid,
   updated_by uuid,
   updated_at timestamptz not null default now()
