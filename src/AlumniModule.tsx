@@ -189,8 +189,8 @@ export default function AlumniModule({ userId, canManage, canLookupMembers, lang
       return;
     }
     if (decision === "rejected" && !record.graduation_review_notes?.trim()) {
-      setError(t.rejectReason);
       startEdit(record);
+      setError(t.rejectReason);
       return;
     }
     const { error: reviewError } = await supabase.from("aasa_alumni_records").update({
