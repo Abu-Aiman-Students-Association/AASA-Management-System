@@ -349,3 +349,6 @@
 .aasa-portal-denied .aasa-secondary{margin-top:12px}
 .aasa-portal-denied .aasa-link{display:inline-block;margin:8px 0}
 @media(max-width:650px){.aasa-portal-grid{grid-template-columns:1fr;gap:13px;margin-top:22px}.aasa-portal-card{min-height:220px}.aasa-portal-card .aasa-portal-icon{margin-bottom:15px}}
+
+.aasa-portal-member{text-align:center;color:#77877d;font-size:11px;margin:8px 0 26px}
+.aasa-portal-member a{color:#1c6845;font-weight:800;text-decoration:underline;text-underline-offset:3px;margin-inline-start:5px}
