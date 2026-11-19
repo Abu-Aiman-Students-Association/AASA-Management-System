@@ -285,6 +285,37 @@ begin
   insert into public.aasa_alumni_chapter_members(chapter_id,alumni_id,added_by)
   values (v_chapter_id,v_alumni_id,'11111111-1111-4111-8111-111111111111');
 
+  update public.aasa_alumni_records
+  set graduation_year=2019,
+      qualification='Diploma',
+      institution='AASA test college',
+      graduation_evidence_reference='TEST-CERT-002',
+      graduation_verification_status='verified',
+      graduation_verified_at=now(),
+      graduation_verified_by='11111111-1111-4111-8111-111111111111'
+  where member_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+  -- Event capacity is enforced even when two different verified alumni are registered.
+  insert into public.aasa_alumni_events(title,starts_at,capacity,created_by)
+  values ('Test reunion',now()+interval '10 days',1,'11111111-1111-4111-8111-111111111111')
+  returning id into v_chapter_id;
+  insert into public.aasa_alumni_event_registrations(event_id,alumni_id,registered_by)
+  values (v_chapter_id,v_alumni_id,'11111111-1111-4111-8111-111111111111');
+  begin
+    insert into public.aasa_alumni_event_registrations(event_id,alumni_id,registered_by)
+    select v_chapter_id,id,'11111111-1111-4111-8111-111111111111'
+    from public.aasa_alumni_records where member_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    raise exception 'Alumni event capacity was unexpectedly exceeded';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.aasa_alumni_mentorships(mentor_alumni_id,mentee_member_id,topic,created_by)
+    values (v_alumni_id,'cccccccc-cccc-4ccc-8ccc-cccccccccccc','Career guidance','11111111-1111-4111-8111-111111111111');
+    raise exception 'Inactive mentee was unexpectedly accepted';
+  exception when check_violation then null;
+  end;
+
   select count(*) into v_audit_count from public.aasa_alumni_activity_log
   where entity_type in ('aasa_alumni_records','aasa_alumni_chapters','aasa_alumni_chapter_members');
   if v_audit_count < 3 then
