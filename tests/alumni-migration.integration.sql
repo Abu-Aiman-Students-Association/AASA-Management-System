@@ -237,4 +237,50 @@ begin
 end;
 $$;
 
+-- Verified-alumni operational linkage and append-only audit behaviour.
+do $alumni_operations_test$
+declare
+  v_alumni_id uuid;
+  v_chapter_id uuid;
+  v_audit_count integer;
+begin
+  select id into v_alumni_id from public.aasa_alumni_records
+  where member_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+  insert into public.aasa_alumni_chapters(name,region,created_by)
+  values ('Borno Alumni Chapter','Borno','11111111-1111-4111-8111-111111111111')
+  returning id into v_chapter_id;
+
+  begin
+    insert into public.aasa_alumni_chapter_members(chapter_id,alumni_id,added_by)
+    values (v_chapter_id,v_alumni_id,'11111111-1111-4111-8111-111111111111');
+    raise exception 'Unverified alumni was unexpectedly admitted to a chapter';
+  exception when check_violation then null;
+  end;
+
+  update public.aasa_alumni_records
+  set graduation_year=2020,
+      qualification='Bachelor degree',
+      institution='AASA test university',
+      graduation_evidence_reference='TEST-CERT-001',
+      graduation_verification_status='verified',
+      graduation_verified_at=now(),
+      graduation_verified_by='11111111-1111-4111-8111-111111111111'
+  where id=v_alumni_id;
+
+  insert into public.aasa_alumni_chapter_members(chapter_id,alumni_id,added_by)
+  values (v_chapter_id,v_alumni_id,'11111111-1111-4111-8111-111111111111');
+
+  select count(*) into v_audit_count from public.aasa_alumni_activity_log
+  where entity_type in ('aasa_alumni_records','aasa_alumni_chapters','aasa_alumni_chapter_members');
+  if v_audit_count < 3 then
+    raise exception 'Alumni operational activity was not recorded in the audit log';
+  end if;
+
+  if has_table_privilege('anon','public.aasa_alumni_events','select') then
+    raise exception 'Anonymous users must not read Alumni events';
+  end if;
+end;
+$alumni_operations_test$;
+
 \echo Alumni migration integration checks passed.
