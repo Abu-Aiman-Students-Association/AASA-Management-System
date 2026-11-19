@@ -91,7 +91,11 @@ begin
   select status,closing_date into v_status,v_closing_date
   from public.aasa_alumni_career_opportunities
   where id=new.opportunity_id for update;
-  if tg_op='INSERT' or new.opportunity_id is distinct from old.opportunity_id then
+  if tg_op='INSERT' then
+    if v_status is distinct from 'open' or (v_closing_date is not null and v_closing_date < current_date) then
+      raise exception 'Alumni interest can only be recorded for open opportunities before their closing date' using errcode='23514';
+    end if;
+  elsif new.opportunity_id is distinct from old.opportunity_id then
     if v_status is distinct from 'open' or (v_closing_date is not null and v_closing_date < current_date) then
       raise exception 'Alumni interest can only be recorded for open opportunities before their closing date' using errcode='23514';
     end if;
