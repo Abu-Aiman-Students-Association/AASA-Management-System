@@ -15,6 +15,7 @@ const translations = {
     associationTitle: "Association Admin",
     associationText: "Manage authorised AASA operations, membership, alumni, governance and association services.",
     associationAction: "Continue to Association Admin",
+    memberPrompt: "Already a registered member?", memberAction: "Member sign in",
     footer: "AASA · Secure · Accountable · Multilingual"
   },
   ha: {
@@ -29,6 +30,7 @@ const translations = {
     associationTitle: "Association Admin",
     associationText: "Gudanar da ayyukan AASA da aka ba da izini, membobinta, tsofaffin mambobi da hidimomin ƙungiya.",
     associationAction: "Ci gaba zuwa Association Admin",
+    memberPrompt: "Kana da membobinta ta AASA?", memberAction: "Shiga a matsayin memba",
     footer: "AASA · Amintacce · Riƙon Amana · Harsuna Uku"
   },
   ar: {
@@ -43,6 +45,7 @@ const translations = {
     associationTitle: "مسؤول الجمعية",
     associationText: "إدارة عمليات AASA المصرح بها والعضوية والخريجين والحوكمة وخدمات الجمعية.",
     associationAction: "المتابعة إلى مسؤول الجمعية",
+    memberPrompt: "هل أنت عضو مسجل؟", memberAction: "دخول العضو",
     footer: "AASA · آمن · مسؤول · متعدد اللغات"
   }
 };
@@ -82,6 +85,7 @@ export default function AdminPortalSelection() {
           <strong>{copy.associationAction} <span aria-hidden="true">→</span></strong>
         </a>
       </div>
+      <p className="aasa-portal-member">{copy.memberPrompt} <a href="?portal=member">{copy.memberAction}</a></p>
       <footer>{copy.footer}</footer>
     </section>
   </main>;
