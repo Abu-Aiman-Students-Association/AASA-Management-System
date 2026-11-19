@@ -379,3 +379,24 @@ test("Alumni permissions are granted only to association administrators and prot
   assert.match(alumniModuleSource, /created_by: userId/);
   assert.doesNotMatch(alumniModuleSource, /\.from\(["']aasa_members["']\)\.(insert|update|upsert|delete)\s*\(/);
 });
+
+const alumniOperationsSource = await readFile(new URL("../src/AlumniOperationsModule.tsx", import.meta.url), "utf8");
+const alumniOperationsMigration = await readFile(new URL("../supabase/migrations/20261119110000_alumni_management_centre_operations.sql", import.meta.url), "utf8");
+
+test("Alumni operations remain separate from AASA financial ledgers", () => {
+  assert.match(alumniOperationsSource, /non-financial/i);
+  assert.doesNotMatch(alumniOperationsSource, /aasa_finance_entries|aasa_payments|aasa_receipts/);
+  assert.doesNotMatch(alumniOperationsMigration, /amount_minor|currency_code|payment_reference/);
+});
+
+test("Alumni operational records enforce RLS, verified-alumni linkage and privacy-conscious audit", () => {
+  assert.match(alumniOperationsMigration, /enable row level security/i);
+  assert.match(alumniOperationsMigration, /aasa_require_verified_alumni/);
+  assert.match(alumniOperationsMigration, /aasa_alumni_activity_log/);
+  assert.match(alumniOperationsMigration, /revoke insert,update,delete on public\.aasa_alumni_activity_log from authenticated/i);
+  assert.match(alumniOperationsSource, /aasa_alumni_education_history/);
+  assert.match(alumniOperationsSource, /aasa_alumni_event_registrations/);
+  assert.match(alumniOperationsSource, /aasa_alumni_chapter_members/);
+  assert.match(alumniOperationsSource, /aasa_alumni_mentorships/);
+  assert.match(alumniOperationsSource, /aasa_alumni_engagement_activities/);
+});
