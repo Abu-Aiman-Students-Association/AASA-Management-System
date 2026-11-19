@@ -174,6 +174,22 @@ create table if not exists public.aasa_alumni_mentorships (
 create index if not exists aasa_alumni_mentorship_mentor_idx on public.aasa_alumni_mentorships(mentor_alumni_id, status);
 create index if not exists aasa_alumni_mentorship_mentee_idx on public.aasa_alumni_mentorships(mentee_member_id, status);
 
+-- Mentorship session log: append-only session history with outcome and duration.
+create table if not exists public.aasa_alumni_mentorship_sessions (
+  id uuid primary key default gen_random_uuid(),
+  mentorship_id uuid not null references public.aasa_alumni_mentorships(id) on delete cascade,
+  session_at timestamptz not null,
+  topic text not null check (char_length(btrim(topic)) between 3 and 180),
+  duration_minutes integer check (duration_minutes is null or duration_minutes between 1 and 600),
+  outcome text,
+  notes text,
+  recorded_by uuid not null references auth.users(id),
+  created_at timestamptz not null default now(),
+  check (outcome is null or char_length(outcome) <= 3000),
+  check (notes is null or char_length(notes) <= 5000)
+);
+create index if not exists aasa_alumni_mentorship_sessions_parent_idx on public.aasa_alumni_mentorship_sessions(mentorship_id,session_at desc);
+
 -- Engagement activities are non-financial. Monetary donations and dues remain in AASA Finance/Payments.
 create table if not exists public.aasa_alumni_engagement_activities (
   id uuid primary key default gen_random_uuid(),
@@ -364,7 +380,7 @@ begin
   foreach t in array array[
     'aasa_alumni_education_history','aasa_alumni_employment_history','aasa_alumni_events',
     'aasa_alumni_event_registrations','aasa_alumni_chapters','aasa_alumni_chapter_members',
-    'aasa_alumni_mentorships','aasa_alumni_engagement_activities','aasa_alumni_activity_log'
+    'aasa_alumni_mentorships','aasa_alumni_mentorship_sessions','aasa_alumni_engagement_activities','aasa_alumni_activity_log'
   ] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on table public.%I from anon', t);
@@ -379,6 +395,7 @@ grant select,insert,update,delete on public.aasa_alumni_event_registrations to a
 grant select,insert,update,delete on public.aasa_alumni_chapters to authenticated;
 grant select,insert,update,delete on public.aasa_alumni_chapter_members to authenticated;
 grant select,insert,update,delete on public.aasa_alumni_mentorships to authenticated;
+grant select,insert on public.aasa_alumni_mentorship_sessions to authenticated;
 grant select,insert,update,delete on public.aasa_alumni_engagement_activities to authenticated;
 grant select on public.aasa_alumni_activity_log to authenticated;
 
@@ -389,7 +406,7 @@ begin
   foreach t in array array[
     'aasa_alumni_education_history','aasa_alumni_employment_history','aasa_alumni_events',
     'aasa_alumni_event_registrations','aasa_alumni_chapters','aasa_alumni_chapter_members',
-    'aasa_alumni_mentorships','aasa_alumni_engagement_activities'
+    'aasa_alumni_mentorships','aasa_alumni_mentorship_sessions','aasa_alumni_engagement_activities'
   ] loop
     execute format('drop policy if exists %I on public.%I', t || '_read', t);
     execute format('create policy %I on public.%I for select to authenticated using (public.aasa_has_permission(''alumni.read'') or public.aasa_has_permission(''alumni.manage''))', t || '_read', t);
