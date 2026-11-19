@@ -3,9 +3,9 @@ import { supabase } from "./lib/supabase";
 
 type Lang = "en" | "ha" | "ar";
 type Tab = "history" | "events" | "chapters" | "mentorship" | "engagement" | "communications" | "audit";
-type Alumni = { id: string; member_id: string | null; graduation_verification_status: string; verified_at: string | null; verified_by: string | null };
+type Alumni = { id: string; member_id: string | null; graduation_verification_status: string };
 type Member = { id: string; full_name: string; member_number: string; status: string };
-type Education = { id: string; alumni_id: string; institution: string; qualification: string; field_of_study: string | null; start_year: number | null; end_year: number | null; evidence_reference: string | null; verification_status: string };
+type Education = { id: string; alumni_id: string; institution: string; qualification: string; field_of_study: string | null; start_year: number | null; end_year: number | null; evidence_reference: string | null; verification_status: string; verified_at: string | null; verified_by: string | null };
 type Employment = { id: string; alumni_id: string; employer: string; job_title: string; industry: string | null; location: string | null; start_date: string | null; end_date: string | null; is_current: boolean };
 type AlumniEvent = { id: string; title: string; description: string | null; starts_at: string; ends_at: string | null; venue: string | null; capacity: number | null; status: string };
 type EventRegistration = { id: string; event_id: string; alumni_id: string; registration_status: string; note: string | null };
