@@ -211,7 +211,7 @@ begin
     new.updated_at := now();
     if to_jsonb(new) ? 'created_by' then
       new.created_by := old.created_by;
-      new.updated_by := v_actor;
+      if v_actor is not null then new.updated_by := v_actor; end if;
     end if;
     if to_jsonb(new) ? 'registered_by' and v_actor is not null then new.registered_by := v_actor; end if;
     if to_jsonb(new) ? 'added_by' and v_actor is not null then new.added_by := v_actor; end if;
