@@ -138,3 +138,25 @@ $alumni_announcement$;
 
 revoke all on function public.aasa_publish_alumni_announcement(text,text,text,uuid,text,integer) from public,anon;
 grant execute on function public.aasa_publish_alumni_announcement(text,text,text,uuid,text,integer) to authenticated;
+
+create or replace function public.aasa_archive_alumni_announcement(p_announcement_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $alumni_archive$
+declare
+  v_user uuid := auth.uid();
+begin
+  if v_user is null or not public.aasa_has_permission('alumni.manage') then
+    raise exception 'Alumni management permission required to archive an alumni announcement';
+  end if;
+  update public.aasa_alumni_announcements
+  set status='archived',updated_by=v_user,updated_at=now()
+  where id=p_announcement_id and status='published';
+  if not found then raise exception 'Published alumni announcement not found'; end if;
+  return true;
+end;
+$alumni_archive$;
+revoke all on function public.aasa_archive_alumni_announcement(uuid) from public,anon;
+grant execute on function public.aasa_archive_alumni_announcement(uuid) to authenticated;
