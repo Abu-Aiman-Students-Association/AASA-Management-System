@@ -73,6 +73,7 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
  const [mentorships,setMentorships] = useState<Mentorship[]>([]);
  const [activities,setActivities] = useState<Engagement[]>([]);
  const [audit,setAudit] = useState<Audit[]>([]);
+ const [announcements,setAnnouncements] = useState<AlumniAnnouncement[]>([]);
  const [busy,setBusy] = useState(false);
  const [loading,setLoading] = useState(true);
  const [error,setError] = useState("");
@@ -100,7 +101,8 @@ export default function AlumniOperationsModule({ userId, canManage, canLookupMem
     supabase.from("aasa_alumni_chapter_members").select("id,chapter_id,alumni_id,chapter_role,joined_at,left_at").order("joined_at",{ascending:false}),
     supabase.from("aasa_alumni_mentorships").select("id,mentor_alumni_id,mentee_member_id,topic,goals,status,starts_on,ends_on,notes").order("created_at",{ascending:false}),
     supabase.from("aasa_alumni_engagement_activities").select("id,alumni_id,activity_type,title,description,occurred_on,hours").order("occurred_on",{ascending:false}),
-    supabase.from("aasa_alumni_activity_log").select("id,actor_user_id,action_key,entity_type,entity_id,created_at").order("created_at",{ascending:false}).limit(100)
+    supabase.from("aasa_alumni_activity_log").select("id,actor_user_id,action_key,entity_type,entity_id,created_at").order("created_at",{ascending:false}).limit(100),
+    supabase.from("aasa_alumni_announcements").select("id,title,body,audience_type,audience_location,audience_graduation_year,published_at,status").order("published_at",{ascending:false}).limit(100)
    ]);
    const firstError=[a,e,j,ev,er,ch,cm,me,ac,au,an].find(x=>x.error)?.error;
    if(firstError) throw firstError;
