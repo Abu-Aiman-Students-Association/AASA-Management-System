@@ -51,12 +51,11 @@ jobs:
       - name: Run Supabase frontend security regression checks
         run: node --test tests/supabase-security.test.js
       - name: Build app
-        run: npm run build
+        run: npm run build -- --mode ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
         env:
           VITE_SUPABASE_URL: https://pedmroseihpaflbzqgkf.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
-      - name: Upload GitHub Pages artifact
-        if: github.event_name != 'pull_request'
+      - name: Upload build artifact for preview or deployment
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
