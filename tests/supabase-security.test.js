@@ -36,6 +36,8 @@ test("Super Admin and Association Admin have separate role-bound login portals",
   assert.match(appSource, /supabase\.auth\.signOut\(\{ scope: "local" \}\)/);
   assert.match(appSource, /let bootstrapComplete = false/);
   assert.match(appSource, /if \(!bootstrapComplete\) return/);
+  assert.match(appSource, /let requiresExplicitSignIn = false/);
+  assert.match(appSource, /requiresExplicitSignIn && event !== "SIGNED_IN"/);
   assert.match(appSource, /if \(roleError\)/);
   assert.ok(dashboardSource.includes('const [email, setEmail] = useState("");'));
   assert.match(appSource, /route === "member_login"/);
