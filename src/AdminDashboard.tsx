@@ -153,7 +153,7 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
       }, 0);
     });
     return () => { live = false; subscription.unsubscribe(); };
-  }, []);
+  }, [accessMode]);
   async function sendCode(e: FormEvent) {
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
@@ -212,7 +212,7 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
       setMetricsLoading(false);
     }).catch(() => { if (live) setMetricsLoading(false); });
     return () => { live = false; };
-  }, [account?.id, account?.status]);
+  }, [accessMode, account?.id, account?.status]);
   const role = !hasPortalRole ? "" : accessMode === "association_admin" ? "association_admin" : account?.roles.includes("super_admin") ? "super_admin" : "platform_admin";
   const rtl = lang === "ar";
   const canAccessSection = (id: Section) => {
