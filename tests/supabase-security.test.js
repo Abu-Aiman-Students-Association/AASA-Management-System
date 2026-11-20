@@ -33,7 +33,10 @@ test("Super Admin and Association Admin have separate role-bound login portals",
   assert.match(adminPortalSelectionSource, /href="\?portal=association-admin"/);
   assert.match(adminPortalSelectionSource, /href="\?portal=member"/);
   assert.match(appSource, /Do not silently restore a remembered Super Admin session/);
-  assert.match(appSource, /supabase\.auth\.signOut\(\)/);
+  assert.match(appSource, /supabase\.auth\.signOut\(\{ scope: "local" \}\)/);
+  assert.match(appSource, /let bootstrapComplete = false/);
+  assert.match(appSource, /if \(!bootstrapComplete\) return/);
+  assert.match(appSource, /if \(roleError\)/);
   assert.ok(dashboardSource.includes('const [email, setEmail] = useState("");'));
   assert.match(appSource, /route === "member_login"/);
   assert.match(memberLoginSource, /aasa_link_own_member_account/);
