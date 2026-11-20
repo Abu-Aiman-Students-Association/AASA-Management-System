@@ -115,7 +115,13 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
     const now = Date.now();
     const activeRoleRows = status === "active" ? (r.data ?? []).filter((x: any) => !x.expires_at || Date.parse(x.expires_at) > now) : [];
     const roles = activeRoleRows.map((x: any) => x.roles?.role_key).filter((x: unknown): x is string => typeof x === "string");
-    const roleIds = activeRoleRows.map((x: any) => x.role_id).filter(Boolean);
+    const portalRoleRows = activeRoleRows.filter((x: any) => {
+      const roleKey = x.roles?.role_key;
+      return accessMode === "super_admin"
+        ? roleKey === "super_admin" || roleKey === "platform_admin"
+        : roleKey === "association_admin";
+    });
+    const roleIds = portalRoleRows.map((x: any) => x.role_id).filter(Boolean);
     let permissions: string[] = [];
     if (roleIds.length) {
       const pr = await supabase.from("role_permissions").select("role_id,permissions(permission_key)").in("role_id", roleIds);
@@ -190,7 +196,7 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
   useEffect(() => {
     if (!account || account.status !== "active") { setLiveMetrics({}); return; }
     let live = true;
-    const allowed = (permissions: string[]) => account.roles.includes("super_admin") || account.permissions.some(p => permissions.includes(p));
+    const allowed = (permissions: string[]) => (accessMode === "super_admin" && (account.roles.includes("super_admin") || account.roles.includes("platform_admin"))) || account.permissions.some(p => permissions.includes(p));
     setMetricsLoading(true);
     Promise.all([
       supabase.from("aasa_members").select("id", { count: "exact", head: true }),
