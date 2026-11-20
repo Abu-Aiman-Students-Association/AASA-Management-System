@@ -443,3 +443,12 @@ test("Alumni career opportunities are RLS protected and restricted to verified a
   assert.match(alumniOperationsSource, /aasa_alumni_career_opportunities/);
   assert.match(alumniOperationsSource, /aasa_alumni_opportunity_applications/);
 });
+
+
+test("administrator portal permissions are isolated to the selected database role", () => {
+  assert.match(dashboardSource, /const portalRoleRows = activeRoleRows\.filter/);
+  assert.match(dashboardSource, /roleKey === "association_admin"/);
+  assert.match(dashboardSource, /roleKey === "super_admin" \|\| roleKey === "platform_admin"/);
+  assert.match(dashboardSource, /accessMode === "super_admin" && \(account\.roles\.includes\("super_admin"\) \|\| account\.roles\.includes\("platform_admin"\)\)/);
+  assert.match(dashboardSource, /accessMode === "super_admin" && account\.email\.toLowerCase\(\) === SUPER_ADMIN_EMAIL/);
+});
