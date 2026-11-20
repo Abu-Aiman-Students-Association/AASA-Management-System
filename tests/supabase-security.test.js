@@ -460,3 +460,21 @@ test("administrator portal permissions are isolated to the selected database rol
   assert.match(dashboardSource, /accessMode === "super_admin" && \(account\.roles\.includes\("super_admin"\) \|\| account\.roles\.includes\("platform_admin"\)\)/);
   assert.match(dashboardSource, /accessMode === "super_admin" && account\.email\.toLowerCase\(\) === SUPER_ADMIN_EMAIL/);
 });
+
+
+const supabaseClientSource = await readFile(new URL("../src/lib/supabase.ts", import.meta.url), "utf8");
+const packageManifest = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+
+test("administrator login supports OTP and Supabase WebAuthn passkeys without bypassing role checks", () => {
+  assert.match(packageManifest.dependencies["@supabase/supabase-js"], /\^2\.105\.0/);
+  assert.match(supabaseClientSource, /experimental:\s*\{\s*passkey:\s*true\s*\}/);
+  assert.match(dashboardSource, /signInWithOtp\(/);
+  assert.match(dashboardSource, /verifyOtp\(/);
+  assert.match(dashboardSource, /signInWithPasskey\(\)/);
+  assert.match(dashboardSource, /registerPasskey\(\)/);
+  assert.match(dashboardSource, /supabase\.auth\.passkey\.list\(\)/);
+  assert.match(dashboardSource, /supabase\.auth\.passkey\.delete\(\{ passkeyId \}\)/);
+  assert.match(dashboardSource, /hasPortalRole && <section className="aasa-panel aasa-passkey-panel"/);
+  assert.match(dashboardSource, /window\.isSecureContext/);
+  assert.match(dashboardSource, /PublicKeyCredential/);
+});
