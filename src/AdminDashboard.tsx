@@ -144,7 +144,6 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
       if (!live) return;
       if (e) setError(e.message);
       else if (data.session?.user) {
-        void supabase.rpc("aasa_link_own_member_account").then(() => undefined);
         void refresh({ id: data.session.user.id, email: data.session.user.email }).catch(e => setError(e.message));
       }
     });
@@ -153,7 +152,6 @@ export default function AdminDashboard({ accessMode }: { accessMode: "super_admi
       window.setTimeout(() => {
         if (!live) return;
         if (session?.user) {
-          void supabase.rpc("aasa_link_own_member_account").then(() => undefined);
           void refresh({ id: session.user.id, email: session.user.email }).catch(e => setError(e.message));
         }
         else { setAccount(null); setView("login"); }
