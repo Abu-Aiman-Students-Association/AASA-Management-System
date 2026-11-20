@@ -69,27 +69,47 @@ export default function App() {
       }
     }
 
+    // Ignore Supabase's initial cached-session event until the role check below completes.
+    // This prevents the auth listener racing the Super Admin sign-out guard.
+    let bootstrapComplete = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!bootstrapComplete) return;
       window.setTimeout(() => { void resolveAccount(session); }, 0);
     });
     supabase.auth.getSession().then(async ({ data, error }) => {
-      if (error) { if (alive) setRoute(requestedPortal === "member" ? "member_login" : params.has("portal") ? "admin" : "choose"); return; }
+      if (error) {
+        if (alive) setRoute(requestedPortal === "member" ? "member_login" : params.has("portal") ? "admin" : "choose");
+        bootstrapComplete = true;
+        return;
+      }
       // Do not silently restore a remembered Super Admin session after a fresh page load.
       // The administrator must explicitly request a new email OTP sign-in.
       if (data.session?.user) {
         const { data: roleRows, error: roleError } = await supabase.from("user_roles")
           .select("roles(role_key),expires_at").eq("user_id", data.session.user.id).is("revoked_at", null);
+        if (roleError) {
+          // Fail closed: never restore a cached administrator session when its role cannot be verified.
+          if (alive) setRoute(requestedPortal === "member" ? "member_login" : params.has("portal") ? "admin" : "choose");
+          bootstrapComplete = true;
+          return;
+        }
         const now = Date.now();
         const activeRoleKeys = (roleRows ?? [])
           .filter((row: any) => !row.expires_at || Date.parse(row.expires_at) > now)
           .map((row: any) => row.roles?.role_key);
-        if (!roleError && activeRoleKeys.some((key: unknown) => key === "super_admin" || key === "platform_admin")) {
-          await supabase.auth.signOut();
+        if (activeRoleKeys.some((key: unknown) => key === "super_admin" || key === "platform_admin")) {
+          // Local scope clears this browser only; it does not revoke the administrator's other devices.
+          await supabase.auth.signOut({ scope: "local" });
           if (alive) setRoute(requestedPortal === "super-admin" ? "admin" : "choose");
+          bootstrapComplete = true;
           return;
         }
       }
+      bootstrapComplete = true;
       void resolveAccount(data.session);
+    }).catch(() => {
+      if (alive) setRoute(requestedPortal === "member" ? "member_login" : params.has("portal") ? "admin" : "choose");
+      bootstrapComplete = true;
     });
     return () => { alive = false; subscription.unsubscribe(); };
   }, []);
