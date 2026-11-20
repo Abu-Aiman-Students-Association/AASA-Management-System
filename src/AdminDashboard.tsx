@@ -51,7 +51,7 @@ const moduleSections: { id: Section; icon: string; en: string; ha: string; ar: s
 ];
 export default function AdminDashboard({ accessMode }: { accessMode: "super_admin" | "association_admin" }) {
   const [account, setAccount] = useState<Account | null>(null);
-  const [email, setEmail] = useState(accessMode === "super_admin" ? SUPER_ADMIN_EMAIL : "");
+  const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [busy, setBusy] = useState(false);
