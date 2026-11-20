@@ -86,12 +86,12 @@ export default function App() {
         return;
       }
       // Do not silently restore a remembered Super Admin session after a fresh page load.
-      // The administrator must explicitly request a new email OTP sign-in.
+      // The administrator must explicitly authenticate again with email OTP or a registered passkey.
       if (data.session?.user) {
         const { data: roleRows, error: roleError } = await supabase.from("user_roles")
           .select("roles(role_key),expires_at").eq("user_id", data.session.user.id).is("revoked_at", null);
         if (roleError) {
-          // Fail closed: wait for an explicit OTP sign-in before accepting any cached session.
+          // Fail closed: wait for an explicit OTP or passkey sign-in before accepting any cached session.
           requiresExplicitSignIn = true;
           if (alive) setRoute(requestedPortal === "member" ? "member_login" : params.has("portal") ? "admin" : "choose");
           bootstrapComplete = true;
@@ -102,7 +102,7 @@ export default function App() {
           .filter((row: any) => !row.expires_at || Date.parse(row.expires_at) > now)
           .map((row: any) => row.roles?.role_key);
         if (activeRoleKeys.some((key: unknown) => key === "super_admin" || key === "platform_admin")) {
-          // Require an explicit OTP sign-in; local scope does not revoke other devices.
+          // Require fresh explicit authentication; local scope does not revoke other devices.
           requiresExplicitSignIn = true;
           await supabase.auth.signOut({ scope: "local" });
           if (alive) setRoute(requestedPortal === "super-admin" ? "admin" : "choose");
