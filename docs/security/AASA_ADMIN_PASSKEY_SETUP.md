@@ -26,7 +26,7 @@ Supabase Auth passkeys are experimental and must be enabled in **Authentication 
 
 Configure:
 
-- **Relying Party Display Name:** Abu-Aiman Students' Association
+- **Relying Party Display Name:** AASA-Management-System
 - **Relying Party ID:** `abu-aiman-students-association.github.io`
 - **Relying Party Origins:** `https://abu-aiman-students-association.github.io`
 
