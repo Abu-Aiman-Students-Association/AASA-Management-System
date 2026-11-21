@@ -425,3 +425,11 @@
  .aasa-auth-card{padding:23px 19px}
 }
 @media(prefers-reduced-motion:reduce){.aasa-login-home .aasa-portal-card{transition:none}}
+
+
+/* Three equal AASA access portals */
+.aasa-login-home .aasa-portal-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.aasa-login-home .aasa-portal-member-card .aasa-portal-icon{background:#f3f0e7;color:#86662d}
+.aasa-login-home .aasa-portal-member-card>strong{color:#86662d}
+@media(max-width:850px){.aasa-login-home .aasa-portal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.aasa-login-home .aasa-portal-grid{grid-template-columns:1fr}}
