@@ -36,6 +36,19 @@ export default function App() {
       }
       setRoute("loading");
       const userId = session.user.id;
+      // Honour an explicitly selected Member Portal before considering administrator roles.
+      // Some association officers may also be active members; portal selection must remain distinct.
+      if (requestedPortal === "member") {
+        try {
+          const { data: member, error } = await supabase.from("aasa_members").select("id")
+            .eq("auth_user_id", userId).eq("status", "active").maybeSingle();
+          if (!error && member) { if (alive) setRoute("member"); return; }
+        } catch {
+          // Fail closed to the member sign-in screen when membership cannot be confirmed.
+        }
+        if (alive) setRoute("member_login");
+        return;
+      }
       try {
         const [{ data: profile }, { data: roleRows }] = await Promise.all([
           supabase.from("profiles").select("account_status").eq("user_id", userId).maybeSingle(),
