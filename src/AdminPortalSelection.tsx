@@ -16,8 +16,10 @@ const translations = {
     associationTitle: "Association Admin",
     associationText: "Membership, alumni, leadership, elections and association services.",
     associationAction: "Enter Association Admin",
-    memberPrompt: "Are you an association member?",
-    memberAction: "Member sign in",
+    memberLabel: "MEMBER SERVICES",
+    memberTitle: "Member Portal",
+    memberText: "Secure access to your verified membership profile and association services.",
+    memberAction: "Enter Member Portal",
     secure: "Protected administrator access",
     footer: "AASA · Secure · Accountable · Multilingual"
   },
@@ -34,8 +36,10 @@ const translations = {
     associationTitle: "Association Admin",
     associationText: "Membobinta, tsofaffin ɗalibai, shugabanci, zaɓe da hidimomin ƙungiya.",
     associationAction: "Shiga Association Admin",
-    memberPrompt: "Kana cikin membobin ƙungiyar?",
-    memberAction: "Shiga a matsayin memba",
+    memberLabel: "HIDIMOMIN MEMBOBI",
+    memberTitle: "Member Portal",
+    memberText: "Amintaccen shiga domin duba bayanan membobintaka da hidimomin ƙungiya.",
+    memberAction: "Shiga Ƙofar Memba",
     secure: "An kare ƙofar shiga ta masu gudanarwa",
     footer: "AASA · Amintacce · Riƙon Amana · Harsuna Uku"
   },
@@ -52,8 +56,10 @@ const translations = {
     associationTitle: "مسؤول الجمعية",
     associationText: "العضوية والخريجون والقيادة والانتخابات وخدمات الجمعية.",
     associationAction: "دخول مسؤول الجمعية",
-    memberPrompt: "هل أنت عضو في الجمعية؟",
-    memberAction: "دخول العضو",
+    memberLabel: "خدمات الأعضاء",
+    memberTitle: "بوابة الأعضاء",
+    memberText: "دخول آمن إلى ملف العضوية الموثق وخدمات الجمعية.",
+    memberAction: "دخول بوابة الأعضاء",
     secure: "بوابة دخول المسؤولين محمية",
     footer: "AASA · آمن · مسؤول · متعدد اللغات"
   }
@@ -101,8 +107,14 @@ export default function AdminPortalSelection() {
             <p>{copy.associationText}</p>
             <strong>{copy.associationAction} <span aria-hidden="true">→</span></strong>
           </a>
+          <a className="aasa-portal-card aasa-portal-member-card" href="?portal=member">
+            <span className="aasa-portal-icon" aria-hidden="true">♙</span>
+            <small>{copy.memberLabel}</small>
+            <h2>{copy.memberTitle}</h2>
+            <p>{copy.memberText}</p>
+            <strong>{copy.memberAction} <span aria-hidden="true">→</span></strong>
+          </a>
         </div>
-        <p className="aasa-portal-member">{copy.memberPrompt} <a href="?portal=member">{copy.memberAction}</a></p>
       </div>
       <footer>{copy.footer}</footer>
     </section>
