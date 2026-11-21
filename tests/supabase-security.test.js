@@ -43,6 +43,7 @@ test("Super Admin and Association Admin have separate role-bound login portals",
   assert.match(appSource, /if \(roleError\)/);
   assert.ok(dashboardSource.includes('const [email, setEmail] = useState("");'));
   assert.match(appSource, /route === "member_login"/);
+  assert.match(appSource, /if \(requestedPortal === "member"\)/);
   assert.match(memberLoginSource, /aasa_link_own_member_account/);
   assert.match(memberLoginSource, /from\("aasa_members"\)/);
   assert.match(memberLoginSource, /window\.location\.assign\("\.\/"/);
