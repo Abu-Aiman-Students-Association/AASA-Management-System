@@ -5,6 +5,9 @@ import { readFile } from "node:fs/promises";
 const supabaseSource = await readFile(new URL("../src/lib/supabase.ts", import.meta.url), "utf8");
 const dashboardSource = await readFile(new URL("../src/AdminDashboard.tsx", import.meta.url), "utf8");
 const accountsSource = await readFile(new URL("../src/AdminAccountsPanel.tsx", import.meta.url), "utf8");
+const appSource = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
+const adminPortalSelectionSource = await readFile(new URL("../src/AdminPortalSelection.tsx", import.meta.url), "utf8");
+const memberLoginSource = await readFile(new URL("../src/MemberLogin.tsx", import.meta.url), "utf8");
 
 test("browser Supabase client uses publishable configuration, not a service-role secret", () => {
   assert.match(supabaseSource, /VITE_SUPABASE_PUBLISHABLE_KEY/);
@@ -16,6 +19,34 @@ test("administrator access is gated by database-confirmed roles", () => {
   assert.match(dashboardSource, /claim_initial_super_admin/);
   assert.match(dashboardSource, /account_status/);
   assert.match(dashboardSource, /SUPER_ADMIN_EMAIL/);
+});
+
+test("Super Admin and Association Admin have separate role-bound login portals", () => {
+  assert.match(appSource, /requestedPortal === "super-admin"/);
+  assert.match(appSource, /AdminPortalSelection/);
+  assert.match(appSource, /AdminDashboard accessMode=\{adminMode\}/);
+  assert.match(dashboardSource, /account\.roles\.includes\("super_admin"\)/);
+  assert.match(dashboardSource, /account\.roles\.includes\("platform_admin"\)/);
+  assert.match(dashboardSource, /account\.roles\.includes\("association_admin"\)/);
+  assert.match(dashboardSource, /portalMismatch/);
+  assert.match(adminPortalSelectionSource, /href="\?portal=super-admin"/);
+  assert.match(adminPortalSelectionSource, /href="\?portal=association-admin"/);
+  assert.match(adminPortalSelectionSource, /href="\?portal=member"/);
+  assert.match(adminPortalSelectionSource, /aasa-portal-member-card/);
+  assert.match(adminPortalSelectionSource, /memberTitle: "Member Portal"/);
+  assert.match(appSource, /Do not silently restore a remembered Super Admin session/);
+  assert.match(appSource, /supabase\.auth\.signOut\(\{ scope: "local" \}\)/);
+  assert.match(appSource, /let bootstrapComplete = false/);
+  assert.match(appSource, /if \(!bootstrapComplete\) return/);
+  assert.match(appSource, /let requiresExplicitSignIn = false/);
+  assert.match(appSource, /requiresExplicitSignIn && event !== "SIGNED_IN"/);
+  assert.match(appSource, /if \(roleError\)/);
+  assert.ok(dashboardSource.includes('const [email, setEmail] = useState("");'));
+  assert.match(appSource, /route === "member_login"/);
+  assert.match(appSource, /if \(requestedPortal === "member"\)/);
+  assert.match(memberLoginSource, /aasa_link_own_member_account/);
+  assert.match(memberLoginSource, /from\("aasa_members"\)/);
+  assert.match(memberLoginSource, /window\.location\.assign\("\.\/"/);
 });
 
 test("administrator account changes use database RPCs rather than direct client table writes", () => {
@@ -423,4 +454,31 @@ test("Alumni career opportunities are RLS protected and restricted to verified a
   assert.match(alumniCareerMigration, /closing date/i);
   assert.match(alumniOperationsSource, /aasa_alumni_career_opportunities/);
   assert.match(alumniOperationsSource, /aasa_alumni_opportunity_applications/);
+});
+
+
+test("administrator portal permissions are isolated to the selected database role", () => {
+  assert.match(dashboardSource, /const portalRoleRows = activeRoleRows\.filter/);
+  assert.match(dashboardSource, /roleKey === "association_admin"/);
+  assert.match(dashboardSource, /roleKey === "super_admin" \|\| roleKey === "platform_admin"/);
+  assert.match(dashboardSource, /accessMode === "super_admin" && \(account\.roles\.includes\("super_admin"\) \|\| account\.roles\.includes\("platform_admin"\)\)/);
+  assert.match(dashboardSource, /accessMode === "super_admin" && account\.email\.toLowerCase\(\) === SUPER_ADMIN_EMAIL/);
+});
+
+
+const supabaseClientSource = await readFile(new URL("../src/lib/supabase.ts", import.meta.url), "utf8");
+const packageManifest = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+
+test("administrator login supports OTP and Supabase WebAuthn passkeys without bypassing role checks", () => {
+  assert.match(packageManifest.dependencies["@supabase/supabase-js"], /\^2\.105\.0/);
+  assert.match(supabaseClientSource, /experimental:\s*\{\s*passkey:\s*true\s*\}/);
+  assert.match(dashboardSource, /signInWithOtp\(/);
+  assert.match(dashboardSource, /verifyOtp\(/);
+  assert.match(dashboardSource, /signInWithPasskey\(\)/);
+  assert.match(dashboardSource, /registerPasskey\(\)/);
+  assert.match(dashboardSource, /supabase\.auth\.passkey\.list\(\)/);
+  assert.match(dashboardSource, /supabase\.auth\.passkey\.delete\(\{ passkeyId \}\)/);
+  assert.match(dashboardSource, /hasPortalRole && <section className="aasa-panel aasa-passkey-panel"/);
+  assert.match(dashboardSource, /window\.isSecureContext/);
+  assert.match(dashboardSource, /PublicKeyCredential/);
 });

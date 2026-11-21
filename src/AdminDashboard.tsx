@@ -49,24 +49,70 @@ const moduleSections: { id: Section; icon: string; en: string; ha: string; ar: s
   { id: "publications", icon: "✎", en: "Publications & Media", ha: "Wallafe-wallafe da Kafofin Yaɗa Labarai", ar: "المنشورات والإعلام", state: "planned" },
   { id: "annual_reports", icon: "▥", en: "Annual Reports", ha: "Rahotannin Shekara-shekara", ar: "التقارير السنوية", state: "planned" }
 ];
-export default function AdminDashboard() {
+export default function AdminDashboard({ accessMode }: { accessMode: "super_admin" | "association_admin" }) {
   const [account, setAccount] = useState<Account | null>(null);
-  const [email, setEmail] = useState(SUPER_ADMIN_EMAIL);
+  const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [passkeys, setPasskeys] = useState<Array<{ id: string; friendly_name?: string; created_at: string }>>([]);
   const [liveMetrics, setLiveMetrics] = useState<Record<string, number | null>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [view, setView] = useState<"login" | "dashboard">("login");
   const [section, setSection] = useState<Section>("overview");
   const [lang, setLang] = useState<"en" | "ha" | "ar">("en");
   const copy = {
-    en: { title: "AASA Administration", intro: "Association operations, governance and accountability", email: "Email address", send: "Send verification code", linkSent: "Enter the 8-digit code sent to your email. It expires in 60 seconds.", verify: "Verify OTP", codeLabel: "8-digit verification code", back: "Use another email", logout: "Sign out", super: "Super Admin", platform: "Platform Administrator", noRole: "No administrator role assigned", claim: "Claim initial Super Admin access", claimHint: "One-time activation for the designated, email-confirmed account only.", status: "Account status", access: "Administrator access", locked: "Administration remains locked until your role is confirmed by the database.", wait: "Please wait…", welcome: "Welcome back", overview: "Dashboard overview", overviewText: "A central workspace for AASA association administration.", available: "Available", planned: "Planned", liveModules: "Connected admin areas", plannedModules: "Modules awaiting implementation", moduleStatus: "Module status", next: "Modules will appear here when their secure workflows and data connections are implemented.", administration: "Administration & Security", accountManagement: "Administrator accounts", platformState: "Platform readiness", foundation: "Security foundation", foundationText: "Sign-in and administrator role checks are active in this interface. Backend checks remain authoritative.", coming: "Not implemented yet", comingText: "This section is part of the approved AASA scope, but its operational workflow is not connected yet. No sample records are shown." },
-    ha: { title: "Gudanarwar AASA", intro: "Ayyukan ƙungiya, shugabanci da riƙon amana", email: "Adireshin imel", send: "Aika lambar tabbatarwa", linkSent: "Shigar da lamba mai lambobi 8 da aka aika zuwa imel ɗinka. Za ta ƙare bayan dakika 60.", verify: "Tabbatar da OTP", codeLabel: "Lambar tabbatarwa mai lambobi 8", back: "Yi amfani da wani imel", logout: "Fita", super: "Babban Mai Gudanarwa", platform: "Mai Gudanar da Dandali", noRole: "Ba a ba da matsayin gudanarwa ba", claim: "Kunna Super Admin na farko", claimHint: "Sau ɗaya kawai ga asusun da aka ware kuma aka tabbatar da imel ɗinsa.", status: "Matsayin asusu", access: "Izinin gudanarwa", locked: "Gudanarwa yana kulle har database ya tabbatar da matsayinka.", wait: "A jira…", welcome: "Barka da dawowa", overview: "Takaitaccen dashboard", overviewText: "Wurin gudanar da ayyukan ƙungiyar AASA.", available: "Akwai", planned: "An tsara", liveModules: "Sassan gudanarwa masu aiki", plannedModules: "Sassan da ake jiran ginawa", moduleStatus: "Matsayin sashe", next: "Za a nuna sassa bayan an gina amintattun hanyoyinsu da haɗin bayanai.", administration: "Gudanarwa da Tsaro", accountManagement: "Asusun masu gudanarwa", platformState: "Shirye-shiryen dandali", foundation: "Tushen tsaro", foundationText: "Shiga da tantance matsayin mai gudanarwa suna aiki a wannan shafi. Database ne ke da ikon tabbatar da izini.", coming: "Ba a kammala ginawa ba", comingText: "Wannan sashe yana cikin tsarin AASA da aka amince da shi, amma ba a haɗa aikin sa ba tukuna. Ba a nuna bayanan gwaji ba." },
-    ar: { title: "إدارة AASA", intro: "عمليات الجمعية والحوكمة والمساءلة", email: "البريد الإلكتروني", send: "إرسال رمز التحقق", linkSent: "أدخل الرمز المكوّن من 8 أرقام المرسل إلى بريدك. تنتهي صلاحيته خلال 60 ثانية.", verify: "تحقق من الرمز", codeLabel: "رمز التحقق المكوّن من 8 أرقام", back: "استخدام بريد آخر", logout: "تسجيل الخروج", super: "المشرف الأعلى", platform: "مدير المنصة", noRole: "لم يتم تعيين دور إداري", claim: "تفعيل المشرف الأعلى الأول", claimHint: "مرة واحدة فقط للحساب المحدد بعد تأكيد البريد.", status: "حالة الحساب", access: "صلاحيات الإدارة", locked: "تبقى الإدارة مقفلة حتى تؤكد قاعدة البيانات دورك.", wait: "يرجى الانتظار…", welcome: "مرحبًا بعودتك", overview: "نظرة عامة", overviewText: "مساحة مركزية لإدارة جمعية AASA.", available: "متاح", planned: "مخطط", liveModules: "أقسام الإدارة المتصلة", plannedModules: "وحدات بانتظار التنفيذ", moduleStatus: "حالة الوحدات", next: "ستظهر الوحدات عند تنفيذ مسارات العمل الآمنة وربط البيانات.", administration: "الإدارة والأمان", accountManagement: "حسابات المسؤولين", platformState: "جاهزية المنصة", foundation: "أساس الأمان", foundationText: "تسجيل الدخول والتحقق من دور المسؤول موجودان في هذه الواجهة. تظل فحوصات الخادم هي المرجع النهائي.", coming: "لم يتم التنفيذ بعد", comingText: "هذا القسم جزء من نطاق AASA المعتمد، لكن سير العمل التشغيلي غير متصل بعد. لن تُعرض سجلات تجريبية." }
+    en: { title: "AASA Administration", intro: "Association operations, governance and accountability", email: "Email address", send: "Send verification code", linkSent: "Enter the 8-digit code sent to your email. It expires according to the email security settings.", verify: "Verify OTP", codeLabel: "8-digit verification code", back: "Use another email", logout: "Sign out", super: "Super Admin", platform: "Platform Administrator", noRole: "No administrator role assigned", claim: "Claim initial Super Admin access", claimHint: "One-time activation for the designated, email-confirmed account only.", status: "Account status", access: "Administrator access", locked: "Administration remains locked until your role is confirmed by the database.", wait: "Please wait…", welcome: "Welcome back", overview: "Dashboard overview", overviewText: "A central workspace for AASA association administration.", available: "Available", planned: "Planned", liveModules: "Connected admin areas", plannedModules: "Modules awaiting implementation", moduleStatus: "Module status", next: "Modules will appear here when their secure workflows and data connections are implemented.", administration: "Administration & Security", accountManagement: "Administrator accounts", platformState: "Platform readiness", foundation: "Security foundation", foundationText: "Sign-in and administrator role checks are active in this interface. Backend checks remain authoritative.", coming: "Not implemented yet", comingText: "This section is part of the approved AASA scope, but its operational workflow is not connected yet. No sample records are shown." },
+    ha: { title: "Gudanarwar AASA", intro: "Ayyukan ƙungiya, shugabanci da riƙon amana", email: "Adireshin imel", send: "Aika lambar tabbatarwa", linkSent: "Shigar da lamba mai lambobi 8 da aka aika zuwa imel ɗinka. Lokacin ƙarewarta yana bin saitunan tsaron imel.", verify: "Tabbatar da OTP", codeLabel: "Lambar tabbatarwa mai lambobi 8", back: "Yi amfani da wani imel", logout: "Fita", super: "Babban Mai Gudanarwa", platform: "Mai Gudanar da Dandali", noRole: "Ba a ba da matsayin gudanarwa ba", claim: "Kunna Super Admin na farko", claimHint: "Sau ɗaya kawai ga asusun da aka ware kuma aka tabbatar da imel ɗinsa.", status: "Matsayin asusu", access: "Izinin gudanarwa", locked: "Gudanarwa yana kulle har database ya tabbatar da matsayinka.", wait: "A jira…", welcome: "Barka da dawowa", overview: "Takaitaccen dashboard", overviewText: "Wurin gudanar da ayyukan ƙungiyar AASA.", available: "Akwai", planned: "An tsara", liveModules: "Sassan gudanarwa masu aiki", plannedModules: "Sassan da ake jiran ginawa", moduleStatus: "Matsayin sashe", next: "Za a nuna sassa bayan an gina amintattun hanyoyinsu da haɗin bayanai.", administration: "Gudanarwa da Tsaro", accountManagement: "Asusun masu gudanarwa", platformState: "Shirye-shiryen dandali", foundation: "Tushen tsaro", foundationText: "Shiga da tantance matsayin mai gudanarwa suna aiki a wannan shafi. Database ne ke da ikon tabbatar da izini.", coming: "Ba a kammala ginawa ba", comingText: "Wannan sashe yana cikin tsarin AASA da aka amince da shi, amma ba a haɗa aikin sa ba tukuna. Ba a nuna bayanan gwaji ba." },
+    ar: { title: "إدارة AASA", intro: "عمليات الجمعية والحوكمة والمساءلة", email: "البريد الإلكتروني", send: "إرسال رمز التحقق", linkSent: "أدخل الرمز المكوّن من 8 أرقام المرسل إلى بريدك. تنتهي صلاحيته وفق إعدادات أمان البريد الإلكتروني.", verify: "تحقق من الرمز", codeLabel: "رمز التحقق المكوّن من 8 أرقام", back: "استخدام بريد آخر", logout: "تسجيل الخروج", super: "المشرف الأعلى", platform: "مدير المنصة", noRole: "لم يتم تعيين دور إداري", claim: "تفعيل المشرف الأعلى الأول", claimHint: "مرة واحدة فقط للحساب المحدد بعد تأكيد البريد.", status: "حالة الحساب", access: "صلاحيات الإدارة", locked: "تبقى الإدارة مقفلة حتى تؤكد قاعدة البيانات دورك.", wait: "يرجى الانتظار…", welcome: "مرحبًا بعودتك", overview: "نظرة عامة", overviewText: "مساحة مركزية لإدارة جمعية AASA.", available: "متاح", planned: "مخطط", liveModules: "أقسام الإدارة المتصلة", plannedModules: "وحدات بانتظار التنفيذ", moduleStatus: "حالة الوحدات", next: "ستظهر الوحدات عند تنفيذ مسارات العمل الآمنة وربط البيانات.", administration: "الإدارة والأمان", accountManagement: "حسابات المسؤولين", platformState: "جاهزية المنصة", foundation: "أساس الأمان", foundationText: "تسجيل الدخول والتحقق من دور المسؤول موجودان في هذه الواجهة. تظل فحوصات الخادم هي المرجع النهائي.", coming: "لم يتم التنفيذ بعد", comingText: "هذا القسم جزء من نطاق AASA المعتمد، لكن سير العمل التشغيلي غير متصل بعد. لن تُعرض سجلات تجريبية." }
   }[lang];
+  const passkeyCopy = lang === "ha"
+    ? { signIn: "Shiga da Passkey", register: "Ƙirƙiri Passkey a wannan na’ura", title: "Tsaron shiga da Passkey", description: "Yi amfani da sawun yatsa, fuska, PIN na na’ura ko password manager.", empty: "Ba a ƙirƙiri Passkey a wannan asusun ba tukuna.", saved: "An ƙirƙiri Passkey cikin nasara.", removed: "An cire Passkey.", remove: "Cire", wait: "Ana tabbatarwa…", unsupported: "Wannan browser ko wannan adireshin bai goyi bayan Passkey ba. Yi amfani da HTTPS da browser mai WebAuthn.", confirmRemove: "Kana son cire wannan Passkey daga asusunka?" }
+    : lang === "ar"
+    ? { signIn: "تسجيل الدخول بمفتاح المرور", register: "إنشاء مفتاح مرور على هذا الجهاز", title: "أمان الدخول بمفتاح المرور", description: "استخدم البصمة أو الوجه أو رمز الجهاز أو مدير كلمات المرور.", empty: "لم يتم إنشاء مفتاح مرور لهذا الحساب بعد.", saved: "تم إنشاء مفتاح المرور بنجاح.", removed: "تم حذف مفتاح المرور.", remove: "حذف", wait: "جارٍ التحقق…", unsupported: "هذا المتصفح أو العنوان لا يدعم مفاتيح المرور. استخدم HTTPS ومتصفحًا يدعم WebAuthn.", confirmRemove: "هل تريد حذف مفتاح المرور هذا من حسابك؟" }
+    : { signIn: "Sign in with Passkey", register: "Create a passkey on this device", title: "Passkey sign-in security", description: "Use your fingerprint, face, device PIN or password manager.", empty: "No passkey has been registered for this account yet.", saved: "Passkey registered successfully.", removed: "Passkey removed.", remove: "Remove", wait: "Verifying…", unsupported: "This browser or origin does not support passkeys. Use HTTPS and a WebAuthn-capable browser.", confirmRemove: "Remove this passkey from your account?" };
+  const portalCopy = {
+    en: {
+      superTitle: "Super Admin Portal", associationTitle: "Association Admin Portal",
+      superIntro: "Secure platform-level sign-in for the designated Super Admin.",
+      associationIntro: "Secure sign-in for authorised AASA association administrators.",
+      loginHint: "Use the existing email account assigned to this administrator role. Public registration is disabled.",
+      mismatchTitle: "This account cannot enter this portal",
+      mismatchText: "Your authenticated account has a different administrator role. Use the portal assigned to your role.",
+      switchPortal: "Open the other administrator login",
+      associationRole: "Association Admin"
+    },
+    ha: {
+      superTitle: "Ƙofar Super Admin", associationTitle: "Ƙofar Association Admin",
+      superIntro: "Amintaccen shiga ga Super Admin da aka ware domin kula da dandali.",
+      associationIntro: "Amintaccen shiga ga masu gudanar da ayyukan ƙungiyar AASA da aka ba izini.",
+      loginHint: "Yi amfani da imel ɗin asusun da aka riga aka ware wa wannan matsayin gudanarwa. Ba a buɗe rajistar jama'a ba.",
+      mismatchTitle: "Ba a ba wannan asusu izinin wannan ƙofa ba",
+      mismatchText: "Matsayin asusun da ka shiga ya bambanta. Yi amfani da ƙofar da ta dace da matsayinka.",
+      switchPortal: "Buɗe ɗayan shafin shiga na masu gudanarwa",
+      associationRole: "Mai Gudanar da Ƙungiya"
+    },
+    ar: {
+      superTitle: "بوابة المشرف الأعلى", associationTitle: "بوابة مسؤول الجمعية",
+      superIntro: "دخول آمن على مستوى المنصة للمشرف الأعلى المعين.",
+      associationIntro: "دخول آمن لمسؤولي جمعية AASA المصرح لهم.",
+      loginHint: "استخدم البريد الإلكتروني للحساب المخصص لهذا الدور الإداري. التسجيل العام معطل.",
+      mismatchTitle: "هذا الحساب غير مخول لدخول هذه البوابة",
+      mismatchText: "دور الحساب الذي سجلت به مختلف. استخدم البوابة المخصصة لدورك.",
+      switchPortal: "فتح صفحة دخول المسؤول الأخرى",
+      associationRole: "مسؤول الجمعية"
+    }
+  }[lang];
+  const portalTitle = accessMode === "super_admin" ? portalCopy.superTitle : portalCopy.associationTitle;
+  const portalIntro = accessMode === "super_admin" ? portalCopy.superIntro : portalCopy.associationIntro;
+  const hasPortalRole = Boolean(account && account.status === "active" &&
+    (accessMode === "super_admin" ? (account.roles.includes("super_admin") || account.roles.includes("platform_admin")) : account.roles.includes("association_admin")));
+  const portalMismatch = Boolean(account && account.status === "active" &&
+    account.roles.some(roleKey => roleKey === "super_admin" || roleKey === "platform_admin" || roleKey === "association_admin") && !hasPortalRole);
+
   async function refresh(user: { id: string; email?: string }) {
     const p = await supabase.from("profiles").select("account_status").eq("user_id", user.id).maybeSingle();
     const r = await supabase.from("user_roles").select("role_id,roles(role_key),expires_at").eq("user_id", user.id).is("revoked_at", null);
@@ -76,7 +122,13 @@ export default function AdminDashboard() {
     const now = Date.now();
     const activeRoleRows = status === "active" ? (r.data ?? []).filter((x: any) => !x.expires_at || Date.parse(x.expires_at) > now) : [];
     const roles = activeRoleRows.map((x: any) => x.roles?.role_key).filter((x: unknown): x is string => typeof x === "string");
-    const roleIds = activeRoleRows.map((x: any) => x.role_id).filter(Boolean);
+    const portalRoleRows = activeRoleRows.filter((x: any) => {
+      const roleKey = x.roles?.role_key;
+      return accessMode === "super_admin"
+        ? roleKey === "super_admin" || roleKey === "platform_admin"
+        : roleKey === "association_admin";
+    });
+    const roleIds = portalRoleRows.map((x: any) => x.role_id).filter(Boolean);
     let permissions: string[] = [];
     if (roleIds.length) {
       const pr = await supabase.from("role_permissions").select("role_id,permissions(permission_key)").in("role_id", roleIds);
@@ -92,7 +144,6 @@ export default function AdminDashboard() {
       if (!live) return;
       if (e) setError(e.message);
       else if (data.session?.user) {
-        void supabase.rpc("aasa_link_own_member_account").then(() => undefined);
         void refresh({ id: data.session.user.id, email: data.session.user.email }).catch(e => setError(e.message));
       }
     });
@@ -101,14 +152,28 @@ export default function AdminDashboard() {
       window.setTimeout(() => {
         if (!live) return;
         if (session?.user) {
-          void supabase.rpc("aasa_link_own_member_account").then(() => undefined);
           void refresh({ id: session.user.id, email: session.user.email }).catch(e => setError(e.message));
         }
         else { setAccount(null); setView("login"); }
       }, 0);
     });
     return () => { live = false; subscription.unsubscribe(); };
-  }, []);
+  }, [accessMode]);
+  useEffect(() => {
+    let active = true;
+    if (!account || !hasPortalRole) {
+      setPasskeys([]);
+      return () => { active = false; };
+    }
+    supabase.auth.passkey.list().then(({ data, error: listError }) => {
+      if (!active) return;
+      if (listError) setError(listError.message);
+      else setPasskeys(data ?? []);
+    }).catch(cause => {
+      if (active) setError(cause instanceof Error ? cause.message : "Could not load passkeys.");
+    });
+    return () => { active = false; };
+  }, [account?.id, hasPortalRole]);
   async function sendCode(e: FormEvent) {
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
@@ -128,6 +193,45 @@ export default function AdminDashboard() {
       setNotice("Email verified. Checking your AASA administrator permissions…");
     } catch (e) { setError(e instanceof Error ? e.message : "Could not verify the code."); }
     finally { setBusy(false); }
+  }
+  async function signInWithPasskey() {
+    setPasskeyBusy(true); setError(""); setNotice("");
+    try {
+      if (!window.isSecureContext || !("PublicKeyCredential" in window)) throw new Error(passkeyCopy.unsupported);
+      const { error: passkeyError } = await supabase.auth.signInWithPasskey();
+      if (passkeyError) throw passkeyError;
+      setNotice("Passkey accepted. Checking your AASA administrator permissions…");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not sign in with this passkey.");
+    } finally { setPasskeyBusy(false); }
+  }
+  async function registerPasskey() {
+    setPasskeyBusy(true); setError(""); setNotice("");
+    try {
+      if (!window.isSecureContext || !("PublicKeyCredential" in window)) throw new Error(passkeyCopy.unsupported);
+      const { error: passkeyError } = await supabase.auth.registerPasskey();
+      if (passkeyError) throw passkeyError;
+      const { data, error: listError } = await supabase.auth.passkey.list();
+      if (listError) throw listError;
+      setPasskeys(data ?? []);
+      setNotice(passkeyCopy.saved);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not register this passkey.");
+    } finally { setPasskeyBusy(false); }
+  }
+  async function removePasskey(passkeyId: string) {
+    if (!window.confirm(passkeyCopy.confirmRemove)) return;
+    setPasskeyBusy(true); setError(""); setNotice("");
+    try {
+      const { error: deleteError } = await supabase.auth.passkey.delete({ passkeyId });
+      if (deleteError) throw deleteError;
+      const { data, error: listError } = await supabase.auth.passkey.list();
+      if (listError) throw listError;
+      setPasskeys(data ?? []);
+      setNotice(passkeyCopy.removed);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not remove this passkey.");
+    } finally { setPasskeyBusy(false); }
   }
   async function claim() {
     setBusy(true); setError(""); setNotice("");
@@ -151,7 +255,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!account || account.status !== "active") { setLiveMetrics({}); return; }
     let live = true;
-    const allowed = (permissions: string[]) => account.roles.includes("super_admin") || account.permissions.some(p => permissions.includes(p));
+    const allowed = (permissions: string[]) => (accessMode === "super_admin" && (account.roles.includes("super_admin") || account.roles.includes("platform_admin"))) || account.permissions.some(p => permissions.includes(p));
     setMetricsLoading(true);
     Promise.all([
       supabase.from("aasa_members").select("id", { count: "exact", head: true }),
@@ -167,8 +271,8 @@ export default function AdminDashboard() {
       setMetricsLoading(false);
     }).catch(() => { if (live) setMetricsLoading(false); });
     return () => { live = false; };
-  }, [account?.id, account?.status]);
-  const role = account?.roles.includes("super_admin") ? "super_admin" : account?.roles.includes("platform_admin") ? "platform_admin" : account?.roles[0] ?? "";
+  }, [accessMode, account?.id, account?.status]);
+  const role = !hasPortalRole ? "" : accessMode === "association_admin" ? "association_admin" : account?.roles.includes("super_admin") ? "super_admin" : "platform_admin";
   const rtl = lang === "ar";
   const canAccessSection = (id: Section) => {
     if (role === "super_admin") return true;
@@ -180,12 +284,12 @@ export default function AdminDashboard() {
     return account?.permissions.some(p => required[id as Exclude<Section,"overview"|"administration">]?.includes(p)) ?? false;
   };
   const visibleSections = moduleSections.filter(item => canAccessSection(item.id));
-  const roleLabel = role === "super_admin" ? copy.super : role === "platform_admin" ? copy.platform : role.replace(/_/g, " ");
+  const roleLabel = role === "super_admin" ? copy.super : role === "platform_admin" ? copy.platform : role === "association_admin" ? portalCopy.associationRole : role.replace(/_/g, " ");
   const label = (item: typeof moduleSections[number]) => lang === "ha" ? item.ha : lang === "ar" ? item.ar : item.en;
-  return <main className={`aasa-admin ${rtl ? "rtl" : ""}`} dir={rtl ? "rtl" : "ltr"}>
+  return <main className={`aasa-admin ${rtl ? "rtl" : ""} ${view === "login" && !account ? "aasa-admin-login-page" : ""}`} dir={rtl ? "rtl" : "ltr"}>
     <header><div className="aasa-brand"><img className="aasa-brand-logo" src={import.meta.env.BASE_URL + "aasa-logo.svg"} alt="AASA crest" /><div><b>AASA</b><small>ABU-AIMAN STUDENTS' ASSOCIATION</small></div></div><div className="aasa-actions"><nav>{(["en", "ha", "ar"] as const).map(x => <button type="button" key={x} className={lang === x ? "on" : ""} onClick={() => setLang(x)}>{x === "ar" ? "عربي" : x.toUpperCase()}</button>)}</nav>{account && <button type="button" onClick={() => void logout()}>{copy.logout}</button>}</div></header>
-    <section className="aasa-content"><p className="aasa-kicker">العلم نور · SECURE ADMINISTRATION</p><h1>{copy.title}</h1><p className="aasa-intro">{copy.intro}</p>
-      {view === "login" && !account ? <form className="aasa-panel aasa-login" onSubmit={sent ? verifyCode : sendCode}><img className="aasa-login-logo" src={import.meta.env.BASE_URL + "aasa-logo.svg"} alt="AASA association crest" /><h2>{copy.title}</h2><p>Use an existing, verified AASA account. Public registration is disabled.</p><label htmlFor="aasa-email">{copy.email}</label><input id="aasa-email" type="email" autoComplete="email" required value={email} disabled={sent || busy} onChange={e => setEmail(e.target.value)} />{sent && <><p className="aasa-notice" role="status">{copy.linkSent}</p><label htmlFor="aasa-otp">{copy.codeLabel}</label><input id="aasa-otp" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{8}" maxLength={8} minLength={8} required value={otp} disabled={busy} onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 8))} /><button className="aasa-primary" disabled={busy || otp.length !== 8}>{busy ? copy.wait : copy.verify}</button></>}{!sent && <button className="aasa-primary" disabled={busy}>{busy ? copy.wait : copy.send}</button>}{sent && <button className="aasa-link" type="button" onClick={() => { setSent(false); setOtp(""); setNotice(""); setError(""); }}>{copy.back}</button>}</form> : account ? <>{!role ? <><section className="aasa-welcome"><div><p className="aasa-kicker">AUTHENTICATED ACCOUNT</p><h2>{copy.access}</h2><p>{account.email}</p></div><span className="aasa-pill">{copy.noRole}</span></section><section className="aasa-panel"><h3>{copy.noRole}</h3><p>{copy.locked}</p><p>{copy.status}: <strong>{account.status}</strong></p>{account.email.toLowerCase() === SUPER_ADMIN_EMAIL && <><p>{copy.claimHint}</p><button className="aasa-primary" disabled={busy || account.status === "suspended" || account.status === "disabled"} onClick={() => void claim()}>{busy ? copy.wait : copy.claim}</button></>}</section></> : <div className="aasa-workspace">
+    <section className={`aasa-content ${view === "login" && !account ? "aasa-auth-content" : ""}`}><div className="aasa-auth-heading"><p className="aasa-kicker">العلم نور · SECURE ADMINISTRATION</p><h1>{portalTitle}</h1><p className="aasa-intro">{portalIntro}</p></div>
+      {view === "login" && !account ? <form className="aasa-panel aasa-login aasa-auth-card" onSubmit={sent ? verifyCode : sendCode}><div className="aasa-auth-card-brand"><img className="aasa-login-logo" src={import.meta.env.BASE_URL + "aasa-logo.svg"} alt="AASA association crest" /><span className="aasa-auth-card-seal">العلم نور</span></div><span className={`aasa-auth-role ${accessMode === "super_admin" ? "super" : "association"}`}>{accessMode === "super_admin" ? "SUPER ADMINISTRATOR" : "ASSOCIATION ADMINISTRATOR"}</span><h2>{portalTitle}</h2><p>{portalCopy.loginHint}</p><label htmlFor="aasa-email">{copy.email}</label><input id="aasa-email" type="email" autoComplete="email" required value={email} disabled={sent || busy} onChange={e => setEmail(e.target.value)} />{sent && <><p className="aasa-notice" role="status">{copy.linkSent}</p><label htmlFor="aasa-otp">{copy.codeLabel}</label><input id="aasa-otp" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{8}" maxLength={8} minLength={8} required value={otp} disabled={busy} onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 8))} /><button className="aasa-primary" disabled={busy || otp.length !== 8}>{busy ? copy.wait : copy.verify}</button></>}{!sent && <button className="aasa-primary" disabled={busy}>{busy ? copy.wait : copy.send}</button>}{sent && <button className="aasa-link" type="button" onClick={() => { setSent(false); setOtp(""); setNotice(""); setError(""); }}>{copy.back}</button>}<button className="aasa-secondary" type="button" disabled={busy || passkeyBusy} onClick={() => void signInWithPasskey()}>{passkeyBusy ? passkeyCopy.wait : passkeyCopy.signIn}</button><a className="aasa-link" href={accessMode === "super_admin" ? "?portal=association-admin" : "?portal=super-admin"}>{portalCopy.switchPortal}</a></form> : account ? <>{hasPortalRole && <section className="aasa-panel aasa-passkey-panel"><div><p className="aasa-kicker">ACCOUNT SECURITY · WEBAUTHN</p><h2>{passkeyCopy.title}</h2><p>{passkeyCopy.description}</p></div><button className="aasa-primary" type="button" disabled={passkeyBusy} onClick={() => void registerPasskey()}>{passkeyBusy ? passkeyCopy.wait : passkeyCopy.register}</button>{passkeys.length === 0 ? <p>{passkeyCopy.empty}</p> : <ul>{passkeys.map(passkey => <li key={passkey.id}><span><strong>{passkey.friendly_name || "Passkey"}</strong><small> · {new Date(passkey.created_at).toLocaleDateString()}</small></span><button className="aasa-link" type="button" disabled={passkeyBusy} onClick={() => void removePasskey(passkey.id)}>{passkeyCopy.remove}</button></li>)}</ul>}</section>}{portalMismatch ? <section className="aasa-panel aasa-portal-denied"><h2>{portalCopy.mismatchTitle}</h2><p>{portalCopy.mismatchText}</p><a className="aasa-link" href={accessMode === "super_admin" ? "?portal=association-admin" : "?portal=super-admin"}>{portalCopy.switchPortal}</a><button className="aasa-secondary" type="button" onClick={() => void logout()}>{copy.logout}</button></section> : !role ? <><section className="aasa-welcome"><div><p className="aasa-kicker">AUTHENTICATED ACCOUNT</p><h2>{copy.access}</h2><p>{account.email}</p></div><span className="aasa-pill">{copy.noRole}</span></section><section className="aasa-panel"><h3>{copy.noRole}</h3><p>{copy.locked}</p><p>{copy.status}: <strong>{account.status}</strong></p>{accessMode === "super_admin" && account.email.toLowerCase() === SUPER_ADMIN_EMAIL && <><p>{copy.claimHint}</p><button className="aasa-primary" disabled={busy || account.status === "suspended" || account.status === "disabled"} onClick={() => void claim()}>{busy ? copy.wait : copy.claim}</button></>}</section></> : <div className="aasa-workspace">
         
         <div className="aasa-workspace-main">
           {section === "overview" && <><section className="aasa-dashboard-hero"><div className="aasa-dashboard-hero-copy"><p className="aasa-kicker">AASA · EXECUTIVE CONTROL CENTRE</p><h2>{copy.welcome}</h2><p>{copy.overviewText} One secure view of membership, governance, programmes and accountability.</p><div className="aasa-hero-meta"><span className="aasa-pill active">{roleLabel}</span><span className="aasa-hero-secure"><i/> Secure administrator session</span></div></div><div className="aasa-hero-seal"><img src={import.meta.env.BASE_URL + "aasa-logo.svg"} alt="AASA crest"/><strong>العلم نور</strong><small>ASSOCIATION ADMINISTRATION</small></div></section><div className="aasa-dashboard-section-title"><div><p className="aasa-kicker">LIVE ORGANISATION SNAPSHOT</p><h3>Association at a glance</h3></div><span>Live database counts · permission filtered</span></div><button type="button" className="aasa-membership-shortcut" onClick={() => setSection("membership")}><span className="aasa-shortcut-icon">♙</span><span><strong>{label(moduleSections.find(m => m.id === "membership")!)}</strong><small>Open member register, search and manage member records</small></span><span className="aasa-shortcut-arrow">Open register →</span></button><div className="aasa-overview-cards aasa-live-metrics"><article><span className="aasa-card-icon">♙</span><small>Member records</small><strong>{metricsLoading?"…":liveMetrics.members===null||liveMetrics.members===undefined?"—":liveMetrics.members}</strong><p>Live membership register count</p></article><article><span className="aasa-card-icon">♜</span><small>Serving committee members</small><strong>{metricsLoading?"…":liveMetrics.committees===null||liveMetrics.committees===undefined?"—":liveMetrics.committees}</strong><p>Current committee assignments</p></article><article><span className="aasa-card-icon">☑</span><small>Active elections</small><strong>{metricsLoading?"…":liveMetrics.elections===null||liveMetrics.elections===undefined?"—":liveMetrics.elections}</strong><p>Nominations or voting phase</p></article><article><span className="aasa-card-icon">▤</span><small>Scheduled events</small><strong>{metricsLoading?"…":liveMetrics.meetings===null||liveMetrics.meetings===undefined?"—":liveMetrics.meetings}</strong><p>Scheduled meetings and events</p></article><article><span className="aasa-card-icon">₦</span><small>Finance entries pending</small><strong>{metricsLoading?"…":liveMetrics.finance===null||liveMetrics.finance===undefined?"—":liveMetrics.finance}</strong><p>Awaiting independent review</p></article><article><span className="aasa-card-icon">♡</span><small>Open welfare cases</small><strong>{metricsLoading?"…":liveMetrics.welfare===null||liveMetrics.welfare===undefined?"—":liveMetrics.welfare}</strong><p>Open, under review or referred</p></article><article><span className="aasa-card-icon">▧</span><small>Active documents</small><strong>{metricsLoading?"…":liveMetrics.documents===null||liveMetrics.documents===undefined?"—":liveMetrics.documents}</strong><p>Non-archived official documents</p></article><article><span className="aasa-card-icon">◉</span><small>Account status</small><strong>{account.status}</strong><p>{account.email}</p></article></div><section className="aasa-dashboard-quick"><div className="aasa-dashboard-section-title"><div><p className="aasa-kicker">QUICK ACCESS</p><h3>Move work forward</h3></div><span>Open a secure workspace</span></div><div className="aasa-quick-grid">{visibleSections.filter(m => ["membership","id_center","governance","elections","meetings","projects","finance","payments","welfare","documents","communications","complaints"].includes(m.id)).slice(0,8).map(item => <button type="button" key={item.id} onClick={() => setSection(item.id)}><span>{item.icon}</span><strong>{label(item)}</strong><small>Open workspace <b>↗</b></small></button>)}</div></section><section className="aasa-panel aasa-module-panel"><div className="aasa-section-heading"><div><p className="aasa-kicker">WORKSPACE DIRECTORY</p><h3>{copy.moduleStatus}</h3></div></div><div className="aasa-module-list">{visibleSections.filter(m => m.id !== "overview").map(item => <button type="button" key={item.id} onClick={() => setSection(item.id)}><span className="aasa-module-icon">{item.icon}</span><span className="aasa-module-copy"><strong>{label(item)}</strong><small>{item.state === "available" ? copy.available : copy.coming}</small></span><span className={item.state === "available" ? "aasa-status-available" : "aasa-status-planned"}>{item.state === "available" ? copy.available : copy.planned}</span><span aria-hidden="true">›</span></button>)}</div></section><section className="aasa-panel"><p className="aasa-kicker">{copy.foundation}</p><h3>{copy.platformState}</h3><p>{copy.foundationText}</p></section></>}
