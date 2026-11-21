@@ -78,6 +78,9 @@ export default function MemberLogin() {
         throw new Error(t.noMember);
       }
       setNotice(t.success);
+      // Reload only after the membership link and active-member check finish.
+      // This lets the app resolve the authenticated member against the completed database state.
+      window.location.assign("./");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not verify this member account.");
     } finally { setBusy(false); }
